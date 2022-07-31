@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="zh-hans">
+
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<meta http-equiv="X-UA-Compatible" content="ie=edge">
+	<meta name="theme-color" content="#494f5c">
+	<meta name="msapplication-TileColor" content="#494f5c">
+<meta itemprop="name" content="Go1.16 新特性：快速上手 Go embed">
+<meta itemprop="description" content="在以前，很多从其他语言转过来 Go 语言的同学会问到，或是踩到一个坑。就是以为 Go 语言所打包的二进制文件中会包含配置文件的联同编译和打包。
+结果往往一把二进制文件挪来挪去，就无法把应用程序运行起来了。因为无法读取到静态文件的资源。
+无法将静态资源编译打包进二进制文件的话，通常会有两种解决方法：
+第一种是识别这类静态资源，是否需要跟着程序走。 第二种就是考虑将其打包进二进制文件中。 第二种情况的话，Go 以前是不支持的，大家就会去借助各种花式的开源库，例如：go-bindata/go-bindata 来实现。
+但从在 Go1.16 起，Go 语言自身正式支持了该项特性，今天我们将通过这篇文章快速了解和学习这项特性。
+基本使用 演示代码：
+import _ &#34;embed&#34; //go:embed hello.txt var s string func main() { print(s) } 我们首先在对应的目录下创建了 hello."><meta itemprop="datePublished" content="2021-02-11T16:13:19+08:00" />
+<meta itemprop="dateModified" content="2021-02-11T16:13:19+08:00" />
+<meta itemprop="wordCount" content="210">
+<meta itemprop="keywords" content="go," /><meta property="og:title" content="Go1.16 新特性：快速上手 Go embed" />
+<meta property="og:description" content="在以前，很多从其他语言转过来 Go 语言的同学会问到，或是踩到一个坑。就是以为 Go 语言所打包的二进制文件中会包含配置文件的联同编译和打包。
+结果往往一把二进制文件挪来挪去，就无法把应用程序运行起来了。因为无法读取到静态文件的资源。
+无法将静态资源编译打包进二进制文件的话，通常会有两种解决方法：
+第一种是识别这类静态资源，是否需要跟着程序走。 第二种就是考虑将其打包进二进制文件中。 第二种情况的话，Go 以前是不支持的，大家就会去借助各种花式的开源库，例如：go-bindata/go-bindata 来实现。
+但从在 Go1.16 起，Go 语言自身正式支持了该项特性，今天我们将通过这篇文章快速了解和学习这项特性。
+基本使用 演示代码：
+import _ &#34;embed&#34; //go:embed hello.txt var s string func main() { print(s) } 我们首先在对应的目录下创建了 hello." />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://wangtu2022.github.io/posts/go/go1.16-2/" /><meta property="article:section" content="posts" />
+<meta property="article:published_time" content="2021-02-11T16:13:19+08:00" />
+<meta property="article:modified_time" content="2021-02-11T16:13:19+08:00" />
+
+<meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="Go1.16 新特性：快速上手 Go embed"/>
+<meta name="twitter:description" content="在以前，很多从其他语言转过来 Go 语言的同学会问到，或是踩到一个坑。就是以为 Go 语言所打包的二进制文件中会包含配置文件的联同编译和打包。
+结果往往一把二进制文件挪来挪去，就无法把应用程序运行起来了。因为无法读取到静态文件的资源。
+无法将静态资源编译打包进二进制文件的话，通常会有两种解决方法：
+第一种是识别这类静态资源，是否需要跟着程序走。 第二种就是考虑将其打包进二进制文件中。 第二种情况的话，Go 以前是不支持的，大家就会去借助各种花式的开源库，例如：go-bindata/go-bindata 来实现。
+但从在 Go1.16 起，Go 语言自身正式支持了该项特性，今天我们将通过这篇文章快速了解和学习这项特性。
+基本使用 演示代码：
+import _ &#34;embed&#34; //go:embed hello.txt var s string func main() { print(s) } 我们首先在对应的目录下创建了 hello."/>
+
+	<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+	<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+	<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+	<link rel="manifest" href="/site.webmanifest">
+	<link rel="mask-icon" href="/safari-pinned-tab.svg" color="">
+	<link rel="shortcut icon" href="/favicon.ico">
+
+	<title>Go1.16 新特性：快速上手 Go embed</title>
+	<link rel="stylesheet" href="https://wangtu2022.github.io/css/style.min.d3141168199607bf3a517216ce3c263814eecdbc8fca72a9a88700799a838219.css" integrity="sha256-0xQRaBmWB786UXIWzjwmOBTuzbyPynKpqIcAeZqDghk=" crossorigin="anonymous">
+	
+	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.1/css/all.min.css">
+	<link rel="stylesheet" href="https://wangtu2022.github.io/css/styles.css">
+</head>
+
+<body id="page">
+	
+	<header id="site-header" class="animated slideInUp">
+		<div class="hdr-wrapper section-inner">
+			<div class="hdr-left">
+				<div class="site-branding">
+					<a href="https://wangtu2022.github.io/">煎鱼</a>
+				</div>
+				<nav class="site-nav hide-in-mobile">
+					
+				<a href="https://wangtu2022.github.io/posts/">文章</a>
+				<a href="https://wangtu2022.github.io/tags/">标签</a>
+				<a href="https://wangtu2022.github.io/about/">关于</a>
+
+				</nav>
+			</div>
+			<div class="hdr-right hdr-icons">
+				<span class="hdr-social hide-in-mobile"><a href="https://github.com/eddycjy" target="_blank" rel="noopener me" title="Github"><svg xmlns="http://www.w3.org/2000/svg" class="feather" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"></path></svg></a></span><button id="menu-btn" class="hdr-btn" title="Menu"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-menu"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg></button>
+			</div>
+		</div>
+	</header>
+	<div id="mobile-menu" class="animated fast">
+		<ul>
+			<li><a href="https://wangtu2022.github.io/posts/">文章</a></li>
+			<li><a href="https://wangtu2022.github.io/tags/">标签</a></li>
+			<li><a href="https://wangtu2022.github.io/about/">关于</a></li>
+		</ul>
+	</div>
+
+
+	<main class="site-main section-inner animated fadeIn faster">
+		<article class="thin">
+			<header class="post-header">
+				<div class="post-meta"><span>Feb 11, 2021</span></div>
+				<h1>Go1.16 新特性：快速上手 Go embed</h1>
+			</header>
+			<div class="content">
+				<p>在以前，很多从其他语言转过来 Go 语言的同学会问到，或是踩到一个坑。就是以为 Go 语言所打包的二进制文件中会包含配置文件的联同编译和打包。</p>
+<p><img src="https://imgkr2.cn-bj.ufileos.com/f59a06c7-2fa1-41f4-901c-990f7dd7d715.png?UCloudPublicKey=TOKEN_8d8b72be-579a-4e83-bfd0-5f6ce1546f13&amp;Signature=werBc5OkLhKUh0JhpYpcAtl3etA%253D&amp;Expires=1612147306" alt=""></p>
+<p>结果往往一把二进制文件挪来挪去，就无法把应用程序运行起来了。因为无法读取到静态文件的资源。</p>
+<p>无法将静态资源编译打包进二进制文件的话，通常会有两种解决方法：</p>
+<ul>
+<li>第一种是识别这类静态资源，是否需要跟着程序走。</li>
+<li>第二种就是考虑将其打包进二进制文件中。</li>
+</ul>
+<p>第二种情况的话，Go 以前是不支持的，大家就会去借助各种花式的开源库，例如：go-bindata/go-bindata 来实现。</p>
+<p>但从在 Go1.16 起，Go 语言自身正式支持了该项特性，今天我们将通过这篇文章快速了解和学习这项特性。</p>
+<h2 id="基本使用">基本使用<a href="#基本使用" class="anchor" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 7h3a5 5 0 0 1 5 5 5 5 0 0 1-5 5h-3m-6 0H6a5 5 0 0 1-5-5 5 5 0 0 1 5-5h3"></path><line x1="8" y1="12" x2="16" y2="12"></line></svg></a></h2>
+<p>演示代码：</p>
+<pre tabindex="0"><code>import _ &#34;embed&#34;
+
+//go:embed hello.txt
+var s string
+
+func main() {
+	print(s)
+}
+</code></pre><p>我们首先在对应的目录下创建了 <code>hello.txt</code> 文件，并且写入文本内容 “吃煎鱼”。</p>
+<p>在代码中编写了最为核心的 <code>//go:embed hello.txt</code> 注解。注解的格式很简单，就是 <code>go:embed</code> 指令声明，外加读取的内容的地址，可支持相对和绝对路径。</p>
+<p>输出结果：</p>
+<pre tabindex="0"><code>吃煎鱼
+</code></pre><p>读取到静态文件中的内容后自动赋值给了变量 <code>s</code>，并且在主函数中成功输出。</p>
+<p>而针对其他的基础类型，Go embed 也是支持的：</p>
+<pre tabindex="0"><code>//go:embed hello.txt
+var s string
+
+//go:embed hello.txt
+var b []byte
+
+//go:embed hello.txt
+var f embed.FS
+
+func main() {
+	print(s)
+	print(string(b))
+
+	data, _ := f.ReadFile(&#34;hello.txt&#34;)
+	print(string(data))
+}
+</code></pre><p>输出结果：</p>
+<pre tabindex="0"><code>吃煎鱼
+吃煎鱼
+吃煎鱼
+</code></pre><p>我们同时在一个代码文件中进行了多个 embed 的注解声明。</p>
+<p>并且针对 string、slice、byte、fs 等多种类型进行了打包，也不需要过多的处理，非常便利。</p>
+<h2 id="拓展用法">拓展用法<a href="#拓展用法" class="anchor" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 7h3a5 5 0 0 1 5 5 5 5 0 0 1-5 5h-3m-6 0H6a5 5 0 0 1-5-5 5 5 0 0 1 5-5h3"></path><line x1="8" y1="12" x2="16" y2="12"></line></svg></a></h2>
+<p>除去基本用法完，embed 本身在指令上也支持多种变形：</p>
+<pre tabindex="0"><code>//go:embed hello1.txt hello2.txt
+var f embed.FS
+
+func main() {
+	data1, _ := f.ReadFile(&#34;hello1.txt&#34;)
+	fmt.Println(string(data1))
+
+	data2, _ := f.ReadFile(&#34;hello2.txt&#34;)
+	fmt.Println(string(data2))
+}
+</code></pre><p>在指定 <code>go:embed</code> 注解时可以一次性多个文件来读取，并且也可以一个变量多行注解：</p>
+<pre tabindex="0"><code>//go:embed hello1.txt 
+//go:embed hello2.txt
+var f embed.FS
+</code></pre><p>也可以通过在注解中指定目录 <code>helloworld</code>，再对应读取文件：</p>
+<pre tabindex="0"><code>//go:embed helloworld
+var f embed.FS
+
+func main() {
+	data1, _ := f.ReadFile(&#34;helloworld/hello1.txt&#34;)
+	fmt.Println(string(data1))
+
+	data2, _ := f.ReadFile(&#34;helloworld/hello2.txt&#34;)
+	fmt.Println(string(data2))
+}
+</code></pre><p>同时既然能够支持目录读取，也能支持贪婪模式的匹配：</p>
+<pre tabindex="0"><code>//go:embed helloworld/*
+var f embed.FS
+</code></pre><p>可能会有小伙伴注意到，<code>embed.FS</code> 也能调各类文件系统的接口，其实本质是 <code>embed.FS</code> 实现了 <code>io/fs</code> 接口。</p>
+<h2 id="只读属性">只读属性<a href="#只读属性" class="anchor" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 7h3a5 5 0 0 1 5 5 5 5 0 0 1-5 5h-3m-6 0H6a5 5 0 0 1-5-5 5 5 0 0 1 5-5h3"></path><line x1="8" y1="12" x2="16" y2="12"></line></svg></a></h2>
+<p>在 embed 所提供的 FS 中，我们可以发现其都是打开和只读方法：</p>
+<pre tabindex="0"><code>type FS
+    func (f FS) Open(name string) (fs.File, error)
+    func (f FS) ReadDir(name string) ([]fs.DirEntry, error)
+    func (f FS) ReadFile(name string) ([]byte, error)
+</code></pre><p>根据此也可以确定 embed 所打包进二进制文件的内容只允许读取，不允许变更。</p>
+<p>更抽象来讲就是在编译期就确定了 embed 的内容，在运行时不允许修改，保证了一致性。</p>
+<h2 id="总结">总结<a href="#总结" class="anchor" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 7h3a5 5 0 0 1 5 5 5 5 0 0 1-5 5h-3m-6 0H6a5 5 0 0 1-5-5 5 5 0 0 1 5-5h3"></path><line x1="8" y1="12" x2="16" y2="12"></line></svg></a></h2>
+<p>通过 Go1.16 正式提供的 embed 特性，可以实现原生就支持静态资源文件的嵌入。整体如下：</p>
+<ul>
+<li>在功能上：能够将静态资源嵌入二进制文件中，在运行时可以打开和读取相关的打包后的静态文件。</li>
+<li>在安全上：是在编译期编译嵌入，在运行时不支持修改。</li>
+<li>在使用上：
+<ul>
+<li>支持单文件读取：<code>go:embed hello.txt</code>。</li>
+<li>支持多文件读取：<code>go:embed hello1.txt</code>、<code>go:embed hello2.txt</code>。</li>
+<li>支持目录读取：<code>go:embed helloworld</code>。</li>
+<li>支持贪婪匹配：<code>go:embed helloworld/*</code>。</li>
+</ul>
+</li>
+</ul>
+<p>总的来讲，Go1.16 embed 特性很好的填补了 Go 语言在打包静态文件资源的一块原生空白领域。同时也说明了 Go 官方的确在不断地吸收社区的一些良好的想法和经验。</p>
+
+			</div>
+			<hr class="post-end">
+			<footer class="post-info">
+				<p>
+					<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-tag meta-icon"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"></path><line x1="7" y1="7" x2="7" y2="7"></line></svg><span class="tag"><a href="https://wangtu2022.github.io/tags/go">go</a></span>
+				</p>
+				<p><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-file-text"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>210 Words</p>
+				<p><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-calendar"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>2021-02-11 16:13 &#43;0800</p>
+			</footer>
+		</article>
+		<div class="post-nav thin">
+			<a class="next-post" href="https://wangtu2022.github.io/posts/go/go1.16-3/">
+				<span class="post-nav-label"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-arrow-left"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>&nbsp;Newer</span><br><span>Go1.16 新特性：详解内存管理机制的变更，你需要了解</span>
+			</a>
+			<a class="prev-post" href="https://wangtu2022.github.io/posts/go/go1.16-1/">
+				<span class="post-nav-label">Older&nbsp;<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-arrow-right"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg></span><br><span>Go1.16 即将正式发布，以下变更你需要知道</span>
+			</a>
+		</div>
+		<div id="comments" class="thin">
+</div>
+	</main>
+
+	<footer id="site-footer" class="section-inner thin animated fadeIn faster">
+		<p>&copy; 2022 <a href="https://wangtu2022.github.io/">煎鱼</a> &#183; <a href="http://www.beian.miit.gov.cn/">粤ICP备19076352号</a></p>
+		<p>
+			Made with <a href="https://gohugo.io/" target="_blank" rel="noopener">Hugo</a> &#183; Theme <a href="https://github.com/Track3/hermit" target="_blank" rel="noopener">Hermit</a> &#183; <a href="https://wangtu2022.github.io/posts/index.xml" target="_blank" title="rss"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-rss"><path d="M4 11a9 9 0 0 1 9 9"></path><path d="M4 4a16 16 0 0 1 16 16"></path><circle cx="5" cy="19" r="1"></circle></svg></a>
+		</p>
+	</footer>
+
+
+
+	<script src="https://wangtu2022.github.io/js/bundle.min.580988ed2982bcbb74a1773c7abea97b43e4c43b9324e10cda0813ec6ec4bb67.js" integrity="sha256-WAmI7SmCvLt0oXc8er6pe0PkxDuTJOEM2ggT7G7Eu2c=" crossorigin="anonymous"></script>
+	
+<script type="application/javascript">
+var doNotTrack = false;
+if (!doNotTrack) {
+	window.ga=window.ga||function(){(ga.q=ga.q||[]).push(arguments)};ga.l=+new Date;
+	ga('create', 'UA-166045776-1', 'auto');
+	
+	ga('send', 'pageview');
+}
+</script>
+<script async src='https://www.google-analytics.com/analytics.js'></script>
+
+
+</body>
+
+</html>

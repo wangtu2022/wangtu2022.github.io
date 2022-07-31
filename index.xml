@@ -1,0 +1,164 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>煎鱼</title>
+    <link>https://wangtu2022.github.io/</link>
+    <description>Recent content on 煎鱼</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>zh-hans</language>
+    <copyright>This work is licensed under a Creative Commons Attribution-NonCommercial 4.0 International License.</copyright>
+    <lastBuildDate>Sat, 05 Feb 2022 16:03:31 +0800</lastBuildDate><atom:link href="https://wangtu2022.github.io/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>Go1.18 新特性：新增好用的 Cut 方法</title>
+      <link>https://wangtu2022.github.io/posts/go/118-cut/</link>
+      <pubDate>Sat, 05 Feb 2022 16:03:31 +0800</pubDate>
+      
+      <guid>https://wangtu2022.github.io/posts/go/118-cut/</guid>
+      <description>大家好，我是煎鱼。
+在各种写业务代码的时候，大家会常常要处理字符串的内容。常见的像是用邮箱登陆账号，如果是：eddycjy@gmail.com，那就得根据 @ 来切割，分别取出前和后，来识别用户名和邮箱地址。
+这种需求，在 Go 里写起来方便吗？今天就由煎鱼带大家了解。
+背景 重复代码 无独有偶，Ainar Garipov 在许多项目中遇到了前面我们所提的切割需求。
+例如：
+idx = strings.Index(username, &amp;#34;@&amp;#34;) if idx != -1 { name = username[:idx] } else { name = username } 又或是：</description>
+    </item>
+    
+    <item>
+      <title>Go1.18 新特性：编译后的二进制文件，将包含更多信息</title>
+      <link>https://wangtu2022.github.io/posts/go/118-build-info/</link>
+      <pubDate>Sat, 05 Feb 2022 16:02:45 +0800</pubDate>
+      
+      <guid>https://wangtu2022.github.io/posts/go/118-build-info/</guid>
+      <description>大家好，我是煎鱼。
+我有一个朋友，，开开心心入职，想着施展拳脚，第一个任务就是对老旧的二进制文件进行研究。
+他一看，这文件，不知道是编译器用什么参数怎么打出来的，环境不知道是什么，更不知道来自什么代码分支？
+这除了是项目流程上的问题外，Go 在这块也有类似的小问题，处理起来比较麻烦。
+背景 日常中很难从 Go 二进制文件中检索元信息，要么是信息完全缺失，要么提取需要对二进制文件进行大量解析。
+包含的元信息如下：
+元信息 提取处 Go 构建版本 符号表，通过全局变量 runtime.buildVersion 来获取 构建信息，例如：模块和版本 符号表，通过全局变量 runtime/debug.modinfo 来获取 编译器选项，例如：构建模式、编译器、gcflags、ldflags 等 无法获取 用户定义的自定义数据，例如：应用程序版本等 需在编译时设置全局字符串变量，才可以获取 关注到编译器选项，也就是参数等都是无法得知的，也就是会提高获取如何编译出来的难度。
+新提案 Michael Obermüller 提出了一个新的提案《cmd/go: add compiler flags, relevant env vars to &amp;lsquo;go version -m&amp;rsquo; output》用于解决上述问题。</description>
+    </item>
+    
+    <item>
+      <title>Go1.18 新特性：多 Module 工作区模式</title>
+      <link>https://wangtu2022.github.io/posts/go/118-module/</link>
+      <pubDate>Sat, 05 Feb 2022 16:00:00 +0800</pubDate>
+      
+      <guid>https://wangtu2022.github.io/posts/go/118-module/</guid>
+      <description>大家好，我是煎鱼。
+Go 的依赖管理，也就是 Go Module。从推出到现在，也已经有了一定的年头了，吐槽一直很多，官方也不断地在进行完善。
+Go1.18 将会推出一个新特性：Multi-Module Workspaces，用于支持 Module 多工作区，能解决以往的一系列问题。
+今天将由煎鱼带大家一起深入学习。
+背景 在日常使用 Go 工程时，总会遇到 2 个经典问题，特别的折腾人。
+如下：
+依赖本地 replace module。 依赖本地未发布的 module。 replace module 第一个场景：像是平时在 Go 工程中，我们为了解决一些本地依赖，或是定制化代码。会在 go.mod 文件中使用 replace 做替换。</description>
+    </item>
+    
+    <item>
+      <title>为什么 Go 有两种声明变量的方式，有什么区别，哪种好？</title>
+      <link>https://wangtu2022.github.io/posts/go/var/</link>
+      <pubDate>Sat, 05 Feb 2022 15:56:48 +0800</pubDate>
+      
+      <guid>https://wangtu2022.github.io/posts/go/var/</guid>
+      <description>大家好，我是煎鱼。
+有一个读者刚入门 Go ，提了一个很有意思的问题：Go 有几种种声明变量的方式，作为初学者，到底用哪种，有什么区别，又为什么要有多种声明方式呢？
+为此，煎鱼将和大家一起探索这个问题。
+变量声明 在 Go 中，一共有 2 种变量声明的方式，各有不同的使用场景。
+分别是：
+标准变量声明（Variable declarations）。 简短变量声明（Short variable declarations） 标准声明 变量声明创建了一个或多个变量，为它们绑定了相应的标识符，并给每个变量一个类型和初始值。
+使用语法：
+VarDecl = &amp;#34;var&amp;#34; ( VarSpec | &amp;#34;(&amp;#34; { VarSpec &amp;#34;;&amp;#34; } &amp;#34;)&amp;#34; ) .</description>
+    </item>
+    
+    <item>
+      <title>Go 为什么不在语言层面支持 map 并发？</title>
+      <link>https://wangtu2022.github.io/posts/go/map-con/</link>
+      <pubDate>Sat, 05 Feb 2022 15:55:22 +0800</pubDate>
+      
+      <guid>https://wangtu2022.github.io/posts/go/map-con/</guid>
+      <description>大家好，我是煎鱼。
+很多小伙伴学习 Go 语言的语法时，可能只是轻轻地看到过这个问题，结果一旦上手，多多少少一个组内总会碰到过几次。
+甚至会发现有一定年限的程序员也会遇到。有小伙伴疑惑了，这么折腾，为什么 Go 不直接在语言层面就支持 map 并发，那得有多香？
+为什么原生不支持 凭什么 Go 官方还不支持，难不成太复杂了，性能太差了，到底是为什么？
+官方答复原因如下（via @go faq）：
+典型使用场景：map 的典型使用场景是不需要从多个 goroutine 中进行安全访问。 非典型场景（需要原子操作）：map 可能是一些更大的数据结构或已经同步的计算的一部分。 性能场景考虑：若是只是为少数程序增加安全性，导致 map 所有的操作都要处理 mutex，将会降低大多数程序的性能。 核心来讲就是：Go 团队在经过了长时间的讨论后，认为原生 map 更应适配典型使用场景。</description>
+    </item>
+    
+    <item>
+      <title>Go 泛型的 3 个核心设计，你学会了吗？</title>
+      <link>https://wangtu2022.github.io/posts/go/generics-design/</link>
+      <pubDate>Sat, 05 Feb 2022 15:52:46 +0800</pubDate>
+      
+      <guid>https://wangtu2022.github.io/posts/go/generics-design/</guid>
+      <description>大家好，我是煎鱼。
+Go1.18 的泛型是闹得沸沸扬扬，虽然之前写过很多篇针对泛型的一些设计和思考。但因为泛型的提案之前一直还没定型，所以就没有写完整介绍。
+如今已经基本成型，就由煎鱼带大家一起摸透 Go 泛型。本文内容主要涉及泛型的 3 大概念，非常值得大家深入了解。
+如下：
+类型参数。 类型约束。 类型推导。 类型参数 类型参数，这个名词。不熟悉的小伙伴咋一看就懵逼了。
+泛型代码是使用抽象的数据类型编写的，我们将其称之为类型参数。当程序运行通用代码时，类型参数就会被类型参数所取代。也就是类型参数是泛型的抽象数据类型。
+简单的泛型例子：
+func Print(s []T) { for _, v := range s { fmt.Println(v) } } 代码有一个 Print 函数，它打印出一个片断的每个元素，其中片断的元素类型，这里称为 T，是未知的。</description>
+    </item>
+    
+    <item>
+      <title>Go 读者提问：值为 nil 也能调用函数，太神奇了吧？</title>
+      <link>https://wangtu2022.github.io/posts/go/nil-func/</link>
+      <pubDate>Fri, 31 Dec 2021 12:55:27 +0800</pubDate>
+      
+      <guid>https://wangtu2022.github.io/posts/go/nil-func/</guid>
+      <description>大家好，我是煎鱼。
+最近在我们 Go 的技术交流群里，有一个小伙伴提了一个程序方面的问题，还挺有意思的，分享给大家。
+示例 示例程序如下：
+type T struct{} func (t *T) Hello() string { if t == nil { fmt.Println(&amp;#34;脑子进煎鱼了&amp;#34;) return &amp;#34;&amp;#34; } return &amp;#34;煎鱼进脑子了&amp;#34; } func main() { var t *T t.</description>
+    </item>
+    
+    <item>
+      <title>Go 有哪些无法恢复的致命场景？</title>
+      <link>https://wangtu2022.github.io/posts/go/throw/</link>
+      <pubDate>Fri, 31 Dec 2021 12:55:26 +0800</pubDate>
+      
+      <guid>https://wangtu2022.github.io/posts/go/throw/</guid>
+      <description>大家好，我是煎鱼。
+有一次事故现场，在紧急恢复后，他正在排查代码，查了好一会。我回头一看，这错误提醒很明显就是致命错误，较好定位。
+但此时，他竟然在查 panic-recover 是不是哪里漏了，我表示大受震惊&amp;hellip;
+今天就由煎鱼给大家分享一下错误类型有哪几种，又在什么场景下会触发。
+错误类型 error 第一种是 Go 中最标准的 error 错误，其真身是一个 interface{}。
+如下：
+type error interface { Error() string } 在日常工程中，我们只需要创建任意结构体，实现了 Error 方法，就可以认为是 error 错误类型。
+如下：
+type errorString struct { s string } func (e *errorString) Error() string { return e.</description>
+    </item>
+    
+    <item>
+      <title>长达 12 年，Go 才引入泛型，是政治，还是技术问题？</title>
+      <link>https://wangtu2022.github.io/posts/go/import-generics/</link>
+      <pubDate>Fri, 31 Dec 2021 12:55:25 +0800</pubDate>
+      
+      <guid>https://wangtu2022.github.io/posts/go/import-generics/</guid>
+      <description>大家好，我是煎鱼。
+前两天 Go1.18 beta1 已经发布，距离正式发布 Go1.18 的生产可用还有 2 个月，也就是泛型即将正式面世。
+最近正在收集泛型的一些资料，看到在 2015 年有人在 Hacker News 上的《Go 1.5 max procs default》吐槽 Go 不支持泛型是 “政治” 原因&amp;hellip;
+看了还是有些意义的，与现在的矛盾点基本一致，为此分享给大家。
+网友吐槽 网友 @aikah 认为 Go 团队不太可能在语言中加入泛型，这显然是一个政治问题而不是技术问题。错误处理也是如此。</description>
+    </item>
+    
+    <item>
+      <title>Go 为什么不支持可重入锁？</title>
+      <link>https://wangtu2022.github.io/posts/go/again-mutex/</link>
+      <pubDate>Fri, 31 Dec 2021 12:55:24 +0800</pubDate>
+      
+      <guid>https://wangtu2022.github.io/posts/go/again-mutex/</guid>
+      <description>大家好，我是煎鱼。
+程序里的锁，是很多小伙伴在写分布式应用时用的最多的一个利器之一。
+使用 Go 的同学里，绝大部分都有其他语言的经验，就会对其中一点有疑惑，那就是 Go 里的锁，竟然不支持可重入？
+为此，今天煎鱼带大家一起来了解这里的设计考量，看看为什么。
+可重入锁 如果对已经上锁的普通互斥锁进行 “加锁” 操作，其结果要么失败，要么会阻塞至解锁。
+锁的场景如下：
+在加锁上：如果是可重入互斥锁，当前尝试加锁的线程如果就是持有该锁的线程时，加锁操作就会成功。 在解锁上：可重入互斥锁一般都会记录被加锁的次数，只有执行相同次数的解锁操作才会真正解锁。 简单来讲，可重入互斥锁是互斥锁的一种，同一线程对其多次加锁不会产生死锁，又或是导致阻塞。
+不同语言间实现可能或多或少有些区别，但大体意思差不多。
+请你想一下，Go 是怎么样的呢？
+Go 支持情况 我们看到以下这个 Go 互斥锁例子：
+var mu sync.Mutex func main() { mu.</description>
+    </item>
+    
+  </channel>
+</rss>

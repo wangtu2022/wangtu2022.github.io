@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>meetup on 煎鱼</title>
+    <link>https://wangtu2022.github.io/tags/meetup/</link>
+    <description>Recent content in meetup on 煎鱼</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>zh-hans</language>
+    <copyright>This work is licensed under a Creative Commons Attribution-NonCommercial 4.0 International License.</copyright>
+    <lastBuildDate>Sun, 18 Oct 2020 01:03:25 +0800</lastBuildDate><atom:link href="https://wangtu2022.github.io/tags/meetup/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>快速了解 2020 Gopher Meetup 深圳站</title>
+      <link>https://wangtu2022.github.io/posts/go-meetup1017/</link>
+      <pubDate>Sun, 18 Oct 2020 01:03:25 +0800</pubDate>
+      
+      <guid>https://wangtu2022.github.io/posts/go-meetup1017/</guid>
+      <description>昨天（20201017）很有幸的参加了 GoCN 的 2020 Gopher Meetup 深圳站，在台下听各位大佬分享各自的知识和案例。恰好也是我第一次参加这类 Meetup。因此希望也能够让没来的小伙伴对本次分享内容有一定的了解。
+按过往对其观察的惯例，一般在下周后官方就会陆续释出 Meetup PPT 和推文，在此引个主线。
+本次 Meetup 主要的方向是云原生，包含四位讲师分享，分享的主题如下：
+华为云的 go 语言云原生实践。 go 云上微服务模式解构。 服务网格在边缘计算领域的实践与探索。 腾讯大规模 etcd 集群治理与优化实践。 华为云的 go 语言云原生实践 讲述华为云在早起使用 Go 语言时，当时 Go 语言的整体生态圈还比较薄弱，因此很多第三方基础/工具库并不全：</description>
+    </item>
+    
+  </channel>
+</rss>

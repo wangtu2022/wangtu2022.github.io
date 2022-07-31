@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="zh-hans">
+
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<meta http-equiv="X-UA-Compatible" content="ie=edge">
+	<meta name="theme-color" content="#494f5c">
+	<meta name="msapplication-TileColor" content="#494f5c">
+<meta itemprop="name" content="Go 为什么不支持类和继承？">
+<meta itemprop="description" content="大家好，我是煎鱼。
+大家在早期学习 Go 时，一旦跨过语法的阶段后。马上就会进入到一个新的纠结点，Go 不支持面向对象吗？
+这门编程语言里没有类（class）、继承（extends），没法一把搜了，面试问啥面向对象（OOP）？
+今天煎鱼就带大家一起来了解这之中的思考，Go 真的不支持吗？
+类和继承 类是什么 类（class）在面向对象编程中是一种面向对象计算机编程语言的构造，是创建对象的蓝图，描述了所创建的对象共同的特性和方法（via @维基百科）。
+例子如下：
+class SimpleClass { // 声明属性 public $var = &#39;脑子进煎鱼了&#39;; // 声明方法 public function displayVar() { echo $this-&gt;var; } } 每个类的定义都以关键字 class 开头，后面跟着类名，后面跟着一对花括号，里面包含有类的属性与方法的定义。"><meta itemprop="datePublished" content="2021-12-31T12:55:22+08:00" />
+<meta itemprop="dateModified" content="2021-12-31T12:55:22+08:00" />
+<meta itemprop="wordCount" content="307">
+<meta itemprop="keywords" content="go," /><meta property="og:title" content="Go 为什么不支持类和继承？" />
+<meta property="og:description" content="大家好，我是煎鱼。
+大家在早期学习 Go 时，一旦跨过语法的阶段后。马上就会进入到一个新的纠结点，Go 不支持面向对象吗？
+这门编程语言里没有类（class）、继承（extends），没法一把搜了，面试问啥面向对象（OOP）？
+今天煎鱼就带大家一起来了解这之中的思考，Go 真的不支持吗？
+类和继承 类是什么 类（class）在面向对象编程中是一种面向对象计算机编程语言的构造，是创建对象的蓝图，描述了所创建的对象共同的特性和方法（via @维基百科）。
+例子如下：
+class SimpleClass { // 声明属性 public $var = &#39;脑子进煎鱼了&#39;; // 声明方法 public function displayVar() { echo $this-&gt;var; } } 每个类的定义都以关键字 class 开头，后面跟着类名，后面跟着一对花括号，里面包含有类的属性与方法的定义。" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://wangtu2022.github.io/posts/go/class-extends/" /><meta property="article:section" content="posts" />
+<meta property="article:published_time" content="2021-12-31T12:55:22+08:00" />
+<meta property="article:modified_time" content="2021-12-31T12:55:22+08:00" />
+
+<meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="Go 为什么不支持类和继承？"/>
+<meta name="twitter:description" content="大家好，我是煎鱼。
+大家在早期学习 Go 时，一旦跨过语法的阶段后。马上就会进入到一个新的纠结点，Go 不支持面向对象吗？
+这门编程语言里没有类（class）、继承（extends），没法一把搜了，面试问啥面向对象（OOP）？
+今天煎鱼就带大家一起来了解这之中的思考，Go 真的不支持吗？
+类和继承 类是什么 类（class）在面向对象编程中是一种面向对象计算机编程语言的构造，是创建对象的蓝图，描述了所创建的对象共同的特性和方法（via @维基百科）。
+例子如下：
+class SimpleClass { // 声明属性 public $var = &#39;脑子进煎鱼了&#39;; // 声明方法 public function displayVar() { echo $this-&gt;var; } } 每个类的定义都以关键字 class 开头，后面跟着类名，后面跟着一对花括号，里面包含有类的属性与方法的定义。"/>
+
+	<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+	<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+	<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+	<link rel="manifest" href="/site.webmanifest">
+	<link rel="mask-icon" href="/safari-pinned-tab.svg" color="">
+	<link rel="shortcut icon" href="/favicon.ico">
+
+	<title>Go 为什么不支持类和继承？</title>
+	<link rel="stylesheet" href="https://wangtu2022.github.io/css/style.min.d3141168199607bf3a517216ce3c263814eecdbc8fca72a9a88700799a838219.css" integrity="sha256-0xQRaBmWB786UXIWzjwmOBTuzbyPynKpqIcAeZqDghk=" crossorigin="anonymous">
+	
+	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.1/css/all.min.css">
+	<link rel="stylesheet" href="https://wangtu2022.github.io/css/styles.css">
+</head>
+
+<body id="page">
+	
+	<header id="site-header" class="animated slideInUp">
+		<div class="hdr-wrapper section-inner">
+			<div class="hdr-left">
+				<div class="site-branding">
+					<a href="https://wangtu2022.github.io/">煎鱼</a>
+				</div>
+				<nav class="site-nav hide-in-mobile">
+					
+				<a href="https://wangtu2022.github.io/posts/">文章</a>
+				<a href="https://wangtu2022.github.io/tags/">标签</a>
+				<a href="https://wangtu2022.github.io/about/">关于</a>
+
+				</nav>
+			</div>
+			<div class="hdr-right hdr-icons">
+				<button id="toc-btn" class="hdr-btn desktop-only-ib" title="Table of Contents"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-list"><line x1="8" y1="6" x2="21" y2="6"></line><line x1="8" y1="12" x2="21" y2="12"></line><line x1="8" y1="18" x2="21" y2="18"></line><line x1="3" y1="6" x2="3" y2="6"></line><line x1="3" y1="12" x2="3" y2="12"></line><line x1="3" y1="18" x2="3" y2="18"></line></svg></button><span class="hdr-social hide-in-mobile"><a href="https://github.com/eddycjy" target="_blank" rel="noopener me" title="Github"><svg xmlns="http://www.w3.org/2000/svg" class="feather" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"></path></svg></a></span><button id="menu-btn" class="hdr-btn" title="Menu"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-menu"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg></button>
+			</div>
+		</div>
+	</header>
+	<div id="mobile-menu" class="animated fast">
+		<ul>
+			<li><a href="https://wangtu2022.github.io/posts/">文章</a></li>
+			<li><a href="https://wangtu2022.github.io/tags/">标签</a></li>
+			<li><a href="https://wangtu2022.github.io/about/">关于</a></li>
+		</ul>
+	</div>
+
+
+	<main class="site-main section-inner animated fadeIn faster">
+		<article class="thin">
+			<header class="post-header">
+				<div class="post-meta"><span>Dec 31, 2021</span></div>
+				<h1>Go 为什么不支持类和继承？</h1>
+			</header>
+			<div class="content">
+				<p>大家好，我是煎鱼。</p>
+<p>大家在早期学习 Go 时，一旦跨过语法的阶段后。马上就会进入到一个新的纠结点，Go 不支持面向对象吗？</p>
+<p><img src="https://files.mdnice.com/user/3610/a299d98d-e46c-4a6d-8362-02f957e86b10.png" alt=""></p>
+<p>这门编程语言里没有类（class）、继承（extends），<del>没法一把搜了，面试问啥面向对象（OOP）</del>？</p>
+<p>今天煎鱼就带大家一起来了解这之中的思考，Go 真的不支持吗？</p>
+<h2 id="类和继承">类和继承<a href="#类和继承" class="anchor" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 7h3a5 5 0 0 1 5 5 5 5 0 0 1-5 5h-3m-6 0H6a5 5 0 0 1-5-5 5 5 0 0 1 5-5h3"></path><line x1="8" y1="12" x2="16" y2="12"></line></svg></a></h2>
+<h3 id="类是什么">类是什么<a href="#类是什么" class="anchor" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 7h3a5 5 0 0 1 5 5 5 5 0 0 1-5 5h-3m-6 0H6a5 5 0 0 1-5-5 5 5 0 0 1 5-5h3"></path><line x1="8" y1="12" x2="16" y2="12"></line></svg></a></h3>
+<p>类（class）在面向对象编程中是一种面向对象计算机编程语言的构造，是创建对象的蓝图，描述了所创建的对象共同的特性和方法（via @维基百科）。</p>
+<p>例子如下：</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-php" data-lang="php"><span class="line"><span class="cl"><span class="k">class</span> <span class="nc">SimpleClass</span>
+</span></span><span class="line"><span class="cl"><span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="c1">// 声明属性
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>    <span class="k">public</span> <span class="nv">$var</span> <span class="o">=</span> <span class="s1">&#39;脑子进煎鱼了&#39;</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="c1">// 声明方法
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>    <span class="k">public</span> <span class="k">function</span> <span class="nf">displayVar</span><span class="p">()</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">        <span class="k">echo</span> <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">var</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="p">}</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span></code></pre></div><p>每个类的定义都以关键字 class 开头，后面跟着类名，后面跟着一对花括号，里面包含有类的属性与方法的定义。</p>
+<h3 id="继承是什么">继承是什么<a href="#继承是什么" class="anchor" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 7h3a5 5 0 0 1 5 5 5 5 0 0 1-5 5h-3m-6 0H6a5 5 0 0 1-5-5 5 5 0 0 1 5-5h3"></path><line x1="8" y1="12" x2="16" y2="12"></line></svg></a></h3>
+<p>继承是面向对象软件技术当中的一个概念，如果一个类别 B “继承自”另一个类别 A，就把这个 B 称为 “A的子类”，而把 A 称为 “B的父类别” 也可以称 “A 是 B 的超类”（via @维基百科）。</p>
+<p>例子如下：</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-php" data-lang="php"><span class="line"><span class="cl"><span class="c1">// 父类
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="k">class</span> <span class="nc">Foo</span>
+</span></span><span class="line"><span class="cl"><span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="k">public</span> <span class="k">function</span> <span class="nf">printItem</span><span class="p">(</span><span class="nv">$string</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">    <span class="p">{</span>
+</span></span><span class="line"><span class="cl">        <span class="k">echo</span> <span class="s1">&#39;煎鱼1: &#39;</span> <span class="o">.</span> <span class="nv">$string</span> <span class="o">.</span> <span class="nx">PHP_EOL</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="p">}</span>
+</span></span><span class="line"><span class="cl">    
+</span></span><span class="line"><span class="cl">    <span class="k">public</span> <span class="k">function</span> <span class="nf">printPHP</span><span class="p">()</span>
+</span></span><span class="line"><span class="cl">    <span class="p">{</span>
+</span></span><span class="line"><span class="cl">        <span class="k">echo</span> <span class="s1">&#39;PHP is great.&#39;</span> <span class="o">.</span> <span class="nx">PHP_EOL</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="p">}</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="c1">// 子类
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="k">class</span> <span class="nc">Bar</span> <span class="k">extends</span> <span class="nx">Foo</span>
+</span></span><span class="line"><span class="cl"><span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="k">public</span> <span class="k">function</span> <span class="nf">printItem</span><span class="p">(</span><span class="nv">$string</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">    <span class="p">{</span>
+</span></span><span class="line"><span class="cl">        <span class="k">echo</span> <span class="s1">&#39;煎鱼2: &#39;</span> <span class="o">.</span> <span class="nv">$string</span> <span class="o">.</span> <span class="nx">PHP_EOL</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="p">}</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span></code></pre></div><p>继承有如下两个特性：</p>
+<ul>
+<li>子类具有父类别的各种属性和方法，不需要再次编写相同的代码。</li>
+<li>子类别继承父类时，可以重新定义某些属性，并重写某些方法，使其获得与父类别不同的功能。</li>
+</ul>
+<h2 id="结构和组合">结构和组合<a href="#结构和组合" class="anchor" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 7h3a5 5 0 0 1 5 5 5 5 0 0 1-5 5h-3m-6 0H6a5 5 0 0 1-5-5 5 5 0 0 1 5-5h3"></path><line x1="8" y1="12" x2="16" y2="12"></line></svg></a></h2>
+<p>在 Go 里就比较 ”特别“ 了，因为没有传统的类，也没有继承。</p>
+<p>取而代之的是结构和组合的方式。这也是业内对 Go 是否 OOP 争议最大的地方。</p>
+<h3 id="结构体">结构体<a href="#结构体" class="anchor" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 7h3a5 5 0 0 1 5 5 5 5 0 0 1-5 5h-3m-6 0H6a5 5 0 0 1-5-5 5 5 0 0 1 5-5h3"></path><line x1="8" y1="12" x2="16" y2="12"></line></svg></a></h3>
+<p>我们可以在 Go 中通过结构体的方式来组织代码，达到类似类的方式。</p>
+<p>例子如下：</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-golang" data-lang="golang"><span class="line"><span class="cl"><span class="kn">package</span> <span class="nx">main</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="kn">import</span> <span class="s">&#34;fmt&#34;</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="kd">type</span> <span class="nx">person</span> <span class="kd">struct</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="nx">name</span> <span class="kt">string</span>
+</span></span><span class="line"><span class="cl">    <span class="nx">age</span>  <span class="kt">int</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="kd">func</span><span class="p">(</span><span class="nx">p</span> <span class="o">*</span><span class="nx">person</span><span class="p">)</span> <span class="nf">hello</span><span class="p">(){}</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="kd">func</span> <span class="nf">newPerson</span><span class="p">(</span><span class="nx">name</span> <span class="kt">string</span><span class="p">)</span> <span class="o">*</span><span class="nx">person</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="nx">p</span> <span class="o">:=</span> <span class="nx">person</span><span class="p">{</span><span class="nx">name</span><span class="p">:</span> <span class="nx">name</span><span class="p">}</span>
+</span></span><span class="line"><span class="cl">    <span class="nx">p</span><span class="p">.</span><span class="nx">age</span> <span class="p">=</span> <span class="mi">42</span>
+</span></span><span class="line"><span class="cl">    <span class="k">return</span> <span class="o">&amp;</span><span class="nx">p</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="kd">func</span> <span class="nf">main</span><span class="p">()</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="nx">fmt</span><span class="p">.</span><span class="nf">Println</span><span class="p">(</span><span class="nx">person</span><span class="p">{</span><span class="s">&#34;煎鱼1&#34;</span><span class="p">,</span> <span class="mi">22</span><span class="p">})</span>
+</span></span><span class="line"><span class="cl">    <span class="nx">fmt</span><span class="p">.</span><span class="nf">Println</span><span class="p">(</span><span class="nx">person</span><span class="p">{</span><span class="nx">name</span><span class="p">:</span> <span class="s">&#34;煎鱼2&#34;</span><span class="p">,</span> <span class="nx">age</span><span class="p">:</span> <span class="mi">33</span><span class="p">})</span>
+</span></span><span class="line"><span class="cl">    <span class="o">...</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span></code></pre></div><p>在上述代码中，我们可以定义结构体内的属性，也可以针对结构体这些类型定义只属于他们的方法。</p>
+<p>在声明实例上，可以配合 <code>newXXX</code> 的初始化方法来生成，这是 Go 里约定俗成的方式。</p>
+<h3 id="组合">组合<a href="#组合" class="anchor" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 7h3a5 5 0 0 1 5 5 5 5 0 0 1-5 5h-3m-6 0H6a5 5 0 0 1-5-5 5 5 0 0 1 5-5h3"></path><line x1="8" y1="12" x2="16" y2="12"></line></svg></a></h3>
+<p>类的声明采取结构体的方式取代后，也可以配套使用 ”组合“ 来达到类似继承的效果。</p>
+<p>例子如下：</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-golang" data-lang="golang"><span class="line"><span class="cl"><span class="kd">type</span> <span class="nx">man</span> <span class="kd">struct</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">	<span class="nx">name</span> <span class="kt">string</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="kd">func</span> <span class="p">(</span><span class="nx">m</span> <span class="o">*</span><span class="nx">man</span><span class="p">)</span> <span class="nf">hello1</span><span class="p">()</span> <span class="p">{}</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="kd">type</span> <span class="nx">person</span> <span class="kd">struct</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">	<span class="nx">man</span>
+</span></span><span class="line"><span class="cl">	<span class="nx">name</span> <span class="kt">string</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="kd">func</span> <span class="p">(</span><span class="nx">p</span> <span class="o">*</span><span class="nx">person</span><span class="p">)</span> <span class="nf">hello2</span><span class="p">()</span> <span class="p">{}</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="kd">func</span> <span class="nf">newPerson</span><span class="p">(</span><span class="nx">name</span> <span class="kt">string</span><span class="p">)</span> <span class="o">*</span><span class="nx">person</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">	<span class="nx">p</span> <span class="o">:=</span> <span class="nx">person</span><span class="p">{</span><span class="nx">name</span><span class="p">:</span> <span class="nx">name</span><span class="p">}</span>
+</span></span><span class="line"><span class="cl">	<span class="k">return</span> <span class="o">&amp;</span><span class="nx">p</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="kd">func</span> <span class="nf">main</span><span class="p">()</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">	<span class="nx">p</span> <span class="o">:=</span> <span class="nf">newPerson</span><span class="p">(</span><span class="s">&#34;脑子进煎鱼了&#34;</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">	<span class="nx">p</span><span class="p">.</span><span class="nf">hello1</span><span class="p">()</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span></code></pre></div><p>在上述代码中，我们分别定义了 man 和 person 两个结构体，并将 man 嵌入到 person 中，形成组合。</p>
+<p>你可以在 main 方法中能够看到，person 实例是可以使用和调用 man 实例的一些公开属性和方法的。</p>
+<p>在简单的使用效果上会与继承有些接近。</p>
+<h2 id="go-是面向对象的语言吗">Go 是面向对象的语言吗<a href="#go-是面向对象的语言吗" class="anchor" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 7h3a5 5 0 0 1 5 5 5 5 0 0 1-5 5h-3m-6 0H6a5 5 0 0 1-5-5 5 5 0 0 1 5-5h3"></path><line x1="8" y1="12" x2="16" y2="12"></line></svg></a></h2>
+<p>“Go 语言是否一门面向对象的语言？”，这是一个日经话题。官方 FAQ 给出的答复是：</p>
+<p><img src="https://files.mdnice.com/user/3610/159601a9-b428-4958-9f85-2214aea30127.png" alt=""></p>
+<p>是的，也不是。原因是：</p>
+<ul>
+<li>Go 有类型和方法，并且允许面向对象的编程风格，但没有类型层次。</li>
+<li>Go 中的 &ldquo;接口 &ldquo;概念提供了一种不同的方法，我们认为这种方法易于使用，而且在某些方面更加通用。还有一些方法可以将类型嵌入到其他类型中，以提供类似的东西，但不等同于子类。</li>
+<li>Go 中的方法比 C++ 或 Java 中的方法更通用：它们可以为任何类型的数据定义，甚至是内置类型，如普通的、&ldquo;未装箱的 &ldquo;整数。它们并不局限于结构（类）。</li>
+<li>Go 由于缺乏类型层次，Go 中的 &ldquo;对象 &ldquo;比 C++ 或 Java 等语言更轻巧。</li>
+</ul>
+<h2 id="为什么不支持类和继承">为什么不支持类和继承<a href="#为什么不支持类和继承" class="anchor" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 7h3a5 5 0 0 1 5 5 5 5 0 0 1-5 5h-3m-6 0H6a5 5 0 0 1-5-5 5 5 0 0 1 5-5h3"></path><line x1="8" y1="12" x2="16" y2="12"></line></svg></a></h2>
+<p>有的人认为类和继承是面向对象的必要特性，必须要有，才能是面向对象的语言，但其实也并非如此。</p>
+<p>面向对象（OOP）有不同的含义和解读，许多概念也可以通过结构体、组合和接口等方式进行表达，说是不支持传统的 OOP。</p>
+<p>其实真相是 Go 是选择了另外一条路，也就是 ”<strong>组合优于继承</strong>“。我们所提到的类和继承并不是定义 OOP 的一种准则，只是协助完成 OOP 的方法之一。</p>
+<p>不要本末倒置了，不让工具来定义 OOP 的理念。</p>
+<h2 id="总结">总结<a href="#总结" class="anchor" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 7h3a5 5 0 0 1 5 5 5 5 0 0 1-5 5h-3m-6 0H6a5 5 0 0 1-5-5 5 5 0 0 1 5-5h3"></path><line x1="8" y1="12" x2="16" y2="12"></line></svg></a></h2>
+<p>在今天这篇文章中，我们介绍了常说的类和继承的业内定义和使用案例。同时面向 Go 读者群里的疑惑，进行了解答。</p>
+<p>实质上，Go 是 OOP，也不是 OOP。类和继承只是实现 OOP 的一种方式，但并不是没有这两者，他就不是 OOP 了。</p>
+<p>不支持的原因也很明确，Go 在设计上，选择了组合优于继承的编程设计模式，它不是传统那种面向类型的范式。</p>
+<p>你觉得呢，欢迎大家在评论区留言和交流：）</p>
+<h2 id="参考">参考<a href="#参考" class="anchor" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 7h3a5 5 0 0 1 5 5 5 5 0 0 1-5 5h-3m-6 0H6a5 5 0 0 1-5-5 5 5 0 0 1 5-5h3"></path><line x1="8" y1="12" x2="16" y2="12"></line></svg></a></h2>
+<ul>
+<li>为什么人们声称 Go 不是面向对象的，我是不是误读了什么？：https://www.reddit.com/r/golang/comments/a9rn6n/why_people_claim_that_go_is_not_object_oriented/</li>
+<li>组合大于继承：https://en.wikipedia.org/wiki/Composition_over_inheritance</li>
+<li>Go 是面向对象的吗？：https://flaviocopes.com/golang-is-go-object-oriented/</li>
+<li>类 vs 新型 + 接收器？：https://www.reddit.com/r/golang/comments/a8zgvm/class_vs_new_type_receiver/</li>
+<li>结构而不是类：https://golangbot.com/structs-instead-of-classes/</li>
+</ul>
+
+			</div>
+			<hr class="post-end">
+			<footer class="post-info">
+				<p>
+					<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-tag meta-icon"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"></path><line x1="7" y1="7" x2="7" y2="7"></line></svg><span class="tag"><a href="https://wangtu2022.github.io/tags/go">go</a></span>
+				</p>
+				<p><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-file-text"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>307 Words</p>
+				<p><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-calendar"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>2021-12-31 12:55 &#43;0800</p>
+			</footer>
+		</article>
+		<aside id="toc">
+			<div class="toc-title">Table of Contents</div>
+			<nav id="TableOfContents">
+  <ul>
+    <li><a href="#类和继承">类和继承</a>
+      <ul>
+        <li><a href="#类是什么">类是什么</a></li>
+        <li><a href="#继承是什么">继承是什么</a></li>
+      </ul>
+    </li>
+    <li><a href="#结构和组合">结构和组合</a>
+      <ul>
+        <li><a href="#结构体">结构体</a></li>
+        <li><a href="#组合">组合</a></li>
+      </ul>
+    </li>
+    <li><a href="#go-是面向对象的语言吗">Go 是面向对象的语言吗</a></li>
+    <li><a href="#为什么不支持类和继承">为什么不支持类和继承</a></li>
+    <li><a href="#总结">总结</a></li>
+    <li><a href="#参考">参考</a></li>
+  </ul>
+</nav>
+		</aside>
+		<div class="post-nav thin">
+			<a class="next-post" href="https://wangtu2022.github.io/posts/go/switch-type/">
+				<span class="post-nav-label"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-arrow-left"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>&nbsp;Newer</span><br><span>Go 泛型玩出花，详解新提案 switch type！</span>
+			</a>
+			<a class="prev-post" href="https://wangtu2022.github.io/posts/go/any/">
+				<span class="post-nav-label">Older&nbsp;<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-arrow-right"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg></span><br><span>Go 新关键字 any，interface 会成历史吗？</span>
+			</a>
+		</div>
+		<div id="comments" class="thin">
+</div>
+	</main>
+
+	<footer id="site-footer" class="section-inner thin animated fadeIn faster">
+		<p>&copy; 2022 <a href="https://wangtu2022.github.io/">煎鱼</a> &#183; <a href="http://www.beian.miit.gov.cn/">粤ICP备19076352号</a></p>
+		<p>
+			Made with <a href="https://gohugo.io/" target="_blank" rel="noopener">Hugo</a> &#183; Theme <a href="https://github.com/Track3/hermit" target="_blank" rel="noopener">Hermit</a> &#183; <a href="https://wangtu2022.github.io/posts/index.xml" target="_blank" title="rss"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-rss"><path d="M4 11a9 9 0 0 1 9 9"></path><path d="M4 4a16 16 0 0 1 16 16"></path><circle cx="5" cy="19" r="1"></circle></svg></a>
+		</p>
+	</footer>
+
+
+
+	<script src="https://wangtu2022.github.io/js/bundle.min.580988ed2982bcbb74a1773c7abea97b43e4c43b9324e10cda0813ec6ec4bb67.js" integrity="sha256-WAmI7SmCvLt0oXc8er6pe0PkxDuTJOEM2ggT7G7Eu2c=" crossorigin="anonymous"></script>
+	
+<script type="application/javascript">
+var doNotTrack = false;
+if (!doNotTrack) {
+	window.ga=window.ga||function(){(ga.q=ga.q||[]).push(arguments)};ga.l=+new Date;
+	ga('create', 'UA-166045776-1', 'auto');
+	
+	ga('send', 'pageview');
+}
+</script>
+<script async src='https://www.google-analytics.com/analytics.js'></script>
+
+
+</body>
+
+</html>

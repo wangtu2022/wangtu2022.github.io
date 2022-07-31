@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>程序员的自我修养 on 煎鱼</title>
+    <link>https://wangtu2022.github.io/tags/%E7%A8%8B%E5%BA%8F%E5%91%98%E7%9A%84%E8%87%AA%E6%88%91%E4%BF%AE%E5%85%BB/</link>
+    <description>Recent content in 程序员的自我修养 on 煎鱼</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>zh-hans</language>
+    <copyright>This work is licensed under a Creative Commons Attribution-NonCommercial 4.0 International License.</copyright>
+    <lastBuildDate>Wed, 28 Oct 2020 20:52:52 +0800</lastBuildDate><atom:link href="https://wangtu2022.github.io/tags/%E7%A8%8B%E5%BA%8F%E5%91%98%E7%9A%84%E8%87%AA%E6%88%91%E4%BF%AE%E5%85%BB/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>应用编译，计算机中那些一定要掌握的知识细节</title>
+      <link>https://wangtu2022.github.io/posts/reading/programmer-compile-link/</link>
+      <pubDate>Wed, 28 Oct 2020 20:52:52 +0800</pubDate>
+      
+      <guid>https://wangtu2022.github.io/posts/reading/programmer-compile-link/</guid>
+      <description>”Hello World“ 程序几乎是每个程序员入门和开发环境测试的基本标准。代码如下：
+#inclue &amp;lt;stdio.h&amp;gt; int main() { printf(&amp;#34;Hello Wolrd\n&amp;#34;); return 0; } 编译该程序，再运行，就基本完成了所有新手的第一个程序。表面看起来轻轻松松，毫无悬念。但是实际上单纯这几下操作，就已经包含了不少暗操作。本着追根溯源的目的，我们将进一步对其流程进行分析。
+其内部主要包含 4 个步骤，分别是：预处理、编译、汇编以及链接。由于篇幅问题本文主要涉及前三部分，链接部分将会放到下一篇文章来讲解。
+预编译 程序编译的第一步是 “预编译” 环境。主要作用是处理源代码文件中以 ”#“ 开始的预编译指令，例如：#include、#define 等。
+常见的处理规则是：
+将所有 #define 删除，并且展开所有的宏定义。
+处理所有条件预编译指令，比如 if、ifdef、elif、else、endif。</description>
+    </item>
+    
+    <item>
+      <title>必知必会！计算机里一些基本又重要的概念</title>
+      <link>https://wangtu2022.github.io/posts/reading/programmer-accom-base/</link>
+      <pubDate>Sat, 17 Oct 2020 00:25:59 +0800</pubDate>
+      
+      <guid>https://wangtu2022.github.io/posts/reading/programmer-accom-base/</guid>
+      <description>最近在翻阅文章时，看到全成推荐的《程序员的自我修养》，这是一本讲链接、装载与库的计算机图书，看了下目录后觉得挺有意思。
+因此决定每读一章就将其读书笔记整理记录下来，分享给大家。
+目录：
+不要让 CPU 打盹 在计算机发展早期，CPU 资源十分昂贵。如果一个 CPU 只能运行一个程序，那么当程序在读写磁盘（进行 I/O 操作）时，CPU 就空闲下来了。这在当时简直就是巨大的浪费。
+CPU 只能和一个程序A “聊天“，其他来再多的程序BCD，都没有任何操作的空间。就像早年的手机，打电话和上网（语音/数据）只能二选一，作为 CPU 的你，并不能多线程操作。
+因此机智的人们很快就编写了一些监控程序，希望来解决这个问题。
+多道程序（Multiprogramming） 多道程序起，操作系统正式具有同时运行多个程序的能力。
+其是让 CPU 一次读取多个程序放入内存中。当某个程序暂时无须使用 CPU 时，监控程序就把另外的正在等待 CPU 资源的程序启动，以此使得 CPU 能够充分地利用起来。这种策略的确大大的提高了 CPU 资源的利用率。</description>
+    </item>
+    
+  </channel>
+</rss>

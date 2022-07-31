@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="zh-hans">
+
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<meta http-equiv="X-UA-Compatible" content="ie=edge">
+	<meta name="theme-color" content="#494f5c">
+	<meta name="msapplication-TileColor" content="#494f5c">
+<meta itemprop="name" content="Go 和 Golang 有什么关系？">
+<meta itemprop="description" content="大家好，我是煎鱼。
+最近天气也冷了，掐指一算是招聘季了，无论是校招、社招、HR、面试官们都蠢蠢欲动。这不，我有一个朋友的 HR 朋友都有起名困难了，一看 Go 语言的工作说明（Job Description），发现各有不同。
+如下图：
+仔细一看，有叫 Go 的，也有叫 Golang，还有叫 GO 的。好家伙，Go 语言有这么多个别名，甚至某乎都讨论了起来。到底叫什么是正确的？
+为此，今天就由煎鱼带大家理一理，了解这背后的关系。
+Go 官方定义 从网上的资料来看，大家对 Go 的名字还是比较关注的，对于 Go 团队来讲，仿佛经常被问。例如：
+“Go 和 Golang 的关系是什么？” “Go、Golang、GO 哪个对？” 甚至在之前探讨 Go2 草案时，也有人开始起 Go2 的名字了，纠结是要叫 “golang2”，还是 “go2lang”："><meta itemprop="datePublished" content="2021-12-31T12:55:12+08:00" />
+<meta itemprop="dateModified" content="2021-12-31T12:55:12+08:00" />
+<meta itemprop="wordCount" content="161">
+<meta itemprop="keywords" content="go," /><meta property="og:title" content="Go 和 Golang 有什么关系？" />
+<meta property="og:description" content="大家好，我是煎鱼。
+最近天气也冷了，掐指一算是招聘季了，无论是校招、社招、HR、面试官们都蠢蠢欲动。这不，我有一个朋友的 HR 朋友都有起名困难了，一看 Go 语言的工作说明（Job Description），发现各有不同。
+如下图：
+仔细一看，有叫 Go 的，也有叫 Golang，还有叫 GO 的。好家伙，Go 语言有这么多个别名，甚至某乎都讨论了起来。到底叫什么是正确的？
+为此，今天就由煎鱼带大家理一理，了解这背后的关系。
+Go 官方定义 从网上的资料来看，大家对 Go 的名字还是比较关注的，对于 Go 团队来讲，仿佛经常被问。例如：
+“Go 和 Golang 的关系是什么？” “Go、Golang、GO 哪个对？” 甚至在之前探讨 Go2 草案时，也有人开始起 Go2 的名字了，纠结是要叫 “golang2”，还是 “go2lang”：" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://wangtu2022.github.io/posts/go/go-golang/" /><meta property="article:section" content="posts" />
+<meta property="article:published_time" content="2021-12-31T12:55:12+08:00" />
+<meta property="article:modified_time" content="2021-12-31T12:55:12+08:00" />
+
+<meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="Go 和 Golang 有什么关系？"/>
+<meta name="twitter:description" content="大家好，我是煎鱼。
+最近天气也冷了，掐指一算是招聘季了，无论是校招、社招、HR、面试官们都蠢蠢欲动。这不，我有一个朋友的 HR 朋友都有起名困难了，一看 Go 语言的工作说明（Job Description），发现各有不同。
+如下图：
+仔细一看，有叫 Go 的，也有叫 Golang，还有叫 GO 的。好家伙，Go 语言有这么多个别名，甚至某乎都讨论了起来。到底叫什么是正确的？
+为此，今天就由煎鱼带大家理一理，了解这背后的关系。
+Go 官方定义 从网上的资料来看，大家对 Go 的名字还是比较关注的，对于 Go 团队来讲，仿佛经常被问。例如：
+“Go 和 Golang 的关系是什么？” “Go、Golang、GO 哪个对？” 甚至在之前探讨 Go2 草案时，也有人开始起 Go2 的名字了，纠结是要叫 “golang2”，还是 “go2lang”："/>
+
+	<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+	<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+	<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+	<link rel="manifest" href="/site.webmanifest">
+	<link rel="mask-icon" href="/safari-pinned-tab.svg" color="">
+	<link rel="shortcut icon" href="/favicon.ico">
+
+	<title>Go 和 Golang 有什么关系？</title>
+	<link rel="stylesheet" href="https://wangtu2022.github.io/css/style.min.d3141168199607bf3a517216ce3c263814eecdbc8fca72a9a88700799a838219.css" integrity="sha256-0xQRaBmWB786UXIWzjwmOBTuzbyPynKpqIcAeZqDghk=" crossorigin="anonymous">
+	
+	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.1/css/all.min.css">
+	<link rel="stylesheet" href="https://wangtu2022.github.io/css/styles.css">
+</head>
+
+<body id="page">
+	
+	<header id="site-header" class="animated slideInUp">
+		<div class="hdr-wrapper section-inner">
+			<div class="hdr-left">
+				<div class="site-branding">
+					<a href="https://wangtu2022.github.io/">煎鱼</a>
+				</div>
+				<nav class="site-nav hide-in-mobile">
+					
+				<a href="https://wangtu2022.github.io/posts/">文章</a>
+				<a href="https://wangtu2022.github.io/tags/">标签</a>
+				<a href="https://wangtu2022.github.io/about/">关于</a>
+
+				</nav>
+			</div>
+			<div class="hdr-right hdr-icons">
+				<button id="toc-btn" class="hdr-btn desktop-only-ib" title="Table of Contents"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-list"><line x1="8" y1="6" x2="21" y2="6"></line><line x1="8" y1="12" x2="21" y2="12"></line><line x1="8" y1="18" x2="21" y2="18"></line><line x1="3" y1="6" x2="3" y2="6"></line><line x1="3" y1="12" x2="3" y2="12"></line><line x1="3" y1="18" x2="3" y2="18"></line></svg></button><span class="hdr-social hide-in-mobile"><a href="https://github.com/eddycjy" target="_blank" rel="noopener me" title="Github"><svg xmlns="http://www.w3.org/2000/svg" class="feather" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"></path></svg></a></span><button id="menu-btn" class="hdr-btn" title="Menu"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-menu"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg></button>
+			</div>
+		</div>
+	</header>
+	<div id="mobile-menu" class="animated fast">
+		<ul>
+			<li><a href="https://wangtu2022.github.io/posts/">文章</a></li>
+			<li><a href="https://wangtu2022.github.io/tags/">标签</a></li>
+			<li><a href="https://wangtu2022.github.io/about/">关于</a></li>
+		</ul>
+	</div>
+
+
+	<main class="site-main section-inner animated fadeIn faster">
+		<article class="thin">
+			<header class="post-header">
+				<div class="post-meta"><span>Dec 31, 2021</span></div>
+				<h1>Go 和 Golang 有什么关系？</h1>
+			</header>
+			<div class="content">
+				<p>大家好，我是煎鱼。</p>
+<p>最近天气也冷了，掐指一算是招聘季了，无论是校招、社招、HR、面试官们都蠢蠢欲动。这不，我有一个朋友的 HR 朋友都有起名困难了，一看 Go 语言的工作说明（Job Description），发现各有不同。</p>
+<p>如下图：</p>
+<p><img src="https://files.mdnice.com/user/3610/629d4aaa-bb01-4e2b-9a43-d671200da099.png" alt="来自某招聘网站"></p>
+<p>仔细一看，有叫 Go 的，也有叫 Golang，还有叫 GO 的。好家伙，Go 语言有这么多个别名，甚至某乎都讨论了起来。到底叫什么是正确的？</p>
+<p>为此，今天就由煎鱼带大家理一理，了解这背后的关系。</p>
+<h2 id="go-官方定义">Go 官方定义<a href="#go-官方定义" class="anchor" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 7h3a5 5 0 0 1 5 5 5 5 0 0 1-5 5h-3m-6 0H6a5 5 0 0 1-5-5 5 5 0 0 1 5-5h3"></path><line x1="8" y1="12" x2="16" y2="12"></line></svg></a></h2>
+<p>从网上的资料来看，大家对 Go 的名字还是比较关注的，对于 Go 团队来讲，仿佛经常被问。例如：</p>
+<ul>
+<li>“Go 和 Golang 的关系是什么？”</li>
+<li>“Go、Golang、GO 哪个对？”</li>
+</ul>
+<p>甚至在之前探讨 Go2 草案时，也有人开始起 Go2 的名字了，纠结是要叫 “golang2”，还是 “go2lang”：</p>
+<p><img src="https://files.mdnice.com/user/3610/7608f5a1-9e77-45b2-a552-a7b7c32ad100.png" alt=""></p>
+<p>其实这是错误的。在 Go FAQ 中有明确的回答这个问题：</p>
+<p><img src="https://files.mdnice.com/user/3610/bdb43d48-f5c1-41bb-8495-7bbfc2fc60a6.png" alt=""></p>
+<p>这一门语言称为 “Go”，不叫 “Golang”，也不叫 “GO”。“golang” 只是网站的地址，而不是语言的名称。</p>
+<p>同时 “GO” 的语言名称叫法也是错误的，虽然官方上的 Logo 是 “GO”：</p>
+<p><img src="https://files.mdnice.com/user/3610/67b022a9-49de-4349-861e-77dd25367ac6.png" alt=""></p>
+<p>但这显然只是设计师层面的美观考量，并不是这一门语言的标准定义。</p>
+<p>因此<strong>这一门语言叫做 “Go” 语言</strong>，这是正确的，也得到官方认证的，也不曾改变过。</p>
+<h2 id="为什么会有-golang">为什么会有 Golang<a href="#为什么会有-golang" class="anchor" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 7h3a5 5 0 0 1 5 5 5 5 0 0 1-5 5h-3m-6 0H6a5 5 0 0 1-5-5 5 5 0 0 1 5-5h3"></path><line x1="8" y1="12" x2="16" y2="12"></line></svg></a></h2>
+<p>但可能又有小伙伴疑惑了，那为什么 “Golang” 这个别名，如此之火。到底是为什么？</p>
+<p>这里一共有三点原因，分别是：站点地址（Go FAQ 提到）、搜索引擎、社区和论坛、语言重名。</p>
+<h3 id="go-站点地址">Go 站点地址<a href="#go-站点地址" class="anchor" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 7h3a5 5 0 0 1 5 5 5 5 0 0 1-5 5h-3m-6 0H6a5 5 0 0 1-5-5 5 5 0 0 1 5-5h3"></path><line x1="8" y1="12" x2="16" y2="12"></line></svg></a></h3>
+<p>Go 团队所期望的 <a href="https://go.org">https://go.org</a> 早就被注册，从网站的底部标识来看，2008 年起建站：</p>
+<p><img src="https://files.mdnice.com/user/3610/d40e96a2-122c-44fa-8134-2a8b88eb7690.png" alt=""></p>
+<p>所以 Go 语言只能使用 <a href="https://golang.org">https://golang.org</a>，你也会 <a href="https://pkg.go.dev">https://pkg.go.dev</a> 和 <a href="https://golang.org">https://golang.org</a>、https://godoc.org，存在多个域名，并不统一。</p>
+<p>因此作为 Go 开发者所常用官方站点，自然而然 golang 这一个语言标识就深深地被记住了，一直沿用至今。</p>
+<p>同时域名为 “golang” 关键字，自然会大幅度的影响到 Go 资料搜索引擎的收录，是一个非常重要的因素。</p>
+<h3 id="搜索引擎">搜索引擎<a href="#搜索引擎" class="anchor" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 7h3a5 5 0 0 1 5 5 5 5 0 0 1-5 5h-3m-6 0H6a5 5 0 0 1-5-5 5 5 0 0 1 5-5h3"></path><line x1="8" y1="12" x2="16" y2="12"></line></svg></a></h3>
+<p>在早年 Go 语言还不知名时，用 go 关键字去搜索资料会非常的困难。这是各大搜索引擎早年的一个槽点（reddit 很多吐槽）。</p>
+<p>因为单一的 go 关键字过于广泛了，很多人会直接用 golang 关键字来搜资料，反而会更能看到一些与 Go 真正相关的。</p>
+<p><img src="https://files.mdnice.com/user/3610/fe21dc19-26d5-4e14-88c5-fa077f149e00.png" alt=""></p>
+<p>这一点在近年来有明确改善，得益于 Go 语言的崛起，现在也能搜到了。</p>
+<h3 id="社区和论坛">社区和论坛<a href="#社区和论坛" class="anchor" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 7h3a5 5 0 0 1 5 5 5 5 0 0 1-5 5h-3m-6 0H6a5 5 0 0 1-5-5 5 5 0 0 1 5-5h3"></path><line x1="8" y1="12" x2="16" y2="12"></line></svg></a></h3>
+<p>在社区、论坛等，也有类似的问题。因为占位、重名、认知等原因。像是 segmentfault、twitter 叫 golang。掘金叫 Go，各有不同。</p>
+<p><img src="https://files.mdnice.com/user/3610/07ee2a59-901f-44ff-bd65-7de95a9878c6.png" alt=""></p>
+<p>这点难以改善，毕竟各家都是不同企业的。所以难受的点是用户，搜了 Go，可能搜不到，又跑去搜 Golang 才可以。</p>
+<p>再看看国外的论坛，在 Google 群组 golang-nuts 和 golang-dev 也有类似偏差。</p>
+<p>基本可以明确 <strong>“Golang” 更多会被用在搜索和标签上</strong>，能够保证搜索和标签查询的结果。</p>
+<h3 id="语言重名">语言重名<a href="#语言重名" class="anchor" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 7h3a5 5 0 0 1 5 5 5 5 0 0 1-5 5h-3m-6 0H6a5 5 0 0 1-5-5 5 5 0 0 1 5-5h3"></path><line x1="8" y1="12" x2="16" y2="12"></line></svg></a></h3>
+<p>实际上在 Go 语言出现前，已经存在一门 “Go!” 的编程语言了。有网友表示这也是 Go 官方纠结的一点。</p>
+<p><img src="https://files.mdnice.com/user/3610/8c2197f0-5376-49c1-845a-b2564606d1a7.png" alt=""></p>
+<p>不过实际上编程语言重名并不少见，但由于真实性有待考量，建议仅是了解即可。</p>
+<p>至少现在已经没有这门语言的命名之争。</p>
+<h2 id="总结">总结<a href="#总结" class="anchor" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 7h3a5 5 0 0 1 5 5 5 5 0 0 1-5 5h-3m-6 0H6a5 5 0 0 1-5-5 5 5 0 0 1 5-5h3"></path><line x1="8" y1="12" x2="16" y2="12"></line></svg></a></h2>
+<p>可以明确，官方诠释的正确名称为 Go。</p>
+<p>但由于 go.org 域名的原因，
+因此在 Go Programming Language 的通俗称呼下，采取了 golang 来作为 Go 站点、Google 群组的域名/组别等的建立。</p>
+<p>Go 资料肯定都集中在官方站点、论坛，自然而然，大家用 “go” 关键字也就很难搜索到了，都得用 “golang” 关键字。</p>
+<p>可以明确，<strong>Go 是这一门编程语言的名字，Golang 更多是在搜索和标签上的使用</strong>。</p>
+<p>这看上去，是搜索引擎的胜利，你觉得呢？ ：）</p>
+
+			</div>
+			<hr class="post-end">
+			<footer class="post-info">
+				<p>
+					<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-tag meta-icon"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"></path><line x1="7" y1="7" x2="7" y2="7"></line></svg><span class="tag"><a href="https://wangtu2022.github.io/tags/go">go</a></span>
+				</p>
+				<p><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-file-text"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>161 Words</p>
+				<p><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-calendar"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>2021-12-31 12:55 &#43;0800</p>
+			</footer>
+		</article>
+		<aside id="toc">
+			<div class="toc-title">Table of Contents</div>
+			<nav id="TableOfContents">
+  <ul>
+    <li><a href="#go-官方定义">Go 官方定义</a></li>
+    <li><a href="#为什么会有-golang">为什么会有 Golang</a>
+      <ul>
+        <li><a href="#go-站点地址">Go 站点地址</a></li>
+        <li><a href="#搜索引擎">搜索引擎</a></li>
+        <li><a href="#社区和论坛">社区和论坛</a></li>
+        <li><a href="#语言重名">语言重名</a></li>
+      </ul>
+    </li>
+    <li><a href="#总结">总结</a></li>
+  </ul>
+</nav>
+		</aside>
+		<div class="post-nav thin">
+			<a class="next-post" href="https://wangtu2022.github.io/posts/go/go-design/">
+				<span class="post-nav-label"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-arrow-left"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>&nbsp;Newer</span><br><span>上帝视角：Go 语言设计失误，缺乏远见？</span>
+			</a>
+			<a class="prev-post" href="https://wangtu2022.github.io/posts/go/annotation/">
+				<span class="post-nav-label">Older&nbsp;<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-arrow-right"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg></span><br><span>Go：我有注解，Java：不，你没有！</span>
+			</a>
+		</div>
+		<div id="comments" class="thin">
+</div>
+	</main>
+
+	<footer id="site-footer" class="section-inner thin animated fadeIn faster">
+		<p>&copy; 2022 <a href="https://wangtu2022.github.io/">煎鱼</a> &#183; <a href="http://www.beian.miit.gov.cn/">粤ICP备19076352号</a></p>
+		<p>
+			Made with <a href="https://gohugo.io/" target="_blank" rel="noopener">Hugo</a> &#183; Theme <a href="https://github.com/Track3/hermit" target="_blank" rel="noopener">Hermit</a> &#183; <a href="https://wangtu2022.github.io/posts/index.xml" target="_blank" title="rss"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-rss"><path d="M4 11a9 9 0 0 1 9 9"></path><path d="M4 4a16 16 0 0 1 16 16"></path><circle cx="5" cy="19" r="1"></circle></svg></a>
+		</p>
+	</footer>
+
+
+
+	<script src="https://wangtu2022.github.io/js/bundle.min.580988ed2982bcbb74a1773c7abea97b43e4c43b9324e10cda0813ec6ec4bb67.js" integrity="sha256-WAmI7SmCvLt0oXc8er6pe0PkxDuTJOEM2ggT7G7Eu2c=" crossorigin="anonymous"></script>
+	
+<script type="application/javascript">
+var doNotTrack = false;
+if (!doNotTrack) {
+	window.ga=window.ga||function(){(ga.q=ga.q||[]).push(arguments)};ga.l=+new Date;
+	ga('create', 'UA-166045776-1', 'auto');
+	
+	ga('send', 'pageview');
+}
+</script>
+<script async src='https://www.google-analytics.com/analytics.js'></script>
+
+
+</body>
+
+</html>

@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="zh-hans">
+
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<meta http-equiv="X-UA-Compatible" content="ie=edge">
+	<meta name="theme-color" content="#494f5c">
+	<meta name="msapplication-TileColor" content="#494f5c">
+<meta itemprop="name" content="Go 为什么不在语言层面支持 map 并发？">
+<meta itemprop="description" content="大家好，我是煎鱼。
+很多小伙伴学习 Go 语言的语法时，可能只是轻轻地看到过这个问题，结果一旦上手，多多少少一个组内总会碰到过几次。
+甚至会发现有一定年限的程序员也会遇到。有小伙伴疑惑了，这么折腾，为什么 Go 不直接在语言层面就支持 map 并发，那得有多香？
+为什么原生不支持 凭什么 Go 官方还不支持，难不成太复杂了，性能太差了，到底是为什么？
+官方答复原因如下（via @go faq）：
+典型使用场景：map 的典型使用场景是不需要从多个 goroutine 中进行安全访问。 非典型场景（需要原子操作）：map 可能是一些更大的数据结构或已经同步的计算的一部分。 性能场景考虑：若是只是为少数程序增加安全性，导致 map 所有的操作都要处理 mutex，将会降低大多数程序的性能。 核心来讲就是：Go 团队在经过了长时间的讨论后，认为原生 map 更应适配典型使用场景。"><meta itemprop="datePublished" content="2022-02-05T15:55:22+08:00" />
+<meta itemprop="dateModified" content="2022-02-05T15:55:22+08:00" />
+<meta itemprop="wordCount" content="112">
+<meta itemprop="keywords" content="go," /><meta property="og:title" content="Go 为什么不在语言层面支持 map 并发？" />
+<meta property="og:description" content="大家好，我是煎鱼。
+很多小伙伴学习 Go 语言的语法时，可能只是轻轻地看到过这个问题，结果一旦上手，多多少少一个组内总会碰到过几次。
+甚至会发现有一定年限的程序员也会遇到。有小伙伴疑惑了，这么折腾，为什么 Go 不直接在语言层面就支持 map 并发，那得有多香？
+为什么原生不支持 凭什么 Go 官方还不支持，难不成太复杂了，性能太差了，到底是为什么？
+官方答复原因如下（via @go faq）：
+典型使用场景：map 的典型使用场景是不需要从多个 goroutine 中进行安全访问。 非典型场景（需要原子操作）：map 可能是一些更大的数据结构或已经同步的计算的一部分。 性能场景考虑：若是只是为少数程序增加安全性，导致 map 所有的操作都要处理 mutex，将会降低大多数程序的性能。 核心来讲就是：Go 团队在经过了长时间的讨论后，认为原生 map 更应适配典型使用场景。" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://wangtu2022.github.io/posts/go/map-con/" /><meta property="article:section" content="posts" />
+<meta property="article:published_time" content="2022-02-05T15:55:22+08:00" />
+<meta property="article:modified_time" content="2022-02-05T15:55:22+08:00" />
+
+<meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="Go 为什么不在语言层面支持 map 并发？"/>
+<meta name="twitter:description" content="大家好，我是煎鱼。
+很多小伙伴学习 Go 语言的语法时，可能只是轻轻地看到过这个问题，结果一旦上手，多多少少一个组内总会碰到过几次。
+甚至会发现有一定年限的程序员也会遇到。有小伙伴疑惑了，这么折腾，为什么 Go 不直接在语言层面就支持 map 并发，那得有多香？
+为什么原生不支持 凭什么 Go 官方还不支持，难不成太复杂了，性能太差了，到底是为什么？
+官方答复原因如下（via @go faq）：
+典型使用场景：map 的典型使用场景是不需要从多个 goroutine 中进行安全访问。 非典型场景（需要原子操作）：map 可能是一些更大的数据结构或已经同步的计算的一部分。 性能场景考虑：若是只是为少数程序增加安全性，导致 map 所有的操作都要处理 mutex，将会降低大多数程序的性能。 核心来讲就是：Go 团队在经过了长时间的讨论后，认为原生 map 更应适配典型使用场景。"/>
+
+	<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+	<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+	<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+	<link rel="manifest" href="/site.webmanifest">
+	<link rel="mask-icon" href="/safari-pinned-tab.svg" color="">
+	<link rel="shortcut icon" href="/favicon.ico">
+
+	<title>Go 为什么不在语言层面支持 map 并发？</title>
+	<link rel="stylesheet" href="https://wangtu2022.github.io/css/style.min.d3141168199607bf3a517216ce3c263814eecdbc8fca72a9a88700799a838219.css" integrity="sha256-0xQRaBmWB786UXIWzjwmOBTuzbyPynKpqIcAeZqDghk=" crossorigin="anonymous">
+	
+	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.1/css/all.min.css">
+	<link rel="stylesheet" href="https://wangtu2022.github.io/css/styles.css">
+</head>
+
+<body id="page">
+	
+	<header id="site-header" class="animated slideInUp">
+		<div class="hdr-wrapper section-inner">
+			<div class="hdr-left">
+				<div class="site-branding">
+					<a href="https://wangtu2022.github.io/">煎鱼</a>
+				</div>
+				<nav class="site-nav hide-in-mobile">
+					
+				<a href="https://wangtu2022.github.io/posts/">文章</a>
+				<a href="https://wangtu2022.github.io/tags/">标签</a>
+				<a href="https://wangtu2022.github.io/about/">关于</a>
+
+				</nav>
+			</div>
+			<div class="hdr-right hdr-icons">
+				<button id="toc-btn" class="hdr-btn desktop-only-ib" title="Table of Contents"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-list"><line x1="8" y1="6" x2="21" y2="6"></line><line x1="8" y1="12" x2="21" y2="12"></line><line x1="8" y1="18" x2="21" y2="18"></line><line x1="3" y1="6" x2="3" y2="6"></line><line x1="3" y1="12" x2="3" y2="12"></line><line x1="3" y1="18" x2="3" y2="18"></line></svg></button><span class="hdr-social hide-in-mobile"><a href="https://github.com/eddycjy" target="_blank" rel="noopener me" title="Github"><svg xmlns="http://www.w3.org/2000/svg" class="feather" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"></path></svg></a></span><button id="menu-btn" class="hdr-btn" title="Menu"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-menu"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg></button>
+			</div>
+		</div>
+	</header>
+	<div id="mobile-menu" class="animated fast">
+		<ul>
+			<li><a href="https://wangtu2022.github.io/posts/">文章</a></li>
+			<li><a href="https://wangtu2022.github.io/tags/">标签</a></li>
+			<li><a href="https://wangtu2022.github.io/about/">关于</a></li>
+		</ul>
+	</div>
+
+
+	<main class="site-main section-inner animated fadeIn faster">
+		<article class="thin">
+			<header class="post-header">
+				<div class="post-meta"><span>Feb 5, 2022</span></div>
+				<h1>Go 为什么不在语言层面支持 map 并发？</h1>
+			</header>
+			<div class="content">
+				<p>大家好，我是煎鱼。</p>
+<p>很多小伙伴学习 Go 语言的语法时，可能只是轻轻地看到过这个问题，结果一旦上手，多多少少一个组内总会碰到过几次。</p>
+<p>甚至会发现有一定年限的程序员也会遇到。有小伙伴疑惑了，这么折腾，为什么 Go 不直接在语言层面就支持 map 并发，那得有多香？</p>
+<h2 id="为什么原生不支持">为什么原生不支持<a href="#为什么原生不支持" class="anchor" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 7h3a5 5 0 0 1 5 5 5 5 0 0 1-5 5h-3m-6 0H6a5 5 0 0 1-5-5 5 5 0 0 1 5-5h3"></path><line x1="8" y1="12" x2="16" y2="12"></line></svg></a></h2>
+<p>凭什么 Go 官方还不支持，难不成太复杂了，性能太差了，到底是为什么？</p>
+<p>官方答复原因如下（via @go faq）：</p>
+<ul>
+<li>典型使用场景：map 的典型使用场景是不需要从多个 goroutine 中进行安全访问。</li>
+<li>非典型场景（需要原子操作）：map 可能是一些更大的数据结构或已经同步的计算的一部分。</li>
+<li>性能场景考虑：若是只是为少数程序增加安全性，导致 map 所有的操作都要处理 mutex，将会降低大多数程序的性能。</li>
+</ul>
+<p>核心来讲就是：Go 团队在经过了长时间的讨论后，认为原生 map 更应适配典型使用场景。</p>
+<p>如果为了小部分情况，将<strong>会导致大部分程序付出性能代价</strong>，决定了不支持原生的并发 map 读写。且在 Go1.6 起，<strong>增加了检测机制</strong>，并发的话会导致异常。</p>
+<h2 id="为什么要崩溃">为什么要崩溃<a href="#为什么要崩溃" class="anchor" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 7h3a5 5 0 0 1 5 5 5 5 0 0 1-5 5h-3m-6 0H6a5 5 0 0 1-5-5 5 5 0 0 1 5-5h3"></path><line x1="8" y1="12" x2="16" y2="12"></line></svg></a></h2>
+<p>前面有提到一点，在 Go1.6 起会进行原生 map 的并发检测，这是一些人的 “噩梦”。</p>
+<p>在此有人吐槽到：“明明给我抛个错就好了，凭什么要让我的 Go 进程直接崩溃掉，分分钟给我背个 P0”。</p>
+<h3 id="场景枚举">场景枚举<a href="#场景枚举" class="anchor" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 7h3a5 5 0 0 1 5 5 5 5 0 0 1-5 5h-3m-6 0H6a5 5 0 0 1-5-5 5 5 0 0 1 5-5h3"></path><line x1="8" y1="12" x2="16" y2="12"></line></svg></a></h3>
+<p>这里我们假设一下，如果并发读写 map 是以下两种场景：</p>
+<ol>
+<li>产生 panic：程序 panic -&gt; 默认走进 recover -&gt; 没有对并发 map 进行处理 -&gt; map 存在脏数据 -&gt; 程序使用脏数据 -&gt; 产生**未知((影响。</li>
+<li>产生 crash：程序 crash -&gt; 直接崩溃 -&gt; 保全数据（数据正常）-&gt; 产生**明确((风险。</li>
+</ol>
+<p>你会选择哪一种方案呢？Go 官方在两者的风险衡量中选择了第二种。</p>
+<p>无论是编程，还是人生。如何在随机性中掌握确定性的部分，也是一门极大的哲学了。</p>
+<h3 id="let-it-crash">let it crash<a href="#let-it-crash" class="anchor" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 7h3a5 5 0 0 1 5 5 5 5 0 0 1-5 5h-3m-6 0H6a5 5 0 0 1-5-5 5 5 0 0 1 5-5h3"></path><line x1="8" y1="12" x2="16" y2="12"></line></svg></a></h3>
+<p>Go 官方团队选择的方式是业内经典的 “let it crash” 行为，很多编程语言中，都会将其奉行为设计哲学。</p>
+<p><strong>let it crash 是指工程师不必过分担心未知的错误，而去进行面面俱到的防御性编码</strong>。</p>
+<p>这块理念最经典的就是 erlang 了。</p>
+<h2 id="总结">总结<a href="#总结" class="anchor" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 7h3a5 5 0 0 1 5 5 5 5 0 0 1-5 5h-3m-6 0H6a5 5 0 0 1-5-5 5 5 0 0 1 5-5h3"></path><line x1="8" y1="12" x2="16" y2="12"></line></svg></a></h2>
+<p>在今天这篇文章中，我们介绍了 Go 语言为什么不支持原生支持 map 并发，核心原因是大部分场景都不需要，从性能考虑上做的考虑。</p>
+<p>直接让并发读写 map 的原因，是从 “let it crash” 去考虑。这块如果你想在自己的工程中避免这个情况，可以在 linter 等工具链加入竞态检测（-race），也可以避免这类风险。</p>
+<p>你觉得 Go 这块的设计考虑怎么样呢？欢迎在评论区留言和交流：）</p>
+
+			</div>
+			<hr class="post-end">
+			<footer class="post-info">
+				<p>
+					<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-tag meta-icon"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"></path><line x1="7" y1="7" x2="7" y2="7"></line></svg><span class="tag"><a href="https://wangtu2022.github.io/tags/go">go</a></span>
+				</p>
+				<p><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-file-text"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>112 Words</p>
+				<p><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-calendar"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>2022-02-05 15:55 &#43;0800</p>
+			</footer>
+		</article>
+		<aside id="toc">
+			<div class="toc-title">Table of Contents</div>
+			<nav id="TableOfContents">
+  <ul>
+    <li><a href="#为什么原生不支持">为什么原生不支持</a></li>
+    <li><a href="#为什么要崩溃">为什么要崩溃</a>
+      <ul>
+        <li><a href="#场景枚举">场景枚举</a></li>
+        <li><a href="#let-it-crash">let it crash</a></li>
+      </ul>
+    </li>
+    <li><a href="#总结">总结</a></li>
+  </ul>
+</nav>
+		</aside>
+		<div class="post-nav thin">
+			<a class="next-post" href="https://wangtu2022.github.io/posts/go/var/">
+				<span class="post-nav-label"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-arrow-left"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>&nbsp;Newer</span><br><span>为什么 Go 有两种声明变量的方式，有什么区别，哪种好？</span>
+			</a>
+			<a class="prev-post" href="https://wangtu2022.github.io/posts/go/generics-design/">
+				<span class="post-nav-label">Older&nbsp;<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-arrow-right"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg></span><br><span>Go 泛型的 3 个核心设计，你学会了吗？</span>
+			</a>
+		</div>
+		<div id="comments" class="thin">
+</div>
+	</main>
+
+	<footer id="site-footer" class="section-inner thin animated fadeIn faster">
+		<p>&copy; 2022 <a href="https://wangtu2022.github.io/">煎鱼</a> &#183; <a href="http://www.beian.miit.gov.cn/">粤ICP备19076352号</a></p>
+		<p>
+			Made with <a href="https://gohugo.io/" target="_blank" rel="noopener">Hugo</a> &#183; Theme <a href="https://github.com/Track3/hermit" target="_blank" rel="noopener">Hermit</a> &#183; <a href="https://wangtu2022.github.io/posts/index.xml" target="_blank" title="rss"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-rss"><path d="M4 11a9 9 0 0 1 9 9"></path><path d="M4 4a16 16 0 0 1 16 16"></path><circle cx="5" cy="19" r="1"></circle></svg></a>
+		</p>
+	</footer>
+
+
+
+	<script src="https://wangtu2022.github.io/js/bundle.min.580988ed2982bcbb74a1773c7abea97b43e4c43b9324e10cda0813ec6ec4bb67.js" integrity="sha256-WAmI7SmCvLt0oXc8er6pe0PkxDuTJOEM2ggT7G7Eu2c=" crossorigin="anonymous"></script>
+	
+<script type="application/javascript">
+var doNotTrack = false;
+if (!doNotTrack) {
+	window.ga=window.ga||function(){(ga.q=ga.q||[]).push(arguments)};ga.l=+new Date;
+	ga('create', 'UA-166045776-1', 'auto');
+	
+	ga('send', 'pageview');
+}
+</script>
+<script async src='https://www.google-analytics.com/analytics.js'></script>
+
+
+</body>
+
+</html>

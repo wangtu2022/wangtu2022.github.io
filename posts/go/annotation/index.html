@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="zh-hans">
+
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<meta http-equiv="X-UA-Compatible" content="ie=edge">
+	<meta name="theme-color" content="#494f5c">
+	<meta name="msapplication-TileColor" content="#494f5c">
+<meta itemprop="name" content="Go：我有注解，Java：不，你没有！">
+<meta itemprop="description" content="大家好，我是煎鱼。
+作为一位 Go 程序员，你会发现身边的同事大多都拥有其他语言的编写经验。那势必就会遇到一点，要把新学到的知识和以前的知识建立连接。
+特殊在于，Go 有些特性是其他语言有，他没有的。最经典的就是 N 位 Java 同学寻找 Go 语言的注解在哪里，总要解释。
+为此，今天煎鱼就带大家了解一下 Go 语言的注解的使用和情况。
+什么是注解 了解历史 注解（Annotation）最早出现自何处，翻了一圈并没有找到。但可以明确，在注解的使用中，Java 注解最为经典，为了便于理解，因此我们基于 Java 做初步的注解理解。
+在 2002 年，JSR-175 提出了 《A Metadata Facility for the Java Programming Language》，也就是为 Java 编程语言提供元数据工具。"><meta itemprop="datePublished" content="2021-12-31T12:55:11+08:00" />
+<meta itemprop="dateModified" content="2021-12-31T12:55:11+08:00" />
+<meta itemprop="wordCount" content="310">
+<meta itemprop="keywords" content="go,为什么," /><meta property="og:title" content="Go：我有注解，Java：不，你没有！" />
+<meta property="og:description" content="大家好，我是煎鱼。
+作为一位 Go 程序员，你会发现身边的同事大多都拥有其他语言的编写经验。那势必就会遇到一点，要把新学到的知识和以前的知识建立连接。
+特殊在于，Go 有些特性是其他语言有，他没有的。最经典的就是 N 位 Java 同学寻找 Go 语言的注解在哪里，总要解释。
+为此，今天煎鱼就带大家了解一下 Go 语言的注解的使用和情况。
+什么是注解 了解历史 注解（Annotation）最早出现自何处，翻了一圈并没有找到。但可以明确，在注解的使用中，Java 注解最为经典，为了便于理解，因此我们基于 Java 做初步的注解理解。
+在 2002 年，JSR-175 提出了 《A Metadata Facility for the Java Programming Language》，也就是为 Java 编程语言提供元数据工具。" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://wangtu2022.github.io/posts/go/annotation/" /><meta property="article:section" content="posts" />
+<meta property="article:published_time" content="2021-12-31T12:55:11+08:00" />
+<meta property="article:modified_time" content="2021-12-31T12:55:11+08:00" />
+
+<meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="Go：我有注解，Java：不，你没有！"/>
+<meta name="twitter:description" content="大家好，我是煎鱼。
+作为一位 Go 程序员，你会发现身边的同事大多都拥有其他语言的编写经验。那势必就会遇到一点，要把新学到的知识和以前的知识建立连接。
+特殊在于，Go 有些特性是其他语言有，他没有的。最经典的就是 N 位 Java 同学寻找 Go 语言的注解在哪里，总要解释。
+为此，今天煎鱼就带大家了解一下 Go 语言的注解的使用和情况。
+什么是注解 了解历史 注解（Annotation）最早出现自何处，翻了一圈并没有找到。但可以明确，在注解的使用中，Java 注解最为经典，为了便于理解，因此我们基于 Java 做初步的注解理解。
+在 2002 年，JSR-175 提出了 《A Metadata Facility for the Java Programming Language》，也就是为 Java 编程语言提供元数据工具。"/>
+
+	<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+	<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+	<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+	<link rel="manifest" href="/site.webmanifest">
+	<link rel="mask-icon" href="/safari-pinned-tab.svg" color="">
+	<link rel="shortcut icon" href="/favicon.ico">
+
+	<title>Go：我有注解，Java：不，你没有！</title>
+	<link rel="stylesheet" href="https://wangtu2022.github.io/css/style.min.d3141168199607bf3a517216ce3c263814eecdbc8fca72a9a88700799a838219.css" integrity="sha256-0xQRaBmWB786UXIWzjwmOBTuzbyPynKpqIcAeZqDghk=" crossorigin="anonymous">
+	
+	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.1/css/all.min.css">
+	<link rel="stylesheet" href="https://wangtu2022.github.io/css/styles.css">
+</head>
+
+<body id="page">
+	
+	<header id="site-header" class="animated slideInUp">
+		<div class="hdr-wrapper section-inner">
+			<div class="hdr-left">
+				<div class="site-branding">
+					<a href="https://wangtu2022.github.io/">煎鱼</a>
+				</div>
+				<nav class="site-nav hide-in-mobile">
+					
+				<a href="https://wangtu2022.github.io/posts/">文章</a>
+				<a href="https://wangtu2022.github.io/tags/">标签</a>
+				<a href="https://wangtu2022.github.io/about/">关于</a>
+
+				</nav>
+			</div>
+			<div class="hdr-right hdr-icons">
+				<button id="toc-btn" class="hdr-btn desktop-only-ib" title="Table of Contents"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-list"><line x1="8" y1="6" x2="21" y2="6"></line><line x1="8" y1="12" x2="21" y2="12"></line><line x1="8" y1="18" x2="21" y2="18"></line><line x1="3" y1="6" x2="3" y2="6"></line><line x1="3" y1="12" x2="3" y2="12"></line><line x1="3" y1="18" x2="3" y2="18"></line></svg></button><span class="hdr-social hide-in-mobile"><a href="https://github.com/eddycjy" target="_blank" rel="noopener me" title="Github"><svg xmlns="http://www.w3.org/2000/svg" class="feather" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"></path></svg></a></span><button id="menu-btn" class="hdr-btn" title="Menu"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-menu"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg></button>
+			</div>
+		</div>
+	</header>
+	<div id="mobile-menu" class="animated fast">
+		<ul>
+			<li><a href="https://wangtu2022.github.io/posts/">文章</a></li>
+			<li><a href="https://wangtu2022.github.io/tags/">标签</a></li>
+			<li><a href="https://wangtu2022.github.io/about/">关于</a></li>
+		</ul>
+	</div>
+
+
+	<main class="site-main section-inner animated fadeIn faster">
+		<article class="thin">
+			<header class="post-header">
+				<div class="post-meta"><span>Dec 31, 2021</span></div>
+				<h1>Go：我有注解，Java：不，你没有！</h1>
+			</header>
+			<div class="content">
+				<p>大家好，我是煎鱼。</p>
+<p>作为一位 Go 程序员，你会发现身边的同事大多都拥有其他语言的编写经验。那势必就会遇到一点，要把新学到的知识和以前的知识建立连接。</p>
+<p><img src="https://files.mdnice.com/user/3610/050a9802-1ca2-4634-859d-325a09d418c5.png" alt="图来自网络"></p>
+<p>特殊在于，Go 有些特性是其他语言有，他没有的。最经典的就是 N 位 Java 同学寻找 Go 语言的注解在哪里，总要解释。</p>
+<p>为此，今天煎鱼就带大家了解一下 Go 语言的注解的使用和情况。</p>
+<h2 id="什么是注解">什么是注解<a href="#什么是注解" class="anchor" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 7h3a5 5 0 0 1 5 5 5 5 0 0 1-5 5h-3m-6 0H6a5 5 0 0 1-5-5 5 5 0 0 1 5-5h3"></path><line x1="8" y1="12" x2="16" y2="12"></line></svg></a></h2>
+<h3 id="了解历史">了解历史<a href="#了解历史" class="anchor" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 7h3a5 5 0 0 1 5 5 5 5 0 0 1-5 5h-3m-6 0H6a5 5 0 0 1-5-5 5 5 0 0 1 5-5h3"></path><line x1="8" y1="12" x2="16" y2="12"></line></svg></a></h3>
+<p>注解（Annotation）最早出现自何处，翻了一圈并没有找到。但可以明确，在注解的使用中，Java 注解最为经典，为了便于理解，因此我们基于 Java 做初步的注解理解。</p>
+<p><img src="https://files.mdnice.com/user/3610/3c9e2434-c5f4-4d7a-bd2d-a8b582b570c8.png" alt=""></p>
+<p>在 2002 年，JSR-175 提出了 《<a href="https://jcp.org/en/jsr/detail?id=175">A Metadata Facility for the Java Programming Language</a>》，也就是为 Java 编程语言提供元数据工具。</p>
+<p>这就是现在使用最广泛地注解（Annotation）的来源。
+示例如下：</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-golang" data-lang="golang"><span class="line"><span class="cl"><span class="c1">// @annotation1
+</span></span></span><span class="line"><span class="cl"><span class="c1">// @annotation2
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="kd">func</span> <span class="nf">Hello</span><span class="p">()</span> <span class="kt">string</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">        <span class="k">return</span> <span class="s">&#34;&#34;</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span></code></pre></div><p>在格式上均以 “@” 作为注解标识来使用。</p>
+<h3 id="注解例子">注解例子<a href="#注解例子" class="anchor" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 7h3a5 5 0 0 1 5 5 5 5 0 0 1-5 5h-3m-6 0H6a5 5 0 0 1-5-5 5 5 0 0 1 5-5h3"></path><line x1="8" y1="12" x2="16" y2="12"></line></svg></a></h3>
+<p>摘抄自 @wikipedia 的一个注解例子：</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-java" data-lang="java"><span class="line"><span class="cl">  <span class="c1">//等同于 @Edible(value = true)
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>  <span class="nd">@Edible</span><span class="o">(</span><span class="kc">true</span><span class="o">)</span>
+</span></span><span class="line"><span class="cl">  <span class="n">Item</span> <span class="n">item</span> <span class="o">=</span> <span class="k">new</span> <span class="n">Carrot</span><span class="o">();</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">  <span class="kd">public</span> <span class="nd">@interface</span> <span class="n">Edible</span> <span class="o">{</span>
+</span></span><span class="line"><span class="cl">    <span class="kt">boolean</span> <span class="nf">value</span><span class="o">()</span> <span class="k">default</span> <span class="kc">false</span><span class="o">;</span>
+</span></span><span class="line"><span class="cl">  <span class="o">}</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">  <span class="nd">@Author</span><span class="o">(</span><span class="n">first</span> <span class="o">=</span> <span class="s">&#34;Oompah&#34;</span><span class="o">,</span> <span class="n">last</span> <span class="o">=</span> <span class="s">&#34;Loompah&#34;</span><span class="o">)</span>
+</span></span><span class="line"><span class="cl">  <span class="n">Book</span> <span class="n">book</span> <span class="o">=</span> <span class="k">new</span> <span class="n">Book</span><span class="o">();</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">  <span class="kd">public</span> <span class="nd">@interface</span> <span class="n">Author</span> <span class="o">{</span>
+</span></span><span class="line"><span class="cl">    <span class="n">String</span> <span class="nf">first</span><span class="o">();</span>
+</span></span><span class="line"><span class="cl">    <span class="n">String</span> <span class="nf">last</span><span class="o">();</span>
+</span></span><span class="line"><span class="cl">  <span class="o">}</span>
+</span></span><span class="line"><span class="cl">  
+</span></span><span class="line"><span class="cl">  <span class="c1">// 该标注可以在运行时通过反射访问。
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>  <span class="nd">@Retention</span><span class="o">(</span><span class="n">RetentionPolicy</span><span class="o">.</span><span class="na">RUNTIME</span><span class="o">)</span> 
+</span></span><span class="line"><span class="cl">  <span class="c1">// 该标注只用于类内方法。
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>  <span class="nd">@Target</span><span class="o">({</span><span class="n">ElementType</span><span class="o">.</span><span class="na">METHOD</span><span class="o">})</span>
+</span></span><span class="line"><span class="cl">  <span class="kd">public</span> <span class="nd">@interface</span> <span class="n">Tweezable</span> <span class="o">{</span>
+</span></span><span class="line"><span class="cl">  <span class="o">}</span>
+</span></span></code></pre></div><p>在上述例子中，通过注解去做了一系列的定义、声明、赋值等。若是对语言既有注解不熟，或是做的比较复杂的注解，就会有一定的理解成本。</p>
+<p>在业内也常常会说，<strong>注解就是 “在源码上进行编码”</strong>，注解的存在，有着明确的优缺点。你觉得呢？</p>
+<h2 id="注解的作用">注解的作用<a href="#注解的作用" class="anchor" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 7h3a5 5 0 0 1 5 5 5 5 0 0 1-5 5h-3m-6 0H6a5 5 0 0 1-5-5 5 5 0 0 1 5-5h3"></path><line x1="8" y1="12" x2="16" y2="12"></line></svg></a></h2>
+<p>在注解的的作用上，分为如下几点：</p>
+<ol>
+<li>为编译器提供信息：注释可以被编译器用来检测错误或支持警告。</li>
+<li>编译时和部署时处理：软件工具可以处理注释信息以生成代码、XML文件等。</li>
+<li>运行时处理：有些注解可以在运行时检查，并用于其他用途。</li>
+</ol>
+<h2 id="go-注解在哪里">Go 注解在哪里<a href="#go-注解在哪里" class="anchor" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 7h3a5 5 0 0 1 5 5 5 5 0 0 1-5 5h-3m-6 0H6a5 5 0 0 1-5-5 5 5 0 0 1 5-5h3"></path><line x1="8" y1="12" x2="16" y2="12"></line></svg></a></h2>
+<h3 id="现状">现状<a href="#现状" class="anchor" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 7h3a5 5 0 0 1 5 5 5 5 0 0 1-5 5h-3m-6 0H6a5 5 0 0 1-5-5 5 5 0 0 1 5-5h3"></path><line x1="8" y1="12" x2="16" y2="12"></line></svg></a></h3>
+<p>Go 语言本身并没有原生支持强大的注解，仅限于以下两种：</p>
+<ul>
+<li>编译时生成：go:generate</li>
+<li>编译时约束：go:build</li>
+</ul>
+<p>但这先按不足以作为一个函数注解来使用，也无法形成像 Python 那样的装饰器行为。</p>
+<h3 id="为什么不支持">为什么不支持<a href="#为什么不支持" class="anchor" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 7h3a5 5 0 0 1 5 5 5 5 0 0 1-5 5h-3m-6 0H6a5 5 0 0 1-5-5 5 5 0 0 1 5-5h3"></path><line x1="8" y1="12" x2="16" y2="12"></line></svg></a></h3>
+<p>Go issues 上有人提过类似的提案：</p>
+<p><img src="https://files.mdnice.com/user/3610/9695f163-65e8-456a-8dce-bb8551739016.png" alt=""></p>
+<p>Go Contributor @ianlancetaylor 给出了明确的答复，Go在设计上更倾向于明确的、显式的编程风格。</p>
+<p>思考的优缺点如下：</p>
+<ul>
+<li>优势：不知道 Go 能从添加装饰器中得到什么好处，没能在 issues 上明确论证。</li>
+<li>缺点：是明确的，会存在意外设置的情况。</li>
+</ul>
+<p>因如下原因，没有接受注解：</p>
+<ul>
+<li>对比现有代码方法，这种装饰器的新的方法没有提供比现有方法更多的优势，大到足矣推翻原有的设计思路。</li>
+<li>社区内的投票，支持的也很少（基于表情符号的投票），用户反馈不多。</li>
+</ul>
+<p>可能有小伙伴会说了，有注解做装饰器了，代码会简洁不少。</p>
+<p>对此 Go 团队的态度很明确：</p>
+<p><img src="https://files.mdnice.com/user/3610/bb357e12-9b15-4729-9381-977d164b6b04.png" alt=""></p>
+<p>Go 认为<strong>可读性更重要</strong>，如果只是额外多写一点代码，在权衡后，还是可以接受的。</p>
+<h2 id="用-go-实现注解">用 Go 实现注解<a href="#用-go-实现注解" class="anchor" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 7h3a5 5 0 0 1 5 5 5 5 0 0 1-5 5h-3m-6 0H6a5 5 0 0 1-5-5 5 5 0 0 1 5-5h3"></path><line x1="8" y1="12" x2="16" y2="12"></line></svg></a></h2>
+<p>虽然 Go 语言官方没有原生的完整支持，但开源社区中也有小伙伴已经放出了大招，借助各项周边工具和库来实现特定的函数注解功能。</p>
+<p>GitHub 项目分别如下：</p>
+<ul>
+<li><a href="github.com/MarcGrol/golangAnnotations">MarcGrol/golangAnnotations</a></li>
+<li><a href="https://github.com/u2takey/go-annotation">u2takey/go-annotation</a></li>
+</ul>
+<p>使用示例如下：</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-golang" data-lang="golang"><span class="line"><span class="cl"><span class="kn">package</span> <span class="nx">tourdefrance</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="c1">//go:generate golangAnnotations -input-dir .
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>
+</span></span><span class="line"><span class="cl"><span class="c1">// @RestService( path = &#34;/api/tour&#34; )
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="kd">type</span> <span class="nx">TourService</span> <span class="kd">struct</span><span class="p">{}</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="kd">type</span> <span class="nx">EtappeResult</span> <span class="kd">struct</span><span class="p">{</span> <span class="o">...</span> <span class="p">}</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="c1">// @RestOperation( method = &#34;PUT&#34;, path = &#34;/{year}/etappe/{etappeUid}&#34; )
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="kd">func</span> <span class="p">(</span><span class="nx">ts</span> <span class="o">*</span><span class="nx">TourService</span><span class="p">)</span> <span class="nf">addEtappeResults</span><span class="p">(</span><span class="nx">c</span> <span class="nx">context</span><span class="p">.</span><span class="nx">Context</span><span class="p">,</span> <span class="nx">year</span> <span class="kt">int</span><span class="p">,</span> <span class="nx">etappeUid</span> <span class="kt">string</span><span class="p">,</span> <span class="nx">results</span> <span class="nx">EtappeResult</span><span class="p">)</span> <span class="kt">error</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">	<span class="k">return</span> <span class="kc">nil</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span></code></pre></div><p>对 Go 注解的使用感兴趣的小伙伴可以自行查阅使用手册。</p>
+<p>我们更多的关心，Go 原生都没支持，那么开源库都是如何实现的呢？在此我们借助 <a href="github.com/MarcGrol/golangAnnotations">MarcGrol/golangAnnotations</a> 项目所提供的思路来讲解。</p>
+<p>分为三个步骤：</p>
+<ol>
+<li>解析代码。</li>
+<li>模板处理。</li>
+<li>生成代码。</li>
+</ol>
+<h3 id="解析-ast">解析 AST<a href="#解析-ast" class="anchor" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 7h3a5 5 0 0 1 5 5 5 5 0 0 1-5 5h-3m-6 0H6a5 5 0 0 1-5-5 5 5 0 0 1 5-5h3"></path><line x1="8" y1="12" x2="16" y2="12"></line></svg></a></h3>
+<p>首先，我们需要用用 go/ast 标准库获取代码所生成的 AST Tree 中需要的内容和结构。</p>
+<p>示例代码如下：</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-shell" data-lang="shell"><span class="line"><span class="cl">parsedSources :<span class="o">=</span> ParsedSources<span class="o">{</span>
+</span></span><span class="line"><span class="cl">    PackageName: <span class="s2">&#34;tourdefrance&#34;</span>,
+</span></span><span class="line"><span class="cl">    Structs:     <span class="o">[]</span>model.Struct<span class="o">{</span>
+</span></span><span class="line"><span class="cl">        <span class="o">{</span>
+</span></span><span class="line"><span class="cl">      	     DocLines:   <span class="o">[]</span>string<span class="o">{</span><span class="s2">&#34;// @RestService( path = &#34;</span>/api/tour<span class="s2">&#34; )&#34;</span><span class="o">}</span>,
+</span></span><span class="line"><span class="cl">      	     Name:       <span class="s2">&#34;TourService&#34;</span>,
+</span></span><span class="line"><span class="cl">      	     Operations: <span class="o">[]</span>model.Operation<span class="o">{</span>
+</span></span><span class="line"><span class="cl">                <span class="o">{</span>
+</span></span><span class="line"><span class="cl">              	    DocLines:   <span class="o">[]</span>string<span class="o">{</span><span class="s2">&#34;// @RestOperation( method = &#34;</span>PUT<span class="s2">&#34;, path = &#34;</span>/<span class="o">{</span>year<span class="o">}</span>/etappe/<span class="o">{</span>etappeUid<span class="o">}</span><span class="s2">&#34;},
+</span></span></span><span class="line"><span class="cl"><span class="s2">              	    ...
+</span></span></span><span class="line"><span class="cl"><span class="s2">                },
+</span></span></span><span class="line"><span class="cl"><span class="s2">            },
+</span></span></span><span class="line"><span class="cl"><span class="s2">        },
+</span></span></span><span class="line"><span class="cl"><span class="s2">    },
+</span></span></span><span class="line"><span class="cl"><span class="s2">}
+</span></span></span></code></pre></div><p>我们可以看到，在 AST Tree 中能够获取到在示例代码中所定义的注解内容，我们就可以依据此去做很多奇奇怪怪的事情了。</p>
+<h3 id="模板生成">模板生成<a href="#模板生成" class="anchor" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 7h3a5 5 0 0 1 5 5 5 5 0 0 1-5 5h-3m-6 0H6a5 5 0 0 1-5-5 5 5 0 0 1 5-5h3"></path><line x1="8" y1="12" x2="16" y2="12"></line></svg></a></h3>
+<p>紧接着，在知道了注解的输入是什么后，我们只需要根据实际情况，编写对应的模板生成器 code-generator 就可以了。</p>
+<p>我们会基于 text/template 标准库来实现，比较经典的像是 <a href="https://github.com/kubernetes/code-generator">kubernetes/code-generator</a> 是一个可以参考的实现。</p>
+<p>代码实现完毕后，将其编译成 go plugin，便于我们在下一步调用就可以了。</p>
+<h3 id="代码生成">代码生成<a href="#代码生成" class="anchor" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 7h3a5 5 0 0 1 5 5 5 5 0 0 1-5 5h-3m-6 0H6a5 5 0 0 1-5-5 5 5 0 0 1 5-5h3"></path><line x1="8" y1="12" x2="16" y2="12"></line></svg></a></h3>
+<p>最后，万事俱备只欠东风。差的就是告诉工具，哪些 Go 文件中包含注解，需要我们去生成的。</p>
+<p>这时候我们可以使用 <code>//go:generate</code> 在 Go 文件声明。就像前面的项目中所说的：</p>
+<pre tabindex="0"><code>//go:generate golangAnnotations -input-dir .
+</code></pre><p>声明该 Go 文件需要生成，并调用前面编写好的 golangAnnotations 二进制文件，就可以实现基本的 Go 注解生成了。</p>
+<h2 id="总结">总结<a href="#总结" class="anchor" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 7h3a5 5 0 0 1 5 5 5 5 0 0 1-5 5h-3m-6 0H6a5 5 0 0 1-5-5 5 5 0 0 1 5-5h3"></path><line x1="8" y1="12" x2="16" y2="12"></line></svg></a></h2>
+<p>今天在这篇文章中，我们介绍了注解（Annotation）的历史背景。同时我们针对 Go 语言目前原生的注解支持情况进行了说明。</p>
+<p>也面向为什么 Go 没有像 Java 那样支持强大的注解进行了基于 Go 官方团队的原因解释。如果希望在 Go 实现注解的，也提供了相应的开源技术方案。</p>
+<p><strong>你觉得 Go 语言是否需要强大的注解支持</strong>呢，欢迎你在评论区留言和讨论！</p>
+
+			</div>
+			<hr class="post-end">
+			<footer class="post-info">
+				<p>
+					<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-tag meta-icon"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"></path><line x1="7" y1="7" x2="7" y2="7"></line></svg><span class="tag"><a href="https://wangtu2022.github.io/tags/go">go</a></span><span class="tag"><a href="https://wangtu2022.github.io/tags/%E4%B8%BA%E4%BB%80%E4%B9%88">为什么</a></span>
+				</p>
+				<p><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-file-text"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>310 Words</p>
+				<p><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-calendar"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>2021-12-31 12:55 &#43;0800</p>
+			</footer>
+		</article>
+		<aside id="toc">
+			<div class="toc-title">Table of Contents</div>
+			<nav id="TableOfContents">
+  <ul>
+    <li><a href="#什么是注解">什么是注解</a>
+      <ul>
+        <li><a href="#了解历史">了解历史</a></li>
+        <li><a href="#注解例子">注解例子</a></li>
+      </ul>
+    </li>
+    <li><a href="#注解的作用">注解的作用</a></li>
+    <li><a href="#go-注解在哪里">Go 注解在哪里</a>
+      <ul>
+        <li><a href="#现状">现状</a></li>
+        <li><a href="#为什么不支持">为什么不支持</a></li>
+      </ul>
+    </li>
+    <li><a href="#用-go-实现注解">用 Go 实现注解</a>
+      <ul>
+        <li><a href="#解析-ast">解析 AST</a></li>
+        <li><a href="#模板生成">模板生成</a></li>
+        <li><a href="#代码生成">代码生成</a></li>
+      </ul>
+    </li>
+    <li><a href="#总结">总结</a></li>
+  </ul>
+</nav>
+		</aside>
+		<div class="post-nav thin">
+			<a class="next-post" href="https://wangtu2022.github.io/posts/go/go-golang/">
+				<span class="post-nav-label"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-arrow-left"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>&nbsp;Newer</span><br><span>Go 和 Golang 有什么关系？</span>
+			</a>
+			<a class="prev-post" href="https://wangtu2022.github.io/posts/go/type-after/">
+				<span class="post-nav-label">Older&nbsp;<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-arrow-right"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg></span><br><span>为什么 Go 语言把类型放在后面？</span>
+			</a>
+		</div>
+		<div id="comments" class="thin">
+</div>
+	</main>
+
+	<footer id="site-footer" class="section-inner thin animated fadeIn faster">
+		<p>&copy; 2022 <a href="https://wangtu2022.github.io/">煎鱼</a> &#183; <a href="http://www.beian.miit.gov.cn/">粤ICP备19076352号</a></p>
+		<p>
+			Made with <a href="https://gohugo.io/" target="_blank" rel="noopener">Hugo</a> &#183; Theme <a href="https://github.com/Track3/hermit" target="_blank" rel="noopener">Hermit</a> &#183; <a href="https://wangtu2022.github.io/posts/index.xml" target="_blank" title="rss"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-rss"><path d="M4 11a9 9 0 0 1 9 9"></path><path d="M4 4a16 16 0 0 1 16 16"></path><circle cx="5" cy="19" r="1"></circle></svg></a>
+		</p>
+	</footer>
+
+
+
+	<script src="https://wangtu2022.github.io/js/bundle.min.580988ed2982bcbb74a1773c7abea97b43e4c43b9324e10cda0813ec6ec4bb67.js" integrity="sha256-WAmI7SmCvLt0oXc8er6pe0PkxDuTJOEM2ggT7G7Eu2c=" crossorigin="anonymous"></script>
+	
+<script type="application/javascript">
+var doNotTrack = false;
+if (!doNotTrack) {
+	window.ga=window.ga||function(){(ga.q=ga.q||[]).push(arguments)};ga.l=+new Date;
+	ga('create', 'UA-166045776-1', 'auto');
+	
+	ga('send', 'pageview');
+}
+</script>
+<script async src='https://www.google-analytics.com/analytics.js'></script>
+
+
+</body>
+
+</html>

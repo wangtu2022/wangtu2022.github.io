@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="zh-hans">
+
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<meta http-equiv="X-UA-Compatible" content="ie=edge">
+	<meta name="theme-color" content="#494f5c">
+	<meta name="msapplication-TileColor" content="#494f5c">
+<meta itemprop="name" content="Go1.17 新特性：对 Go 依赖管理的一把大剪刀">
+<meta itemprop="description" content="大家好，我是煎鱼。
+不得不说。我可是个经历过 Go 依赖管理群魔乱舞，Go modules 迁移一堆 BUG 的人儿，难顶&hellip; 为此当年我写了不少技术文章，希望给大家避坑。
+如下：
+Go Modules 终极入门 干货满满的 Go Modules 知识分享 Go1.16 新特性：Go mod 的后悔药，仅需这一招 在近期 Go1.17 发布后，Go modules 带来了两大更新，煎鱼摩拳擦掌，他们分别是：
+模块依赖图裁剪（module graph pruning） 延时模块加载（lazy module loading） 今天带大家一起来了解这两块内容，争取了解其为何物，背景又是什么。"><meta itemprop="datePublished" content="2021-12-31T12:55:03+08:00" />
+<meta itemprop="dateModified" content="2021-12-31T12:55:03+08:00" />
+<meta itemprop="wordCount" content="262">
+<meta itemprop="keywords" content="go," /><meta property="og:title" content="Go1.17 新特性：对 Go 依赖管理的一把大剪刀" />
+<meta property="og:description" content="大家好，我是煎鱼。
+不得不说。我可是个经历过 Go 依赖管理群魔乱舞，Go modules 迁移一堆 BUG 的人儿，难顶&hellip; 为此当年我写了不少技术文章，希望给大家避坑。
+如下：
+Go Modules 终极入门 干货满满的 Go Modules 知识分享 Go1.16 新特性：Go mod 的后悔药，仅需这一招 在近期 Go1.17 发布后，Go modules 带来了两大更新，煎鱼摩拳擦掌，他们分别是：
+模块依赖图裁剪（module graph pruning） 延时模块加载（lazy module loading） 今天带大家一起来了解这两块内容，争取了解其为何物，背景又是什么。" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://wangtu2022.github.io/posts/go/117-module-pruning-lazy/" /><meta property="article:section" content="posts" />
+<meta property="article:published_time" content="2021-12-31T12:55:03+08:00" />
+<meta property="article:modified_time" content="2021-12-31T12:55:03+08:00" />
+
+<meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="Go1.17 新特性：对 Go 依赖管理的一把大剪刀"/>
+<meta name="twitter:description" content="大家好，我是煎鱼。
+不得不说。我可是个经历过 Go 依赖管理群魔乱舞，Go modules 迁移一堆 BUG 的人儿，难顶&hellip; 为此当年我写了不少技术文章，希望给大家避坑。
+如下：
+Go Modules 终极入门 干货满满的 Go Modules 知识分享 Go1.16 新特性：Go mod 的后悔药，仅需这一招 在近期 Go1.17 发布后，Go modules 带来了两大更新，煎鱼摩拳擦掌，他们分别是：
+模块依赖图裁剪（module graph pruning） 延时模块加载（lazy module loading） 今天带大家一起来了解这两块内容，争取了解其为何物，背景又是什么。"/>
+
+	<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+	<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+	<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+	<link rel="manifest" href="/site.webmanifest">
+	<link rel="mask-icon" href="/safari-pinned-tab.svg" color="">
+	<link rel="shortcut icon" href="/favicon.ico">
+
+	<title>Go1.17 新特性：对 Go 依赖管理的一把大剪刀</title>
+	<link rel="stylesheet" href="https://wangtu2022.github.io/css/style.min.d3141168199607bf3a517216ce3c263814eecdbc8fca72a9a88700799a838219.css" integrity="sha256-0xQRaBmWB786UXIWzjwmOBTuzbyPynKpqIcAeZqDghk=" crossorigin="anonymous">
+	
+	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.1/css/all.min.css">
+	<link rel="stylesheet" href="https://wangtu2022.github.io/css/styles.css">
+</head>
+
+<body id="page">
+	
+	<header id="site-header" class="animated slideInUp">
+		<div class="hdr-wrapper section-inner">
+			<div class="hdr-left">
+				<div class="site-branding">
+					<a href="https://wangtu2022.github.io/">煎鱼</a>
+				</div>
+				<nav class="site-nav hide-in-mobile">
+					
+				<a href="https://wangtu2022.github.io/posts/">文章</a>
+				<a href="https://wangtu2022.github.io/tags/">标签</a>
+				<a href="https://wangtu2022.github.io/about/">关于</a>
+
+				</nav>
+			</div>
+			<div class="hdr-right hdr-icons">
+				<button id="toc-btn" class="hdr-btn desktop-only-ib" title="Table of Contents"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-list"><line x1="8" y1="6" x2="21" y2="6"></line><line x1="8" y1="12" x2="21" y2="12"></line><line x1="8" y1="18" x2="21" y2="18"></line><line x1="3" y1="6" x2="3" y2="6"></line><line x1="3" y1="12" x2="3" y2="12"></line><line x1="3" y1="18" x2="3" y2="18"></line></svg></button><span class="hdr-social hide-in-mobile"><a href="https://github.com/eddycjy" target="_blank" rel="noopener me" title="Github"><svg xmlns="http://www.w3.org/2000/svg" class="feather" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"></path></svg></a></span><button id="menu-btn" class="hdr-btn" title="Menu"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-menu"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg></button>
+			</div>
+		</div>
+	</header>
+	<div id="mobile-menu" class="animated fast">
+		<ul>
+			<li><a href="https://wangtu2022.github.io/posts/">文章</a></li>
+			<li><a href="https://wangtu2022.github.io/tags/">标签</a></li>
+			<li><a href="https://wangtu2022.github.io/about/">关于</a></li>
+		</ul>
+	</div>
+
+
+	<main class="site-main section-inner animated fadeIn faster">
+		<article class="thin">
+			<header class="post-header">
+				<div class="post-meta"><span>Dec 31, 2021</span></div>
+				<h1>Go1.17 新特性：对 Go 依赖管理的一把大剪刀</h1>
+			</header>
+			<div class="content">
+				<p>大家好，我是煎鱼。</p>
+<p>不得不说。我可是个经历过 Go 依赖管理群魔乱舞，Go modules 迁移一堆 BUG 的人儿，难顶&hellip;
+为此当年我写了不少技术文章，希望给大家避坑。</p>
+<p>如下：</p>
+<ul>
+<li><a href="https://mp.weixin.qq.com/s/6gJkSyGAFR0v6kow2uVklA">Go Modules 终极入门</a></li>
+<li><a href="https://mp.weixin.qq.com/s/uUNTH06_s6yzy5urtjPMsg">干货满满的 Go Modules 知识分享</a></li>
+<li><a href="https://mp.weixin.qq.com/s/0g89yj9sc1oIz9kS9ZIAEA">Go1.16 新特性：Go mod 的后悔药，仅需这一招</a></li>
+</ul>
+<p>在近期 Go1.17 发布后，Go modules 带来了两大更新，煎鱼摩拳擦掌，他们分别是：</p>
+<ul>
+<li>模块依赖图裁剪（module graph pruning）</li>
+<li>延时模块加载（lazy module loading）</li>
+</ul>
+<p>今天带大家一起来了解这两块内容，争取了解其为何物，背景又是什么。</p>
+<h2 id="背景">背景<a href="#背景" class="anchor" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 7h3a5 5 0 0 1 5 5 5 5 0 0 1-5 5h-3m-6 0H6a5 5 0 0 1-5-5 5 5 0 0 1 5-5h3"></path><line x1="8" y1="12" x2="16" y2="12"></line></svg></a></h2>
+<p>在日常的 Go 工程开发中，不知道你有没有遇到过 Go modules 的一个奇怪的点。大家没说，就以为是正确的，默认就接受了。</p>
+<p>引用官方的 <a href="https://github.com/golang/go/blob/4012fea822763ef3aa66dd949fa95b9f8d89450a/src/cmd/go/testdata/script/mod_lazy_new_import.txt" title="mod_lazy_new_import.txt">mod_lazy_new_import.txt</a> 的案例来说，就是假设我们在代码中：</p>
+<ul>
+<li>main module 是 lazy。其导入了 module A 的 package x，package x 又导入了 module B。</li>
+<li>main module lazy 也相当于同时导入了 module A 的 package y。</li>
+<li>module A 的 package y 又导入了 module C 的 package z。</li>
+</ul>
+<p>关联如下图所示：</p>
+<p><img src="https://image.eddycjy.com/d535e2d41648a346c08c41ac38eff6b9.jpg" alt="module 关联图示"></p>
+<p>这个 Go 程序如果运行起来，会发生什么情况呢？<strong>在 Go1.17 以前，如果你不存在 module C 的 package z</strong>，程序在编译构建的时候就会报错，提示找不到。</p>
+<p>实际上 module C 的 package z 并没有<strong>对你主程序有任何建设意义</strong>，俗话来讲就是 “占着茅坑不拉屎”。</p>
+<p>他只是因为 main module 在导入 module A 时，也被 “间接” 导入了 package y 的依赖，也就是我们常看到的 go.mod 文件中的 “indirect” 标识，他们会导致构建失败，让人直呼无奈。</p>
+<h2 id="go117-module-改进">Go1.17 module 改进<a href="#go117-module-改进" class="anchor" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 7h3a5 5 0 0 1 5 5 5 5 0 0 1-5 5h-3m-6 0H6a5 5 0 0 1-5-5 5 5 0 0 1 5-5h3"></path><line x1="8" y1="12" x2="16" y2="12"></line></svg></a></h2>
+<p>显然，社区反馈希望避免看到 “不相关” 的传递依赖等，也因此有了 Go1.17 的 module 改造。</p>
+<p><img src="https://files.mdnice.com/user/3610/e69f5155-3334-462f-b021-bee477c62c49.png" alt=""></p>
+<p>接下来的 module 例子我们将会结合提案 <a href="https://go.googlesource.com/proposal/+/master/design/36460-lazy-module-loading.md" title="Proposal: Lazy Module Loading">《Proposal: Lazy Module Loading》</a> 、<a href="https://github.com/golang/go/issues/36460" title="cmd/go: module graph pruning and lazy module loading">《cmd/go: module graph pruning and lazy module loading》</a> 以及 《<a href="https://golang.google.cn/ref/mod#graph-pruning" title="Module graph pruning">Module graph pruning</a>》的内容、案例来进行说明和介绍。</p>
+<h3 id="module-graph-pruning">module graph pruning<a href="#module-graph-pruning" class="anchor" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 7h3a5 5 0 0 1 5 5 5 5 0 0 1-5 5h-3m-6 0H6a5 5 0 0 1-5-5 5 5 0 0 1 5-5h3"></path><line x1="8" y1="12" x2="16" y2="12"></line></svg></a></h3>
+<p>第一个改进就是模块依赖图裁剪（module graph pruning），这是这个版本 module 优化的基础。</p>
+<p>在 Go1.17 以前，只要该项目的 go.mod 文件分析出来你存在间接的依赖，如果你没有安装过该依赖，就会出现报错。</p>
+<p>错误提示如下：</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-golang" data-lang="golang"><span class="line"><span class="cl"><span class="err">$</span> <span class="k">go</span> <span class="nx">build</span>
+</span></span><span class="line"><span class="cl"><span class="k">go</span><span class="p">:</span> <span class="nx">example</span><span class="p">.</span><span class="nx">com</span><span class="o">/</span><span class="nx">a</span><span class="err">@</span><span class="nx">v0</span><span class="mf">.1.0</span> <span class="nx">requires</span>
+</span></span><span class="line"><span class="cl"> <span class="nx">example</span><span class="p">.</span><span class="nx">com</span><span class="o">/</span><span class="nx">c</span><span class="err">@</span><span class="nx">v0</span><span class="mf">.1.0</span><span class="p">:</span> <span class="nx">missing</span> <span class="k">go</span><span class="p">.</span><span class="nx">sum</span> <span class="nx">entry</span><span class="p">;</span> <span class="nx">to</span> <span class="nx">add</span> <span class="nx">it</span><span class="p">:</span>
+</span></span><span class="line"><span class="cl"> <span class="k">go</span> <span class="nx">mod</span> <span class="nx">download</span> <span class="nx">example</span><span class="p">.</span><span class="nx">com</span><span class="o">/</span><span class="nx">c</span>
+</span></span></code></pre></div><p>这个时候我们都会默默地去安装一遍&hellip;没想过这是间接依赖，和我们的程序没一点直接的代码关系。</p>
+<p>在 Go1.17 及之后就变了，go.mod 文件如下，会存在 2 块 require 代码块：</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-golang" data-lang="golang"><span class="line"><span class="cl"><span class="nx">module</span> <span class="nx">example</span><span class="p">.</span><span class="nx">com</span><span class="o">/</span><span class="nx">lazy</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="k">go</span> <span class="mf">1.17</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="nx">require</span> <span class="nx">example</span><span class="p">.</span><span class="nx">com</span><span class="o">/</span><span class="nx">a</span> <span class="nx">v0</span><span class="mf">.1.0</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="nx">require</span> <span class="nx">example</span><span class="p">.</span><span class="nx">com</span><span class="o">/</span><span class="nx">b</span> <span class="nx">v0</span><span class="mf">.1.0</span> <span class="c1">// indirect
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="o">...</span>
+</span></span></code></pre></div><p>这就是区别，第一块的 require 我们眼熟，那分拆出来的第二块 require 的是什么呢？</p>
+<p>这就是那些模块的间接依赖（常见到的 indirect 标识依赖）。可以理解为像是其他语言的 xxx.lock 文件一样的存在。</p>
+<p>此处分析出来的间接依赖，将会不会像以前一样阻碍编译构建，只会真正有使用到的才会进行识别。</p>
+<h3 id="lazy-module-loading">lazy module loading<a href="#lazy-module-loading" class="anchor" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 7h3a5 5 0 0 1 5 5 5 5 0 0 1-5 5h-3m-6 0H6a5 5 0 0 1-5-5 5 5 0 0 1 5-5h3"></path><line x1="8" y1="12" x2="16" y2="12"></line></svg></a></h3>
+<p>第二个改进是延时模块加载（lazy module loading），是基于模块依赖图裁剪（module graph pruning）的场景上的进一步优化。</p>
+<p>也就是以往那些没被使用到的，但又间接依赖的模块。在 Go1.17 及以后不会被 Go 命令读取和加载，只有真正需要的时候才会加载。</p>
+<h3 id="副作用">副作用<a href="#副作用" class="anchor" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 7h3a5 5 0 0 1 5 5 5 5 0 0 1-5 5h-3m-6 0H6a5 5 0 0 1-5-5 5 5 0 0 1 5-5h3"></path><line x1="8" y1="12" x2="16" y2="12"></line></svg></a></h3>
+<p>Go module 依赖图裁剪也带来了一个副作用，那就是 go.mod 文件 size 会变大。</p>
+<p>在 Go 1.17 版本之后，每次 go mod tidy（当go.mod中的go版本为1.17时），Go 命令都会对 main module 的依赖做一次深度扫描（deepening scan）。</p>
+<p>该操作将 main module 的所有直接和间接依赖都记录在 go.mod 中，考虑到内容较多，Go 1.17 将直接依赖和间接依赖分别放在两个不同的 require 代码块中。</p>
+<p>也就是上文所见到的内容。</p>
+<h2 id="总结">总结<a href="#总结" class="anchor" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 7h3a5 5 0 0 1 5 5 5 5 0 0 1-5 5h-3m-6 0H6a5 5 0 0 1-5-5 5 5 0 0 1 5-5h3"></path><line x1="8" y1="12" x2="16" y2="12"></line></svg></a></h2>
+<p>自从 Go 语言推出 Go modules 依赖，module 一直不断地在优化和改进。虽然看上去已经越来越好用了，但依然似乎存在不少问题。</p>
+<p>就拿本次变更来讲，我也是在好朋友的 Go 微信群中看到提问，才思考了起来。因为大家看到第二块 require 时，虽然知道是间接依赖的包，但更明确，为什么要单独出来？</p>
+<p>大家其实是不大理解的，本次变更也可能存在语义不清，不够明确的情况。但无论如何，后续我们可以继续观察。</p>
+
+			</div>
+			<hr class="post-end">
+			<footer class="post-info">
+				<p>
+					<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-tag meta-icon"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"></path><line x1="7" y1="7" x2="7" y2="7"></line></svg><span class="tag"><a href="https://wangtu2022.github.io/tags/go">go</a></span>
+				</p>
+				<p><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-file-text"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>262 Words</p>
+				<p><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-calendar"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>2021-12-31 12:55 &#43;0800</p>
+			</footer>
+		</article>
+		<aside id="toc">
+			<div class="toc-title">Table of Contents</div>
+			<nav id="TableOfContents">
+  <ul>
+    <li><a href="#背景">背景</a></li>
+    <li><a href="#go117-module-改进">Go1.17 module 改进</a>
+      <ul>
+        <li><a href="#module-graph-pruning">module graph pruning</a></li>
+        <li><a href="#lazy-module-loading">lazy module loading</a></li>
+        <li><a href="#副作用">副作用</a></li>
+      </ul>
+    </li>
+    <li><a href="#总结">总结</a></li>
+  </ul>
+</nav>
+		</aside>
+		<div class="post-nav thin">
+			<a class="next-post" href="https://wangtu2022.github.io/posts/go/117-performance/">
+				<span class="post-nav-label"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-arrow-left"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>&nbsp;Newer</span><br><span>Go1.17 新特性，凭什么提速 5~10%？</span>
+			</a>
+			<a class="prev-post" href="https://wangtu2022.github.io/posts/go/site-history/">
+				<span class="post-nav-label">Older&nbsp;<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-arrow-right"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg></span><br><span>分久必合，golang.org 将成为历史！</span>
+			</a>
+		</div>
+		<div id="comments" class="thin">
+</div>
+	</main>
+
+	<footer id="site-footer" class="section-inner thin animated fadeIn faster">
+		<p>&copy; 2022 <a href="https://wangtu2022.github.io/">煎鱼</a> &#183; <a href="http://www.beian.miit.gov.cn/">粤ICP备19076352号</a></p>
+		<p>
+			Made with <a href="https://gohugo.io/" target="_blank" rel="noopener">Hugo</a> &#183; Theme <a href="https://github.com/Track3/hermit" target="_blank" rel="noopener">Hermit</a> &#183; <a href="https://wangtu2022.github.io/posts/index.xml" target="_blank" title="rss"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-rss"><path d="M4 11a9 9 0 0 1 9 9"></path><path d="M4 4a16 16 0 0 1 16 16"></path><circle cx="5" cy="19" r="1"></circle></svg></a>
+		</p>
+	</footer>
+
+
+
+	<script src="https://wangtu2022.github.io/js/bundle.min.580988ed2982bcbb74a1773c7abea97b43e4c43b9324e10cda0813ec6ec4bb67.js" integrity="sha256-WAmI7SmCvLt0oXc8er6pe0PkxDuTJOEM2ggT7G7Eu2c=" crossorigin="anonymous"></script>
+	
+<script type="application/javascript">
+var doNotTrack = false;
+if (!doNotTrack) {
+	window.ga=window.ga||function(){(ga.q=ga.q||[]).push(arguments)};ga.l=+new Date;
+	ga('create', 'UA-166045776-1', 'auto');
+	
+	ga('send', 'pageview');
+}
+</script>
+<script async src='https://www.google-analytics.com/analytics.js'></script>
+
+
+</body>
+
+</html>

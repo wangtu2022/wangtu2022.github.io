@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>grpc-gateway on 煎鱼</title>
+    <link>https://wangtu2022.github.io/tags/grpc-gateway/</link>
+    <description>Recent content in grpc-gateway on 煎鱼</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>zh-hans</language>
+    <copyright>This work is licensed under a Creative Commons Attribution-NonCommercial 4.0 International License.</copyright>
+    <lastBuildDate>Sat, 22 Jun 2019 12:00:00 +0000</lastBuildDate><atom:link href="https://wangtu2022.github.io/tags/grpc-gateway/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>「连载四」gRPC&#43;gRPC Gateway 能不能不用证书？</title>
+      <link>https://wangtu2022.github.io/posts/go/grpc-gateway/2019-06-22-grpc-gateway-tls/</link>
+      <pubDate>Sat, 22 Jun 2019 12:00:00 +0000</pubDate>
+      
+      <guid>https://wangtu2022.github.io/posts/go/grpc-gateway/2019-06-22-grpc-gateway-tls/</guid>
+      <description>如果你以前有涉猎过 gRPC+gRPC Gateway 这两个组件，你肯定会遇到这个问题，就是 “为什么非得开 TLS，才能够实现同端口双流量，能不能不开？” 又或是 “我不想用证书就实现这些功能，行不行？”。我被无数的人问过无数次这些问题，也说服过很多人，但说服归说服，不代表放弃。前年不行，不代表今年不行，在今天我希望分享来龙去脉和具体的实现方式给你。
+过去 为什么 h2 不行 因为 net/http2 仅支持 &amp;ldquo;h2&amp;rdquo; 标识，而 &amp;ldquo;h2&amp;rdquo; 标识 HTTP/2 必须使用传输层安全性（TLS）的协议，此标识符用于 TLS 应用层协议协商字段以及识别 HTTP/2 over TLS。
+简单来讲，也就 net/http2 必须使用 TLS 来交互。通俗来讲就要用证书，那么理所当然，也就无法支持非 TLS 的情况了。</description>
+    </item>
+    
+    <item>
+      <title>「连载三」Swagger了解一下</title>
+      <link>https://wangtu2022.github.io/posts/go/grpc-gateway/2018-03-04-swagger/</link>
+      <pubDate>Sun, 04 Mar 2018 12:00:00 +0000</pubDate>
+      
+      <guid>https://wangtu2022.github.io/posts/go/grpc-gateway/2018-03-04-swagger/</guid>
+      <description>在上一节，我们完成了一个服务端同时支持Rpc和RESTful Api后，你以为自己大功告成了，结果突然发现要写Api文档和前端同事对接= = 。。。
+你寻思有没有什么组件能够自动化生成Api文档来解决这个问题，就在这时你发现了Swagger，一起了解一下吧！
+介绍 Swagger Swagger是全球最大的OpenAPI规范（OAS）API开发工具框架，支持从设计和文档到测试和部署的整个API生命周期的开发
+Swagger是目前最受欢迎的RESTful Api文档生成工具之一，主要的原因如下
+跨平台、跨语言的支持 强大的社区 生态圈 Swagger Tools（Swagger Editor、Swagger Codegen、Swagger UI &amp;hellip;） 强大的控制台 同时grpc-gateway也支持Swagger
+[image]
+OpenAPI规范 OpenAPI规范是Linux基金会的一个项目，试图通过定义一种用来描述API格式或API定义的语言，来规范RESTful服务开发过程。OpenAPI规范帮助我们描述一个API的基本信息，比如：
+有关该API的一般性描述 可用路径（/资源） 在每个路径上的可用操作（获取/提交&amp;hellip;） 每个操作的输入/输出格式 目前V2.0版本的OpenAPI规范（也就是SwaggerV2.0规范）已经发布并开源在github上。该文档写的非常好，结构清晰，方便随时查阅。
+注：OpenAPI规范的介绍引用自原文</description>
+    </item>
+    
+    <item>
+      <title>「连载二」Hello World</title>
+      <link>https://wangtu2022.github.io/posts/go/grpc-gateway/2018-02-27-hello-world/</link>
+      <pubDate>Tue, 27 Feb 2018 12:00:00 +0000</pubDate>
+      
+      <guid>https://wangtu2022.github.io/posts/go/grpc-gateway/2018-02-27-hello-world/</guid>
+      <description>这节将开始编写一个复杂的Hello World，涉及到许多的知识，建议大家认真思考其中的概念
+需求 由于本实践偏向Grpc+Grpc Gateway的方面，我们的需求是同一个服务端支持Rpc和Restful Api，那么就意味着http2、TLS等等的应用，功能方面就是一个服务端能够接受来自grpc和Restful Api的请求并响应
+一、初始化目录 我们先在$GOPATH中新建grpc-hello-world文件夹，我们项目的初始目录目录如下：
+grpc-hello-world/ ├── certs ├── client ├── cmd ├── pkg ├── proto │ ├── google │ │ └── api └── server certs：证书凭证 client：客户端 cmd：命令行 pkg：第三方公共模块 proto：protobuf的一些相关文件（含.</description>
+    </item>
+    
+    <item>
+      <title>「连载一」gRPC介绍与环境安装</title>
+      <link>https://wangtu2022.github.io/posts/go/grpc-gateway/2018-02-23-install/</link>
+      <pubDate>Fri, 23 Feb 2018 12:00:00 +0000</pubDate>
+      
+      <guid>https://wangtu2022.github.io/posts/go/grpc-gateway/2018-02-23-install/</guid>
+      <description>假定我们有一个项目需求，希望用Rpc作为内部API的通讯，同时也想对外提供Restful Api，写两套又太繁琐不符合
+于是我们想到了Grpc以及Grpc Gateway，这就是我们所需要的
+准备环节 在正式开始我们的Grpc+Grpc Gateway实践前，我们需要先配置好我们的开发环境
+Grpc Protoc Plugin Protocol Buffers Grpc-gateway Grpc 是什么 Google对Grpc的定义：
+A high performance, open-source universal RPC framework
+也就是Grpc是一个高性能、开源的通用RPC框架，具有以下特性：
+强大的IDL，使用Protocol Buffers作为数据交换的格式，支持v2、v3（推荐v3） 跨语言、跨平台，也就是Grpc支持多种平台和语言 支持HTTP2，双向传输、多路复用、认证等 安装 1、官方推荐（需科学上网）</description>
+    </item>
+    
+  </channel>
+</rss>

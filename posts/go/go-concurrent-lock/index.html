@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="zh-hans">
+
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<meta http-equiv="X-UA-Compatible" content="ie=edge">
+	<meta name="theme-color" content="#494f5c">
+	<meta name="msapplication-TileColor" content="#494f5c">
+<meta itemprop="name" content="Go 并发：一些有趣的现象和要避开的 “坑”">
+<meta itemprop="description" content="大家好，我是煎鱼。
+最近在看 Go 并发相关的内容，发现还是有不少细节容易让人迷迷糊糊的，一个不小心就踏入深坑里，且指不定要在上线跑了一些数据后才能发现，那可真是太人崩溃了。
+今天来分享几个案例，希望大家在编码时能够避开这几个 “坑”。
+案例一 演示代码 第一个案例来自 @鸟窝 大佬在极客时间的分享，代码如下：
+func main() { count := 0 wg := sync.WaitGroup{} wg.Add(10) for i := 0; i &lt; 10; i&#43;&#43; { go func() { defer wg."><meta itemprop="datePublished" content="2020-12-10T00:25:59+08:00" />
+<meta itemprop="dateModified" content="2020-12-10T00:25:59+08:00" />
+<meta itemprop="wordCount" content="363">
+<meta itemprop="keywords" content="go," /><meta property="og:title" content="Go 并发：一些有趣的现象和要避开的 “坑”" />
+<meta property="og:description" content="大家好，我是煎鱼。
+最近在看 Go 并发相关的内容，发现还是有不少细节容易让人迷迷糊糊的，一个不小心就踏入深坑里，且指不定要在上线跑了一些数据后才能发现，那可真是太人崩溃了。
+今天来分享几个案例，希望大家在编码时能够避开这几个 “坑”。
+案例一 演示代码 第一个案例来自 @鸟窝 大佬在极客时间的分享，代码如下：
+func main() { count := 0 wg := sync.WaitGroup{} wg.Add(10) for i := 0; i &lt; 10; i&#43;&#43; { go func() { defer wg." />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://wangtu2022.github.io/posts/go/go-concurrent-lock/" /><meta property="article:section" content="posts" />
+<meta property="article:published_time" content="2020-12-10T00:25:59+08:00" />
+<meta property="article:modified_time" content="2020-12-10T00:25:59+08:00" />
+
+<meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="Go 并发：一些有趣的现象和要避开的 “坑”"/>
+<meta name="twitter:description" content="大家好，我是煎鱼。
+最近在看 Go 并发相关的内容，发现还是有不少细节容易让人迷迷糊糊的，一个不小心就踏入深坑里，且指不定要在上线跑了一些数据后才能发现，那可真是太人崩溃了。
+今天来分享几个案例，希望大家在编码时能够避开这几个 “坑”。
+案例一 演示代码 第一个案例来自 @鸟窝 大佬在极客时间的分享，代码如下：
+func main() { count := 0 wg := sync.WaitGroup{} wg.Add(10) for i := 0; i &lt; 10; i&#43;&#43; { go func() { defer wg."/>
+
+	<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+	<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+	<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+	<link rel="manifest" href="/site.webmanifest">
+	<link rel="mask-icon" href="/safari-pinned-tab.svg" color="">
+	<link rel="shortcut icon" href="/favicon.ico">
+
+	<title>Go 并发：一些有趣的现象和要避开的 “坑”</title>
+	<link rel="stylesheet" href="https://wangtu2022.github.io/css/style.min.d3141168199607bf3a517216ce3c263814eecdbc8fca72a9a88700799a838219.css" integrity="sha256-0xQRaBmWB786UXIWzjwmOBTuzbyPynKpqIcAeZqDghk=" crossorigin="anonymous">
+	
+	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.1/css/all.min.css">
+	<link rel="stylesheet" href="https://wangtu2022.github.io/css/styles.css">
+</head>
+
+<body id="page">
+	
+	<header id="site-header" class="animated slideInUp">
+		<div class="hdr-wrapper section-inner">
+			<div class="hdr-left">
+				<div class="site-branding">
+					<a href="https://wangtu2022.github.io/">煎鱼</a>
+				</div>
+				<nav class="site-nav hide-in-mobile">
+					
+				<a href="https://wangtu2022.github.io/posts/">文章</a>
+				<a href="https://wangtu2022.github.io/tags/">标签</a>
+				<a href="https://wangtu2022.github.io/about/">关于</a>
+
+				</nav>
+			</div>
+			<div class="hdr-right hdr-icons">
+				<button id="toc-btn" class="hdr-btn desktop-only-ib" title="Table of Contents"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-list"><line x1="8" y1="6" x2="21" y2="6"></line><line x1="8" y1="12" x2="21" y2="12"></line><line x1="8" y1="18" x2="21" y2="18"></line><line x1="3" y1="6" x2="3" y2="6"></line><line x1="3" y1="12" x2="3" y2="12"></line><line x1="3" y1="18" x2="3" y2="18"></line></svg></button><span class="hdr-social hide-in-mobile"><a href="https://github.com/eddycjy" target="_blank" rel="noopener me" title="Github"><svg xmlns="http://www.w3.org/2000/svg" class="feather" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"></path></svg></a></span><button id="menu-btn" class="hdr-btn" title="Menu"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-menu"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg></button>
+			</div>
+		</div>
+	</header>
+	<div id="mobile-menu" class="animated fast">
+		<ul>
+			<li><a href="https://wangtu2022.github.io/posts/">文章</a></li>
+			<li><a href="https://wangtu2022.github.io/tags/">标签</a></li>
+			<li><a href="https://wangtu2022.github.io/about/">关于</a></li>
+		</ul>
+	</div>
+
+
+	<main class="site-main section-inner animated fadeIn faster">
+		<article class="thin">
+			<header class="post-header">
+				<div class="post-meta"><span>Dec 10, 2020</span></div>
+				<h1>Go 并发：一些有趣的现象和要避开的 “坑”</h1>
+			</header>
+			<div class="content">
+				<p>大家好，我是煎鱼。</p>
+<p>最近在看 Go 并发相关的内容，发现还是有不少细节容易让人迷迷糊糊的，一个不小心就踏入深坑里，且指不定要在上线跑了一些数据后才能发现，那可真是太人崩溃了。</p>
+<p>今天来分享几个案例，希望大家在编码时能够避开这几个 “坑”。</p>
+<h2 id="案例一">案例一<a href="#案例一" class="anchor" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 7h3a5 5 0 0 1 5 5 5 5 0 0 1-5 5h-3m-6 0H6a5 5 0 0 1-5-5 5 5 0 0 1 5-5h3"></path><line x1="8" y1="12" x2="16" y2="12"></line></svg></a></h2>
+<h3 id="演示代码">演示代码<a href="#演示代码" class="anchor" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 7h3a5 5 0 0 1 5 5 5 5 0 0 1-5 5h-3m-6 0H6a5 5 0 0 1-5-5 5 5 0 0 1 5-5h3"></path><line x1="8" y1="12" x2="16" y2="12"></line></svg></a></h3>
+<p>第一个案例来自 @鸟窝 大佬在极客时间的分享，代码如下：</p>
+<pre tabindex="0"><code>func main() {
+	count := 0
+	wg := sync.WaitGroup{}
+	wg.Add(10)
+	for i := 0; i &lt; 10; i++ {
+		go func() {
+			defer wg.Done()
+			for j := 0; j &lt; 100000; j++ {
+				count++
+			}
+		}()
+	}
+	wg.Wait()
+
+	fmt.Println(count)
+}
+</code></pre><p>思考一下，最后输出的 <code>count</code> 变量的值是多少？是不是一百万？</p>
+<h3 id="输出结果">输出结果<a href="#输出结果" class="anchor" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 7h3a5 5 0 0 1 5 5 5 5 0 0 1-5 5h-3m-6 0H6a5 5 0 0 1-5-5 5 5 0 0 1 5-5h3"></path><line x1="8" y1="12" x2="16" y2="12"></line></svg></a></h3>
+<p>在上述代码中，我们通过 <code>for-loop </code> 循环起 <code>goroutine</code> 进行自增，并使用了 <code>sync.WaitGroup</code> 来保证所有的 goroutine 都执行完毕才输出最终的结果值。</p>
+<p>最终的输出结果如下：</p>
+<pre tabindex="0"><code>// 第一次执行
+638853
+
+// 第二次执行
+654473
+
+// 第三次执行
+786193
+</code></pre><p>输出的结果值不是恒定的，也就是每次输出的都不一样，且基本不会达到想象中的一百万。</p>
+<h3 id="分析原因">分析原因<a href="#分析原因" class="anchor" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 7h3a5 5 0 0 1 5 5 5 5 0 0 1-5 5h-3m-6 0H6a5 5 0 0 1-5-5 5 5 0 0 1 5-5h3"></path><line x1="8" y1="12" x2="16" y2="12"></line></svg></a></h3>
+<p>其原因在于 <code>count++</code> 并不是一个原子操作，在汇编上就包含了好几个动作，如下：</p>
+<pre tabindex="0"><code>MOVQ &#34;&#34;.count(SB), AX 
+LEAQ 1(AX), CX 
+MOVQ CX, &#34;&#34;.count(SB)
+</code></pre><p>因为可能会同时存在多个 goroutine 同时读取到 <code>count</code> 的值为 1212，并各自自增 1，再将其写回。</p>
+<p>与此同时也会有其他的 goroutine 可能也在其自增时读到了值，形成了互相覆盖的情况，这是一种并发访问共享数据的错误。</p>
+<h3 id="发现问题">发现问题<a href="#发现问题" class="anchor" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 7h3a5 5 0 0 1 5 5 5 5 0 0 1-5 5h-3m-6 0H6a5 5 0 0 1-5-5 5 5 0 0 1 5-5h3"></path><line x1="8" y1="12" x2="16" y2="12"></line></svg></a></h3>
+<p>这类竞争问题可以通过 Go 语言所提供的的 race 检测（<a href="https://blog.golang.org/race-detector">Go race detector</a>）来进行分析和发现：</p>
+<pre tabindex="0"><code>$ go run -race main.go 
+==================
+WARNING: DATA RACE
+Read at 0x00c0000c6008 by goroutine 13:
+  main.main.func1()
+      /Users/eddycjy/go-application/awesomeProject/main.go:28 +0x78
+
+Previous write at 0x00c0000c6008 by goroutine 7:
+  main.main.func1()
+      /Users/eddycjy/go-application/awesomeProject/main.go:28 +0x91
+
+Goroutine 13 (running) created at:
+  main.main()
+      /Users/eddycjy/go-application/awesomeProject/main.go:25 +0xe4
+
+Goroutine 7 (running) created at:
+  main.main()
+      /Users/eddycjy/go-application/awesomeProject/main.go:25 +0xe4
+==================
+...
+489194
+Found 3 data race(s)
+exit status 66
+</code></pre><p>编译器会通过探测所有的内存访问，监听其内存地址的访问（读或写）。在应用运行时就能够发现对共享变量的访问和操作，进而发现问题并打印出相关的警告信息。</p>
+<p>需要注意的一点是，<code>go run -race</code> 是运行时检测，并不是编译时。且 race 存在明确的性能开销，通常是正常程序的十倍，因此不要想不开在生产环境打开这个配置，很容易翻车。</p>
+<h2 id="案例二">案例二<a href="#案例二" class="anchor" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 7h3a5 5 0 0 1 5 5 5 5 0 0 1-5 5h-3m-6 0H6a5 5 0 0 1-5-5 5 5 0 0 1 5-5h3"></path><line x1="8" y1="12" x2="16" y2="12"></line></svg></a></h2>
+<h3 id="演示代码-1">演示代码<a href="#演示代码-1" class="anchor" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 7h3a5 5 0 0 1 5 5 5 5 0 0 1-5 5h-3m-6 0H6a5 5 0 0 1-5-5 5 5 0 0 1 5-5h3"></path><line x1="8" y1="12" x2="16" y2="12"></line></svg></a></h3>
+<p>第二个案例来自煎鱼在脑子的分享，代码如下：</p>
+<pre tabindex="0"><code>func main() {
+	wg := sync.WaitGroup{}
+	wg.Add(5)
+	for i := 0; i &lt; 5; i++ {
+		go func(i int) {
+			defer wg.Done()
+			fmt.Println(i)
+		}(i)
+	}
+	wg.Wait()
+}
+</code></pre><p>思考一下，最后输出的结果是什么？值都是 4 吗？输出是稳定有序的吗？</p>
+<h3 id="输出结果-1">输出结果<a href="#输出结果-1" class="anchor" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 7h3a5 5 0 0 1 5 5 5 5 0 0 1-5 5h-3m-6 0H6a5 5 0 0 1-5-5 5 5 0 0 1 5-5h3"></path><line x1="8" y1="12" x2="16" y2="12"></line></svg></a></h3>
+<p>在上述代码中，我们通过 <code>for-loop</code> 循环起了多个 <code>goroutine</code>，并将变量 <code>i</code> 作为形参传递给了 <code>goroutine</code>，最后在 <code>goroutine</code> 内输出了变量 <code>i</code>。</p>
+<p>最终的输出结果如下：</p>
+<pre tabindex="0"><code>// 第一次输出
+0
+1
+2
+4
+3
+
+// 第二次输出
+4
+0
+1
+2
+3
+</code></pre><p>显然，从结果上来看，输出的值都是无序且不稳定的，值更不是 4。这到底是为什么？</p>
+<h3 id="分析原因-1">分析原因<a href="#分析原因-1" class="anchor" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 7h3a5 5 0 0 1 5 5 5 5 0 0 1-5 5h-3m-6 0H6a5 5 0 0 1-5-5 5 5 0 0 1 5-5h3"></path><line x1="8" y1="12" x2="16" y2="12"></line></svg></a></h3>
+<p>其原因在于，即使所有的 <code>goroutine</code> 都创建完了，但 <code>goroutine</code> 不一定已经开始运行了。</p>
+<p>也就是等到 <code>goroutine</code> 真正去执行输出时，变量 <code>i</code> （值拷贝）可能已经不是创建时的值了。</p>
+<p>其整个程序扭转实质上分为了多个阶段，也就是各自运行的时间线并不同，可以其拆分为：</p>
+<ul>
+<li>
+<p>先创建：<code>for-loop</code> 循环创建 <code>goroutine</code>。</p>
+</li>
+<li>
+<p>再调度：协程<code>goroutine</code> 开始调度执行。</p>
+</li>
+<li>
+<p>才执行：开始执行 <code>goroutine</code> 内的输出。</p>
+</li>
+</ul>
+<p>同时 <code>goroutine</code> 的调度存在一定的随机性（建议了解一下 GMP 模型），那么其输出的结果就势必是无序且不稳定的。</p>
+<h3 id="发现问题-1">发现问题<a href="#发现问题-1" class="anchor" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 7h3a5 5 0 0 1 5 5 5 5 0 0 1-5 5h-3m-6 0H6a5 5 0 0 1-5-5 5 5 0 0 1 5-5h3"></path><line x1="8" y1="12" x2="16" y2="12"></line></svg></a></h3>
+<p>这时候你可能会想，那前面提到的 <code>go run -race</code> 能不能发现这个问题呢。如下：</p>
+<pre tabindex="0"><code>$ go run -race main.go
+0
+1
+2
+3
+4
+</code></pre><p>没有出现警告，显然是不能的，因为其本质上并不是并发访问共享数据的错误，且会导致程序变成了串行，从而蒙蔽了你的双眼。</p>
+<h2 id="案例三">案例三<a href="#案例三" class="anchor" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 7h3a5 5 0 0 1 5 5 5 5 0 0 1-5 5h-3m-6 0H6a5 5 0 0 1-5-5 5 5 0 0 1 5-5h3"></path><line x1="8" y1="12" x2="16" y2="12"></line></svg></a></h2>
+<h3 id="演示代码-2">演示代码<a href="#演示代码-2" class="anchor" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 7h3a5 5 0 0 1 5 5 5 5 0 0 1-5 5h-3m-6 0H6a5 5 0 0 1-5-5 5 5 0 0 1 5-5h3"></path><line x1="8" y1="12" x2="16" y2="12"></line></svg></a></h3>
+<p>第三个案例来自煎鱼在梦里的分享，代码如下：</p>
+<pre tabindex="0"><code>func main() {
+	wg := sync.WaitGroup{}
+	wg.Add(5)
+	for i := 0; i &lt; 5; i++ {
+		go func() {
+			defer wg.Done()
+			fmt.Println(i)
+		}()
+	}
+	wg.Wait()
+}
+</code></pre><p>思考一下，最后输出的结果是什么？值都是 4 吗？会像案例二一样乱窜吗？</p>
+<h3 id="输出结果-2">输出结果<a href="#输出结果-2" class="anchor" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 7h3a5 5 0 0 1 5 5 5 5 0 0 1-5 5h-3m-6 0H6a5 5 0 0 1-5-5 5 5 0 0 1 5-5h3"></path><line x1="8" y1="12" x2="16" y2="12"></line></svg></a></h3>
+<p>在上述代码中，与案例二大体没有区别，主要是变量 <code>i</code> 没有作为形参传入。</p>
+<p>最终的输出结果如下：</p>
+<pre tabindex="0"><code>// 第一次输出
+5
+5
+5
+5
+5
+</code></pre><p>初步从输出的结果上来看都是 5，这时候就会有人迷糊了，为什么不是 4 呢？</p>
+<p>不少人会因不是 4 而陷入了迷惑，但千万不要被一两次的输出迷惑了心智，认为铁定就是 5 了。可以再动手多输出几次，如下：</p>
+<pre tabindex="0"><code>// 多输出几次
+5
+3
+5
+5
+5
+</code></pre><p>最终会发现&hellip;输出结果存在随机性，输出结果并不是 100% 都是 5，更不用提 4 了。这到底是为什么呢？</p>
+<h3 id="分析原因-2">分析原因<a href="#分析原因-2" class="anchor" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 7h3a5 5 0 0 1 5 5 5 5 0 0 1-5 5h-3m-6 0H6a5 5 0 0 1-5-5 5 5 0 0 1 5-5h3"></path><line x1="8" y1="12" x2="16" y2="12"></line></svg></a></h3>
+<p>其原因与案例二其实非常接近，理论上理解了案例二也就能解决案例三。</p>
+<p>其本质还是创建 <code>goroutine</code> 与真正执行 <code>fmt.Println</code> 并不同步。因此很有可能在你执行 <code>fmt.Println</code> 时，循环 <code>for-loop</code> 已经运行完毕，因此变量 <code>i</code> 的值最终变成了 5。</p>
+<p>那么相反，其也有可能没运行完，存在随机性。写个 test case 就能发现明显的不同。</p>
+<h2 id="总结">总结<a href="#总结" class="anchor" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 7h3a5 5 0 0 1 5 5 5 5 0 0 1-5 5h-3m-6 0H6a5 5 0 0 1-5-5 5 5 0 0 1 5-5h3"></path><line x1="8" y1="12" x2="16" y2="12"></line></svg></a></h2>
+<p>在本文中，我分享了几个近期看到次数最频繁的一些并发上的小 “坑”，希望对你有所帮助。同时你也可以回想一下，在你编写 Go 并发程序有没有也遇到过什么问题？</p>
+<p>同时你也可以回想一下，在你编写 Go 并发程序有没有也遇到过什么问题？</p>
+<p>欢迎大家一起讨论交流。</p>
+
+			</div>
+			<hr class="post-end">
+			<footer class="post-info">
+				<p>
+					<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-tag meta-icon"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"></path><line x1="7" y1="7" x2="7" y2="7"></line></svg><span class="tag"><a href="https://wangtu2022.github.io/tags/go">go</a></span>
+				</p>
+				<p><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-file-text"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>363 Words</p>
+				<p><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-calendar"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>2020-12-10 00:25 &#43;0800</p>
+			</footer>
+		</article>
+		<aside id="toc">
+			<div class="toc-title">Table of Contents</div>
+			<nav id="TableOfContents">
+  <ul>
+    <li><a href="#案例一">案例一</a>
+      <ul>
+        <li><a href="#演示代码">演示代码</a></li>
+        <li><a href="#输出结果">输出结果</a></li>
+        <li><a href="#分析原因">分析原因</a></li>
+        <li><a href="#发现问题">发现问题</a></li>
+      </ul>
+    </li>
+    <li><a href="#案例二">案例二</a>
+      <ul>
+        <li><a href="#演示代码-1">演示代码</a></li>
+        <li><a href="#输出结果-1">输出结果</a></li>
+        <li><a href="#分析原因-1">分析原因</a></li>
+        <li><a href="#发现问题-1">发现问题</a></li>
+      </ul>
+    </li>
+    <li><a href="#案例三">案例三</a>
+      <ul>
+        <li><a href="#演示代码-2">演示代码</a></li>
+        <li><a href="#输出结果-2">输出结果</a></li>
+        <li><a href="#分析原因-2">分析原因</a></li>
+      </ul>
+    </li>
+    <li><a href="#总结">总结</a></li>
+  </ul>
+</nav>
+		</aside>
+		<div class="post-nav thin">
+			<a class="next-post" href="https://wangtu2022.github.io/posts/go/go-error2panic/">
+				<span class="post-nav-label"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-arrow-left"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>&nbsp;Newer</span><br><span>Go 错误处理：用 panic 取代 err != nil 的模式</span>
+			</a>
+			<a class="prev-post" href="https://wangtu2022.github.io/posts/go/go2-errors/">
+				<span class="post-nav-label">Older&nbsp;<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-arrow-right"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg></span><br><span>先睹为快，Go2 Error 的挣扎之路</span>
+			</a>
+		</div>
+		<div id="comments" class="thin">
+</div>
+	</main>
+
+	<footer id="site-footer" class="section-inner thin animated fadeIn faster">
+		<p>&copy; 2022 <a href="https://wangtu2022.github.io/">煎鱼</a> &#183; <a href="http://www.beian.miit.gov.cn/">粤ICP备19076352号</a></p>
+		<p>
+			Made with <a href="https://gohugo.io/" target="_blank" rel="noopener">Hugo</a> &#183; Theme <a href="https://github.com/Track3/hermit" target="_blank" rel="noopener">Hermit</a> &#183; <a href="https://wangtu2022.github.io/posts/index.xml" target="_blank" title="rss"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-rss"><path d="M4 11a9 9 0 0 1 9 9"></path><path d="M4 4a16 16 0 0 1 16 16"></path><circle cx="5" cy="19" r="1"></circle></svg></a>
+		</p>
+	</footer>
+
+
+
+	<script src="https://wangtu2022.github.io/js/bundle.min.580988ed2982bcbb74a1773c7abea97b43e4c43b9324e10cda0813ec6ec4bb67.js" integrity="sha256-WAmI7SmCvLt0oXc8er6pe0PkxDuTJOEM2ggT7G7Eu2c=" crossorigin="anonymous"></script>
+	
+<script type="application/javascript">
+var doNotTrack = false;
+if (!doNotTrack) {
+	window.ga=window.ga||function(){(ga.q=ga.q||[]).push(arguments)};ga.l=+new Date;
+	ga('create', 'UA-166045776-1', 'auto');
+	
+	ga('send', 'pageview');
+}
+</script>
+<script async src='https://www.google-analytics.com/analytics.js'></script>
+
+
+</body>
+
+</html>

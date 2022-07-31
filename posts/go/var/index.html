@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="zh-hans">
+
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<meta http-equiv="X-UA-Compatible" content="ie=edge">
+	<meta name="theme-color" content="#494f5c">
+	<meta name="msapplication-TileColor" content="#494f5c">
+<meta itemprop="name" content="为什么 Go 有两种声明变量的方式，有什么区别，哪种好？">
+<meta itemprop="description" content="大家好，我是煎鱼。
+有一个读者刚入门 Go ，提了一个很有意思的问题：Go 有几种种声明变量的方式，作为初学者，到底用哪种，有什么区别，又为什么要有多种声明方式呢？
+为此，煎鱼将和大家一起探索这个问题。
+变量声明 在 Go 中，一共有 2 种变量声明的方式，各有不同的使用场景。
+分别是：
+标准变量声明（Variable declarations）。 简短变量声明（Short variable declarations） 标准声明 变量声明创建了一个或多个变量，为它们绑定了相应的标识符，并给每个变量一个类型和初始值。
+使用语法：
+VarDecl = &#34;var&#34; ( VarSpec | &#34;(&#34; { VarSpec &#34;;&#34; } &#34;)&#34; ) ."><meta itemprop="datePublished" content="2022-02-05T15:56:48+08:00" />
+<meta itemprop="dateModified" content="2022-02-05T15:56:48+08:00" />
+<meta itemprop="wordCount" content="302">
+<meta itemprop="keywords" content="go," /><meta property="og:title" content="为什么 Go 有两种声明变量的方式，有什么区别，哪种好？" />
+<meta property="og:description" content="大家好，我是煎鱼。
+有一个读者刚入门 Go ，提了一个很有意思的问题：Go 有几种种声明变量的方式，作为初学者，到底用哪种，有什么区别，又为什么要有多种声明方式呢？
+为此，煎鱼将和大家一起探索这个问题。
+变量声明 在 Go 中，一共有 2 种变量声明的方式，各有不同的使用场景。
+分别是：
+标准变量声明（Variable declarations）。 简短变量声明（Short variable declarations） 标准声明 变量声明创建了一个或多个变量，为它们绑定了相应的标识符，并给每个变量一个类型和初始值。
+使用语法：
+VarDecl = &#34;var&#34; ( VarSpec | &#34;(&#34; { VarSpec &#34;;&#34; } &#34;)&#34; ) ." />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://wangtu2022.github.io/posts/go/var/" /><meta property="article:section" content="posts" />
+<meta property="article:published_time" content="2022-02-05T15:56:48+08:00" />
+<meta property="article:modified_time" content="2022-02-05T15:56:48+08:00" />
+
+<meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="为什么 Go 有两种声明变量的方式，有什么区别，哪种好？"/>
+<meta name="twitter:description" content="大家好，我是煎鱼。
+有一个读者刚入门 Go ，提了一个很有意思的问题：Go 有几种种声明变量的方式，作为初学者，到底用哪种，有什么区别，又为什么要有多种声明方式呢？
+为此，煎鱼将和大家一起探索这个问题。
+变量声明 在 Go 中，一共有 2 种变量声明的方式，各有不同的使用场景。
+分别是：
+标准变量声明（Variable declarations）。 简短变量声明（Short variable declarations） 标准声明 变量声明创建了一个或多个变量，为它们绑定了相应的标识符，并给每个变量一个类型和初始值。
+使用语法：
+VarDecl = &#34;var&#34; ( VarSpec | &#34;(&#34; { VarSpec &#34;;&#34; } &#34;)&#34; ) ."/>
+
+	<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+	<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+	<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+	<link rel="manifest" href="/site.webmanifest">
+	<link rel="mask-icon" href="/safari-pinned-tab.svg" color="">
+	<link rel="shortcut icon" href="/favicon.ico">
+
+	<title>为什么 Go 有两种声明变量的方式，有什么区别，哪种好？</title>
+	<link rel="stylesheet" href="https://wangtu2022.github.io/css/style.min.d3141168199607bf3a517216ce3c263814eecdbc8fca72a9a88700799a838219.css" integrity="sha256-0xQRaBmWB786UXIWzjwmOBTuzbyPynKpqIcAeZqDghk=" crossorigin="anonymous">
+	
+	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.1/css/all.min.css">
+	<link rel="stylesheet" href="https://wangtu2022.github.io/css/styles.css">
+</head>
+
+<body id="page">
+	
+	<header id="site-header" class="animated slideInUp">
+		<div class="hdr-wrapper section-inner">
+			<div class="hdr-left">
+				<div class="site-branding">
+					<a href="https://wangtu2022.github.io/">煎鱼</a>
+				</div>
+				<nav class="site-nav hide-in-mobile">
+					
+				<a href="https://wangtu2022.github.io/posts/">文章</a>
+				<a href="https://wangtu2022.github.io/tags/">标签</a>
+				<a href="https://wangtu2022.github.io/about/">关于</a>
+
+				</nav>
+			</div>
+			<div class="hdr-right hdr-icons">
+				<button id="toc-btn" class="hdr-btn desktop-only-ib" title="Table of Contents"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-list"><line x1="8" y1="6" x2="21" y2="6"></line><line x1="8" y1="12" x2="21" y2="12"></line><line x1="8" y1="18" x2="21" y2="18"></line><line x1="3" y1="6" x2="3" y2="6"></line><line x1="3" y1="12" x2="3" y2="12"></line><line x1="3" y1="18" x2="3" y2="18"></line></svg></button><span class="hdr-social hide-in-mobile"><a href="https://github.com/eddycjy" target="_blank" rel="noopener me" title="Github"><svg xmlns="http://www.w3.org/2000/svg" class="feather" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"></path></svg></a></span><button id="menu-btn" class="hdr-btn" title="Menu"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-menu"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg></button>
+			</div>
+		</div>
+	</header>
+	<div id="mobile-menu" class="animated fast">
+		<ul>
+			<li><a href="https://wangtu2022.github.io/posts/">文章</a></li>
+			<li><a href="https://wangtu2022.github.io/tags/">标签</a></li>
+			<li><a href="https://wangtu2022.github.io/about/">关于</a></li>
+		</ul>
+	</div>
+
+
+	<main class="site-main section-inner animated fadeIn faster">
+		<article class="thin">
+			<header class="post-header">
+				<div class="post-meta"><span>Feb 5, 2022</span></div>
+				<h1>为什么 Go 有两种声明变量的方式，有什么区别，哪种好？</h1>
+			</header>
+			<div class="content">
+				<p>大家好，我是煎鱼。</p>
+<p>有一个读者刚入门 Go ，提了一个很有意思的问题：Go 有几种种声明变量的方式，作为初学者，到底用哪种，有什么区别，又为什么要有多种声明方式呢？</p>
+<p>为此，煎鱼将和大家一起探索这个问题。</p>
+<h2 id="变量声明">变量声明<a href="#变量声明" class="anchor" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 7h3a5 5 0 0 1 5 5 5 5 0 0 1-5 5h-3m-6 0H6a5 5 0 0 1-5-5 5 5 0 0 1 5-5h3"></path><line x1="8" y1="12" x2="16" y2="12"></line></svg></a></h2>
+<p>在 Go 中，一共有 2 种变量声明的方式，各有不同的使用场景。</p>
+<p>分别是：</p>
+<ul>
+<li>标准变量声明（Variable declarations）。</li>
+<li>简短变量声明（Short variable declarations）</li>
+</ul>
+<h3 id="标准声明">标准声明<a href="#标准声明" class="anchor" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 7h3a5 5 0 0 1 5 5 5 5 0 0 1-5 5h-3m-6 0H6a5 5 0 0 1-5-5 5 5 0 0 1 5-5h3"></path><line x1="8" y1="12" x2="16" y2="12"></line></svg></a></h3>
+<p>变量声明创建了一个或多个变量，为它们绑定了相应的标识符，并给每个变量一个类型和初始值。</p>
+<p>使用语法：</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-go" data-lang="go"><span class="line"><span class="cl"><span class="nx">VarDecl</span>     <span class="p">=</span> <span class="s">&#34;var&#34;</span> <span class="p">(</span> <span class="nx">VarSpec</span> <span class="p">|</span> <span class="s">&#34;(&#34;</span> <span class="p">{</span> <span class="nx">VarSpec</span> <span class="s">&#34;;&#34;</span> <span class="p">}</span> <span class="s">&#34;)&#34;</span> <span class="p">)</span> <span class="p">.</span>
+</span></span><span class="line"><span class="cl"><span class="nx">VarSpec</span>     <span class="p">=</span> <span class="nf">IdentifierList</span> <span class="p">(</span> <span class="nx">Type</span> <span class="p">[</span> <span class="s">&#34;=&#34;</span> <span class="nx">ExpressionList</span> <span class="p">]</span> <span class="p">|</span> <span class="s">&#34;=&#34;</span> <span class="nx">ExpressionList</span> <span class="p">)</span> <span class="p">.</span>
+</span></span></code></pre></div><p>案例代码：</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-go" data-lang="go"><span class="line"><span class="cl"><span class="kd">var</span> <span class="nx">i</span> <span class="kt">int</span>
+</span></span><span class="line"><span class="cl"><span class="kd">var</span> <span class="nx">U</span><span class="p">,</span> <span class="nx">V</span><span class="p">,</span> <span class="nx">W</span> <span class="kt">float64</span>
+</span></span><span class="line"><span class="cl"><span class="kd">var</span> <span class="nx">k</span> <span class="p">=</span> <span class="mi">0</span>
+</span></span><span class="line"><span class="cl"><span class="kd">var</span> <span class="nx">x</span><span class="p">,</span> <span class="nx">y</span> <span class="kt">float32</span> <span class="p">=</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">2</span>
+</span></span><span class="line"><span class="cl"><span class="kd">var</span> <span class="p">(</span>
+</span></span><span class="line"><span class="cl">	<span class="nx">i</span>       <span class="kt">int</span>
+</span></span><span class="line"><span class="cl">	<span class="nx">u</span><span class="p">,</span> <span class="nx">v</span><span class="p">,</span> <span class="nx">s</span> <span class="p">=</span> <span class="mf">1.0</span><span class="p">,</span> <span class="mf">2.0</span><span class="p">,</span> <span class="s">&#34;脑子进煎鱼了&#34;</span>
+</span></span><span class="line"><span class="cl"><span class="p">)</span>
+</span></span></code></pre></div><h3 id="简短声明">简短声明<a href="#简短声明" class="anchor" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 7h3a5 5 0 0 1 5 5 5 5 0 0 1-5 5h-3m-6 0H6a5 5 0 0 1-5-5 5 5 0 0 1 5-5h3"></path><line x1="8" y1="12" x2="16" y2="12"></line></svg></a></h3>
+<p>一个短变量声明。使用语法：</p>
+<pre tabindex="0"><code>ShortVarDecl = IdentifierList &#34;:=&#34; ExpressionList .
+</code></pre><p>案例代码：</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-go" data-lang="go"><span class="line"><span class="cl"><span class="nx">s</span> <span class="o">:=</span> <span class="s">&#34;煎鱼进脑子了&#34;</span>
+</span></span><span class="line"><span class="cl"><span class="nx">i</span><span class="p">,</span> <span class="nx">j</span> <span class="o">:=</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">10</span>
+</span></span><span class="line"><span class="cl"><span class="nx">f</span> <span class="o">:=</span> <span class="kd">func</span><span class="p">()</span> <span class="kt">int</span> <span class="p">{</span> <span class="k">return</span> <span class="mi">7</span> <span class="p">}</span>
+</span></span><span class="line"><span class="cl"><span class="nx">ch</span> <span class="o">:=</span> <span class="nb">make</span><span class="p">(</span><span class="kd">chan</span> <span class="kt">int</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="nx">r</span><span class="p">,</span> <span class="nx">w</span><span class="p">,</span> <span class="nx">_</span> <span class="o">:=</span> <span class="nx">os</span><span class="p">.</span><span class="nf">Pipe</span><span class="p">()</span>
+</span></span><span class="line"><span class="cl"><span class="nx">_</span><span class="p">,</span> <span class="nx">y</span><span class="p">,</span> <span class="nx">_</span> <span class="o">:=</span> <span class="nf">coord</span><span class="p">(</span><span class="nx">p</span><span class="p">)</span> 
+</span></span></code></pre></div><h2 id="网友疑惑">网友疑惑<a href="#网友疑惑" class="anchor" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 7h3a5 5 0 0 1 5 5 5 5 0 0 1-5 5h-3m-6 0H6a5 5 0 0 1-5-5 5 5 0 0 1 5-5h3"></path><line x1="8" y1="12" x2="16" y2="12"></line></svg></a></h2>
+<p>在我们群里的 Go 读者提了这问题后，我也搜了搜相关资料。发现在 stackoverflow 上也有人提出了类似的疑惑：</p>
+<p><img src="https://files.mdnice.com/user/3610/ff663b2b-d65a-4969-b5bb-03bc81a247b5.png" alt=""></p>
+<p>问题是：使用哪一种声明方式，令人困惑。</p>
+<p>题主纠结的原因在于：</p>
+<ul>
+<li>如果一个只是另一个的速记方式，为什么它们的行为会不同？</li>
+<li>Go 的作者出于什么考虑，让两种方式来声明一个变量（为什么不把它们合并成一种方式）？只是为了迷惑我们？</li>
+<li>有没有其他方面需要我在使用时留心的，以防掉进坑里？</li>
+</ul>
+<p>下面我们结合 stackoverflow 的这个提问内容和回答，进一步展开。</p>
+<p>思考一下：标准声明和短声明，这两者的区别的在哪那里，又或是凭喜好随意使用？</p>
+<h2 id="区别在哪">区别在哪<a href="#区别在哪" class="anchor" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 7h3a5 5 0 0 1 5 5 5 5 0 0 1-5 5h-3m-6 0H6a5 5 0 0 1-5-5 5 5 0 0 1 5-5h3"></path><line x1="8" y1="12" x2="16" y2="12"></line></svg></a></h2>
+<h3 id="代码块的分组声明">代码块的分组声明<a href="#代码块的分组声明" class="anchor" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 7h3a5 5 0 0 1 5 5 5 5 0 0 1-5 5h-3m-6 0H6a5 5 0 0 1-5-5 5 5 0 0 1 5-5h3"></path><line x1="8" y1="12" x2="16" y2="12"></line></svg></a></h3>
+<p>使用包含关键字 var 的声明语法时，和其他 package、import、const、type、var 等关键字一样，是可以进行分组的代码块声明的。</p>
+<p>例如：</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-go" data-lang="go"><span class="line"><span class="cl"><span class="kd">var</span> <span class="p">(</span>
+</span></span><span class="line"><span class="cl">	<span class="nx">i</span>       <span class="kt">int</span>
+</span></span><span class="line"><span class="cl">	<span class="nx">u</span><span class="p">,</span> <span class="nx">v</span><span class="p">,</span> <span class="nx">s</span> <span class="p">=</span> <span class="mf">1.0</span><span class="p">,</span> <span class="mf">2.0</span><span class="p">,</span> <span class="s">&#34;脑子进煎鱼了&#34;</span>
+</span></span><span class="line"><span class="cl"><span class="p">)</span>
+</span></span></code></pre></div><p>而短声明，是不支持的。</p>
+<h3 id="变量的初始值指定">变量的初始值指定<a href="#变量的初始值指定" class="anchor" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 7h3a5 5 0 0 1 5 5 5 5 0 0 1-5 5h-3m-6 0H6a5 5 0 0 1-5-5 5 5 0 0 1 5-5h3"></path><line x1="8" y1="12" x2="16" y2="12"></line></svg></a></h3>
+<p>使用标准的变量定义时，我们可以只声明，不主动地定义该变量的初始值（缺省会给零值）。</p>
+<p>例如：</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-go" data-lang="go"><span class="line"><span class="cl"><span class="kd">var</span> <span class="p">(</span>
+</span></span><span class="line"><span class="cl">	<span class="nx">i</span>    <span class="kt">int</span>
+</span></span><span class="line"><span class="cl">	<span class="nx">s</span>    <span class="kt">string</span>
+</span></span><span class="line"><span class="cl"><span class="p">)</span>
+</span></span></code></pre></div><p>而短声明则不行，必须要在程序中主动地去对变量定义一个值。</p>
+<p>例如：</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-go" data-lang="go"><span class="line"><span class="cl"><span class="nx">s</span> <span class="o">:=</span> <span class="s">&#34;脑子进煎鱼了&#34;</span>
+</span></span></code></pre></div><p>此处即使是定义的空字符串，那也属于是用户侧主动定义的，而非缺省的零值。</p>
+<h3 id="局部变量区分作用域">局部变量，区分作用域<a href="#局部变量区分作用域" class="anchor" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 7h3a5 5 0 0 1 5 5 5 5 0 0 1-5 5h-3m-6 0H6a5 5 0 0 1-5-5 5 5 0 0 1 5-5h3"></path><line x1="8" y1="12" x2="16" y2="12"></line></svg></a></h3>
+<p>在编写程序时，我们经常会有一些局部变量声明，且作用域是有限的。</p>
+<p>可以看看自己的代码，这种时候，我们都会采取短声明的方式。</p>
+<p>例如：</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-go" data-lang="go"><span class="line"><span class="cl"><span class="k">for</span> <span class="nx">idx</span><span class="p">,</span> <span class="nx">value</span> <span class="o">:=</span> <span class="k">range</span> <span class="nx">array</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="c1">// Do something with index and value
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="p">}</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="k">if</span> <span class="nx">num</span> <span class="o">:=</span> <span class="nx">runtime</span><span class="p">.</span><span class="nf">NumCPU</span><span class="p">();</span> <span class="nx">num</span> <span class="p">&gt;</span> <span class="mi">1</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="nx">fmt</span><span class="p">.</span><span class="nf">Println</span><span class="p">(</span><span class="s">&#34;Multicore CPU, cores:&#34;</span><span class="p">,</span> <span class="nx">num</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span></code></pre></div><p>短声明在这类场景下有明确的优势，标准的变量声明在这类场景不讨好。</p>
+<h3 id="重新声明变量">重新声明变量<a href="#重新声明变量" class="anchor" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 7h3a5 5 0 0 1 5 5 5 5 0 0 1-5 5h-3m-6 0H6a5 5 0 0 1-5-5 5 5 0 0 1 5-5h3"></path><line x1="8" y1="12" x2="16" y2="12"></line></svg></a></h3>
+<p>在 Go 语言规范中有明确提到，短变量声明是可以重新声明变量的，这是一个高频重新声明的覆盖动作。</p>
+<p>如下：</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-go" data-lang="go"><span class="line"><span class="cl"><span class="kd">var</span> <span class="nx">name</span> <span class="p">=</span> <span class="s">&#34;煎鱼.txt&#34;</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="nx">fi</span><span class="p">,</span> <span class="nx">err</span> <span class="o">:=</span> <span class="nx">os</span><span class="p">.</span><span class="nf">Stat</span><span class="p">(</span><span class="nx">name</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="k">if</span> <span class="nx">err</span> <span class="o">!=</span> <span class="kc">nil</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="nx">log</span><span class="p">.</span><span class="nf">Fatal</span><span class="p">(</span><span class="nx">err</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="nx">data</span><span class="p">,</span> <span class="nx">err</span> <span class="o">:=</span> <span class="nx">ioutil</span><span class="p">.</span><span class="nf">ReadFile</span><span class="p">(</span><span class="nx">name</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="k">if</span> <span class="nx">err</span> <span class="o">!=</span> <span class="kc">nil</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="nx">log</span><span class="p">.</span><span class="nf">Fatal</span><span class="p">(</span><span class="nx">err</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span><span class="line"><span class="cl"><span class="o">...</span>
+</span></span></code></pre></div><p>上述代码中，err 变量就是不断地被反复定义。在 <code>if err != nil</code> 猖狂的现在，短变量在此处的优势，简直是大杀器了。</p>
+<h2 id="总结">总结<a href="#总结" class="anchor" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 7h3a5 5 0 0 1 5 5 5 5 0 0 1-5 5h-3m-6 0H6a5 5 0 0 1-5-5 5 5 0 0 1 5-5h3"></path><line x1="8" y1="12" x2="16" y2="12"></line></svg></a></h2>
+<p>相信很多小伙伴初入门时都为此纠结过一下，又或是很多教程压根就没有说清楚两者变量声明的区别。</p>
+<p>在今天这篇文章中，我们介绍了 Go 的两种变量声明放水。并且针对短声明存在的场景进行了说明。</p>
+<p>主要是：</p>
+<ul>
+<li>代码块的分组声明。</li>
+<li>变量的初始值指定。</li>
+<li>局部变量，区分作用域。</li>
+<li>重新声明变量。</li>
+</ul>
+<p>你觉得变量声明上，还有没有别的优缺点呢，欢迎在评论区交流：）</p>
+<h2 id="参考">参考<a href="#参考" class="anchor" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 7h3a5 5 0 0 1 5 5 5 5 0 0 1-5 5h-3m-6 0H6a5 5 0 0 1-5-5 5 5 0 0 1 5-5h3"></path><line x1="8" y1="12" x2="16" y2="12"></line></svg></a></h2>
+<ul>
+<li><a href="https://www.tutorialandexample.com/golang-variable-declaration/">GoLang Variable Declaration</a></li>
+<li><a href="https://stackoverflow.com/questions/27919359/why-there-are-two-ways-of-declaring-variables-in-go-whats-the-difference-and-w">Why there are two ways of declaring variables in Go, what&rsquo;s the difference and which to use?</a></li>
+<li><a href="https://www.quora.com/What-is-the-best-practice-when-declaring-variables-in-go-golang-E-G-should-I-use-var-x-int-1-or-just-x-1">What is the best practice when declaring variables in go (golang)? E.G. should I use &ldquo;var x int = 1&rdquo; or just &ldquo;x := 1&rdquo;?</a></li>
+</ul>
+
+			</div>
+			<hr class="post-end">
+			<footer class="post-info">
+				<p>
+					<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-tag meta-icon"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"></path><line x1="7" y1="7" x2="7" y2="7"></line></svg><span class="tag"><a href="https://wangtu2022.github.io/tags/go">go</a></span>
+				</p>
+				<p><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-file-text"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>302 Words</p>
+				<p><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-calendar"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>2022-02-05 15:56 &#43;0800</p>
+			</footer>
+		</article>
+		<aside id="toc">
+			<div class="toc-title">Table of Contents</div>
+			<nav id="TableOfContents">
+  <ul>
+    <li><a href="#变量声明">变量声明</a>
+      <ul>
+        <li><a href="#标准声明">标准声明</a></li>
+        <li><a href="#简短声明">简短声明</a></li>
+      </ul>
+    </li>
+    <li><a href="#网友疑惑">网友疑惑</a></li>
+    <li><a href="#区别在哪">区别在哪</a>
+      <ul>
+        <li><a href="#代码块的分组声明">代码块的分组声明</a></li>
+        <li><a href="#变量的初始值指定">变量的初始值指定</a></li>
+        <li><a href="#局部变量区分作用域">局部变量，区分作用域</a></li>
+        <li><a href="#重新声明变量">重新声明变量</a></li>
+      </ul>
+    </li>
+    <li><a href="#总结">总结</a></li>
+    <li><a href="#参考">参考</a></li>
+  </ul>
+</nav>
+		</aside>
+		<div class="post-nav thin">
+			<a class="next-post" href="https://wangtu2022.github.io/posts/go/118-module/">
+				<span class="post-nav-label"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-arrow-left"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>&nbsp;Newer</span><br><span>Go1.18 新特性：多 Module 工作区模式</span>
+			</a>
+			<a class="prev-post" href="https://wangtu2022.github.io/posts/go/map-con/">
+				<span class="post-nav-label">Older&nbsp;<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-arrow-right"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg></span><br><span>Go 为什么不在语言层面支持 map 并发？</span>
+			</a>
+		</div>
+		<div id="comments" class="thin">
+</div>
+	</main>
+
+	<footer id="site-footer" class="section-inner thin animated fadeIn faster">
+		<p>&copy; 2022 <a href="https://wangtu2022.github.io/">煎鱼</a> &#183; <a href="http://www.beian.miit.gov.cn/">粤ICP备19076352号</a></p>
+		<p>
+			Made with <a href="https://gohugo.io/" target="_blank" rel="noopener">Hugo</a> &#183; Theme <a href="https://github.com/Track3/hermit" target="_blank" rel="noopener">Hermit</a> &#183; <a href="https://wangtu2022.github.io/posts/index.xml" target="_blank" title="rss"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-rss"><path d="M4 11a9 9 0 0 1 9 9"></path><path d="M4 4a16 16 0 0 1 16 16"></path><circle cx="5" cy="19" r="1"></circle></svg></a>
+		</p>
+	</footer>
+
+
+
+	<script src="https://wangtu2022.github.io/js/bundle.min.580988ed2982bcbb74a1773c7abea97b43e4c43b9324e10cda0813ec6ec4bb67.js" integrity="sha256-WAmI7SmCvLt0oXc8er6pe0PkxDuTJOEM2ggT7G7Eu2c=" crossorigin="anonymous"></script>
+	
+<script type="application/javascript">
+var doNotTrack = false;
+if (!doNotTrack) {
+	window.ga=window.ga||function(){(ga.q=ga.q||[]).push(arguments)};ga.l=+new Date;
+	ga('create', 'UA-166045776-1', 'auto');
+	
+	ga('send', 'pageview');
+}
+</script>
+<script async src='https://www.google-analytics.com/analytics.js'></script>
+
+
+</body>
+
+</html>

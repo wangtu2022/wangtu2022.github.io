@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>深度解密 on 煎鱼</title>
+    <link>https://wangtu2022.github.io/tags/%E6%B7%B1%E5%BA%A6%E8%A7%A3%E5%AF%86/</link>
+    <description>Recent content in 深度解密 on 煎鱼</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>zh-hans</language>
+    <copyright>This work is licensed under a Creative Commons Attribution-NonCommercial 4.0 International License.</copyright>
+    <lastBuildDate>Sat, 07 Nov 2020 15:01:51 +0800</lastBuildDate><atom:link href="https://wangtu2022.github.io/tags/%E6%B7%B1%E5%BA%A6%E8%A7%A3%E5%AF%86/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>解密 Go 语言之反射 reflect</title>
+      <link>https://wangtu2022.github.io/posts/go/reflect/</link>
+      <pubDate>Sat, 07 Nov 2020 15:01:51 +0800</pubDate>
+      
+      <guid>https://wangtu2022.github.io/posts/go/reflect/</guid>
+      <description>大家好，我是煎鱼。
+在所有的语言中，反射这一功能基本属于必不可少的模块。虽说 “反射” 这个词让人根深蒂固，但更多的还是 WHY。反射到底是什么，反射又是基于什么法则实现的？
+今天我们通过这篇文章来一一揭晓，以 Go 语言为例，了解反射到底为何物，其底层又是如何实现的。
+反射是什么 在计算机学中，反射是指计算机程序在运行时（runtime）可以访问、检测和修改它本身状态或行为的一种能力。用比喻来说，反射就是程序在运行的时候能够 “观察” 并且修改自己的行为（来自维基百科）。
+简单来讲就是，应用程序能够在运行时观察到变量的值，并且能够修改他。
+一个例子 最常见的 reflect 标准库例子，如下：
+import ( &amp;#34;fmt&amp;#34; &amp;#34;reflect&amp;#34; ) func main() { rv := []interface{}{&amp;#34;hi&amp;#34;, 42, func() {}} for _, v := range rv { switch v := reflect.</description>
+    </item>
+    
+  </channel>
+</rss>

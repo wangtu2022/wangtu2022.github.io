@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>giac on 煎鱼</title>
+    <link>https://wangtu2022.github.io/tags/giac/</link>
+    <description>Recent content in giac on 煎鱼</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>zh-hans</language>
+    <copyright>This work is licensed under a Creative Commons Attribution-NonCommercial 4.0 International License.</copyright>
+    <lastBuildDate>Fri, 31 Dec 2021 12:54:57 +0800</lastBuildDate><atom:link href="https://wangtu2022.github.io/tags/giac/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>我周末参加了个架构师大会！</title>
+      <link>https://wangtu2022.github.io/posts/2021giac/</link>
+      <pubDate>Fri, 31 Dec 2021 12:54:57 +0800</pubDate>
+      
+      <guid>https://wangtu2022.github.io/posts/2021giac/</guid>
+      <description>大家好，我是煎鱼。
+前两天 GIAC 全球互联网架构大会在深圳举办了，总算是有个长年在深圳举办的大会了，愉快参加了大部分的场次，面基了不少社区网友。
+分享一些我听了觉得有意义的记录给大家。希望能和大家一起学习进步。本文分别涉及如下几个议题：
+《hits for microservices desgin》 《在企业中的个人成长》 《大规模任务调度在 AfterShip 的高可用实践》 《快手前端实时性能监控和稳定性度量》 《快手中间件 mesh 化实践》 hits for microservices desgin 一开始先介绍了为什么叫 ”hits“。叫 ”hits“ 的主要原因，是业务架构没有技术架构那么明确，没有明确的对与错，是个人的工作经验和总结。
+微服务解决什么问题 业内常常说到，微服务，微服务。总归期望微服务解决什么问题。
+演讲的作者做了如下的调研：
+从调研结果来看，占比最大的就是 ”独立自治，只关注自己的模块“。这和绝大部分既有业务的公司做微服务的初衷一致。</description>
+    </item>
+    
+  </channel>
+</rss>

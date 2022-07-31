@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>protobuf on 煎鱼</title>
+    <link>https://wangtu2022.github.io/tags/protobuf/</link>
+    <description>Recent content in protobuf on 煎鱼</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>zh-hans</language>
+    <copyright>This work is licensed under a Creative Commons Attribution-NonCommercial 4.0 International License.</copyright>
+    <lastBuildDate>Sat, 23 May 2020 15:07:37 +0800</lastBuildDate><atom:link href="https://wangtu2022.github.io/tags/protobuf/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>Proto 代码到底放哪里？</title>
+      <link>https://wangtu2022.github.io/posts/where-is-proto/</link>
+      <pubDate>Sat, 23 May 2020 15:07:37 +0800</pubDate>
+      
+      <guid>https://wangtu2022.github.io/posts/where-is-proto/</guid>
+      <description>虽然公司已经从大单体切换为微服务化有一定的年头了，但一些细节方面的处理总会有不同的人有不同的看法，这其中一个讨论点，就是 Proto 这个 IDL 的代码到底放在哪里？
+目前来看，一共有如下方案， 我们一起来探讨一下 Proto 的存储方式和对应带来的优缺点。
+方案一：存放在代码仓库 直接将项目所依赖到的所有 Proto 文件都存放在 proto/ 目录下，不经过开发工具的自动拉取和发布：
+缺点 项目所有依赖的 Proto 都存储在代码仓库下，因此所有依赖 Proto 都需要人工的向其它业务组 “要” 来，再放到 proto/ 目录下，人工介入极度麻烦。
+Proto 升级和变更，经常要重复第一步，沟通成本高。
+优点 项目所有依赖的 Proto 都存储在代码仓库下，因此不涉及个人开仓库权限的问题。</description>
+    </item>
+    
+  </channel>
+</rss>

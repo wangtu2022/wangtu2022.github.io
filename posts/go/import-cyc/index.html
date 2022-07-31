@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="zh-hans">
+
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<meta http-equiv="X-UA-Compatible" content="ie=edge">
+	<meta name="theme-color" content="#494f5c">
+	<meta name="msapplication-TileColor" content="#494f5c">
+<meta itemprop="name" content="为什么 Go 不支持循环引用？">
+<meta itemprop="description" content="大家好，我是煎鱼。
+近年来开始学习 Go 语言的开发者越来越多了。很多小伙伴在使用时，就会遇到种种不理解的问题。
+其中一点就是循环引入的报错：
+package command-line-arguments imports github.com/eddycjy/awesome-project/a imports github.com/eddycjy/awesome-project/b imports github.com/eddycjy/awesome-project/a: import cycle not allowed 为什么 Go 不支持循环引用呢，这就很不解了，难道还影响性能了？
+今天煎鱼将和大家一起了解背后的原因。
+案例演示 做一个基本的案例 Demo，便于没接触过的同学建立初步认知。我们的程序分别有 2 个 package。
+package a 的代码如下："><meta itemprop="datePublished" content="2021-12-31T12:55:15+08:00" />
+<meta itemprop="dateModified" content="2021-12-31T12:55:15+08:00" />
+<meta itemprop="wordCount" content="130">
+<meta itemprop="keywords" content="go,为什么," /><meta property="og:title" content="为什么 Go 不支持循环引用？" />
+<meta property="og:description" content="大家好，我是煎鱼。
+近年来开始学习 Go 语言的开发者越来越多了。很多小伙伴在使用时，就会遇到种种不理解的问题。
+其中一点就是循环引入的报错：
+package command-line-arguments imports github.com/eddycjy/awesome-project/a imports github.com/eddycjy/awesome-project/b imports github.com/eddycjy/awesome-project/a: import cycle not allowed 为什么 Go 不支持循环引用呢，这就很不解了，难道还影响性能了？
+今天煎鱼将和大家一起了解背后的原因。
+案例演示 做一个基本的案例 Demo，便于没接触过的同学建立初步认知。我们的程序分别有 2 个 package。
+package a 的代码如下：" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://wangtu2022.github.io/posts/go/import-cyc/" /><meta property="article:section" content="posts" />
+<meta property="article:published_time" content="2021-12-31T12:55:15+08:00" />
+<meta property="article:modified_time" content="2021-12-31T12:55:15+08:00" />
+
+<meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="为什么 Go 不支持循环引用？"/>
+<meta name="twitter:description" content="大家好，我是煎鱼。
+近年来开始学习 Go 语言的开发者越来越多了。很多小伙伴在使用时，就会遇到种种不理解的问题。
+其中一点就是循环引入的报错：
+package command-line-arguments imports github.com/eddycjy/awesome-project/a imports github.com/eddycjy/awesome-project/b imports github.com/eddycjy/awesome-project/a: import cycle not allowed 为什么 Go 不支持循环引用呢，这就很不解了，难道还影响性能了？
+今天煎鱼将和大家一起了解背后的原因。
+案例演示 做一个基本的案例 Demo，便于没接触过的同学建立初步认知。我们的程序分别有 2 个 package。
+package a 的代码如下："/>
+
+	<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+	<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+	<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+	<link rel="manifest" href="/site.webmanifest">
+	<link rel="mask-icon" href="/safari-pinned-tab.svg" color="">
+	<link rel="shortcut icon" href="/favicon.ico">
+
+	<title>为什么 Go 不支持循环引用？</title>
+	<link rel="stylesheet" href="https://wangtu2022.github.io/css/style.min.d3141168199607bf3a517216ce3c263814eecdbc8fca72a9a88700799a838219.css" integrity="sha256-0xQRaBmWB786UXIWzjwmOBTuzbyPynKpqIcAeZqDghk=" crossorigin="anonymous">
+	
+	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.1/css/all.min.css">
+	<link rel="stylesheet" href="https://wangtu2022.github.io/css/styles.css">
+</head>
+
+<body id="page">
+	
+	<header id="site-header" class="animated slideInUp">
+		<div class="hdr-wrapper section-inner">
+			<div class="hdr-left">
+				<div class="site-branding">
+					<a href="https://wangtu2022.github.io/">煎鱼</a>
+				</div>
+				<nav class="site-nav hide-in-mobile">
+					
+				<a href="https://wangtu2022.github.io/posts/">文章</a>
+				<a href="https://wangtu2022.github.io/tags/">标签</a>
+				<a href="https://wangtu2022.github.io/about/">关于</a>
+
+				</nav>
+			</div>
+			<div class="hdr-right hdr-icons">
+				<button id="toc-btn" class="hdr-btn desktop-only-ib" title="Table of Contents"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-list"><line x1="8" y1="6" x2="21" y2="6"></line><line x1="8" y1="12" x2="21" y2="12"></line><line x1="8" y1="18" x2="21" y2="18"></line><line x1="3" y1="6" x2="3" y2="6"></line><line x1="3" y1="12" x2="3" y2="12"></line><line x1="3" y1="18" x2="3" y2="18"></line></svg></button><span class="hdr-social hide-in-mobile"><a href="https://github.com/eddycjy" target="_blank" rel="noopener me" title="Github"><svg xmlns="http://www.w3.org/2000/svg" class="feather" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"></path></svg></a></span><button id="menu-btn" class="hdr-btn" title="Menu"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-menu"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg></button>
+			</div>
+		</div>
+	</header>
+	<div id="mobile-menu" class="animated fast">
+		<ul>
+			<li><a href="https://wangtu2022.github.io/posts/">文章</a></li>
+			<li><a href="https://wangtu2022.github.io/tags/">标签</a></li>
+			<li><a href="https://wangtu2022.github.io/about/">关于</a></li>
+		</ul>
+	</div>
+
+
+	<main class="site-main section-inner animated fadeIn faster">
+		<article class="thin">
+			<header class="post-header">
+				<div class="post-meta"><span>Dec 31, 2021</span></div>
+				<h1>为什么 Go 不支持循环引用？</h1>
+			</header>
+			<div class="content">
+				<p>大家好，我是煎鱼。</p>
+<p>近年来开始学习 Go 语言的开发者越来越多了。很多小伙伴在使用时，就会遇到种种不理解的问题。</p>
+<p>其中一点就是循环引入的报错：</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-shell" data-lang="shell"><span class="line"><span class="cl">package command-line-arguments
+</span></span><span class="line"><span class="cl">	imports github.com/eddycjy/awesome-project/a
+</span></span><span class="line"><span class="cl">	imports github.com/eddycjy/awesome-project/b
+</span></span><span class="line"><span class="cl">	imports github.com/eddycjy/awesome-project/a: import cycle not allowed
+</span></span></code></pre></div><p>为什么 Go 不支持循环引用呢，这就很不解了，难道还影响性能了？</p>
+<p><img src="https://files.mdnice.com/user/3610/4596a6d1-9286-40b2-8074-cc43f9bbd9f4.png" alt="图来自网络"></p>
+<p>今天煎鱼将和大家一起了解背后的原因。</p>
+<h2 id="案例演示">案例演示<a href="#案例演示" class="anchor" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 7h3a5 5 0 0 1 5 5 5 5 0 0 1-5 5h-3m-6 0H6a5 5 0 0 1-5-5 5 5 0 0 1 5-5h3"></path><line x1="8" y1="12" x2="16" y2="12"></line></svg></a></h2>
+<p>做一个基本的案例 Demo，便于没接触过的同学建立初步认知。我们的程序分别有 2 个 package。</p>
+<p>package a 的代码如下：</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-golang" data-lang="golang"><span class="line"><span class="cl"><span class="kn">import</span> <span class="p">(</span>
+</span></span><span class="line"><span class="cl">	<span class="s">&#34;github.com/eddycjy/awesome-project/b&#34;</span>
+</span></span><span class="line"><span class="cl"><span class="p">)</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="kd">func</span> <span class="nf">Hello</span><span class="p">(</span><span class="nx">s</span> <span class="kt">string</span><span class="p">)</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">	<span class="nx">b</span><span class="p">.</span><span class="nf">Print</span><span class="p">(</span><span class="nx">s</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span></code></pre></div><p>package b 的代码如下：</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-golang" data-lang="golang"><span class="line"><span class="cl"><span class="kn">import</span> <span class="p">(</span>
+</span></span><span class="line"><span class="cl">	<span class="s">&#34;fmt&#34;</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">	<span class="s">&#34;github.com/eddycjy/awesome-project/a&#34;</span>
+</span></span><span class="line"><span class="cl"><span class="p">)</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="kd">func</span> <span class="nf">Hello</span><span class="p">()</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">	<span class="nx">a</span><span class="p">.</span><span class="nf">Hello</span><span class="p">(</span><span class="s">&#34;脑子进煎鱼了&#34;</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="kd">func</span> <span class="nf">Print</span><span class="p">(</span><span class="nx">s</span> <span class="kt">string</span><span class="p">)</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">	<span class="nx">fmt</span><span class="p">.</span><span class="nf">Println</span><span class="p">(</span><span class="nx">s</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span></code></pre></div><p>再在 main.go 的文件中调用 <code>a.Hello(&quot;脑子进煎鱼了&quot;)</code> 方法。</p>
+<p>一运行，就会出现如下错误提示：</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-shell" data-lang="shell"><span class="line"><span class="cl">package command-line-arguments
+</span></span><span class="line"><span class="cl">	imports github.com/eddycjy/awesome-project/a
+</span></span><span class="line"><span class="cl">	imports github.com/eddycjy/awesome-project/b
+</span></span><span class="line"><span class="cl">	imports github.com/eddycjy/awesome-project/a: import cycle not allowed
+</span></span></code></pre></div><p>错误的本质原因是 package a 引用了 package b，而 package b 又引用了 package a，造成了循环引用。</p>
+<p>这在 Go 语言中是明令禁止的，在编译时就会中断程序，导致编译失败。</p>
+<h2 id="原因分析">原因分析<a href="#原因分析" class="anchor" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 7h3a5 5 0 0 1 5 5 5 5 0 0 1-5 5h-3m-6 0H6a5 5 0 0 1-5-5 5 5 0 0 1 5-5h3"></path><line x1="8" y1="12" x2="16" y2="12"></line></svg></a></h2>
+<p>根据现在 Go 官方的统一意见来看，package 循环导入几乎不可能出现，即使是 Go2。</p>
+<p>因为 Go2 可能是很多核心问题的破变的关键节点，有许多人提了类似《<a href="https://github.com/golang/go/issues/30247">proposal: Go 2: allow import cycle</a>》的提案，希望解决循环引入的问题。</p>
+<p>Go 语言之父 Rob Pike 亲自回答了这个问题，原因如下：</p>
+<ul>
+<li>没有支持循环导入，目的是迫使 Go 程序员更多地考虑程序的依赖关系。
+<ul>
+<li>保持依赖关系图的简洁。</li>
+<li>快速的程序构建。</li>
+</ul>
+</li>
+<li>如果支持循环导入，很容易会造成懒惰、不良的依赖性管理和缓慢的构建。这是设计者不希望看见的。
+<ul>
+<li>混乱的依赖关系。</li>
+<li>缓慢的程序构建</li>
+</ul>
+</li>
+</ul>
+<p>简单拿来就，就是在 Go 工程中出现循环引用，这会对构建性能和依赖关系的解决非常不利。</p>
+<p>为此，考虑一开始就保持图的正确 DAG，认为这是一个值得预先简化的领域。导入循环可能很方便，但其实背后的代价可能是灾难性的，所以在 Go 中被明确禁止支持。</p>
+<h2 id="总结">总结<a href="#总结" class="anchor" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 7h3a5 5 0 0 1 5 5 5 5 0 0 1-5 5h-3m-6 0H6a5 5 0 0 1-5-5 5 5 0 0 1 5-5h3"></path><line x1="8" y1="12" x2="16" y2="12"></line></svg></a></h2>
+<p>在程序中，如果我们频繁的出现模块与模块之间的循环引用，这时候我们是不是应该考虑一下，是不是设计的有些问题，要不要考虑调整？</p>
+<p>但也并非所有的事都是二极管，Go 源码可能或多或少都有自己循环引用的案例，最重要的是想清楚。</p>
+<p><strong>你对此支持循环引用怎么看</strong>，欢迎在评论区留言交流：）</p>
+
+			</div>
+			<hr class="post-end">
+			<footer class="post-info">
+				<p>
+					<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-tag meta-icon"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"></path><line x1="7" y1="7" x2="7" y2="7"></line></svg><span class="tag"><a href="https://wangtu2022.github.io/tags/go">go</a></span><span class="tag"><a href="https://wangtu2022.github.io/tags/%E4%B8%BA%E4%BB%80%E4%B9%88">为什么</a></span>
+				</p>
+				<p><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-file-text"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>130 Words</p>
+				<p><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-calendar"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>2021-12-31 12:55 &#43;0800</p>
+			</footer>
+		</article>
+		<aside id="toc">
+			<div class="toc-title">Table of Contents</div>
+			<nav id="TableOfContents">
+  <ul>
+    <li><a href="#案例演示">案例演示</a></li>
+    <li><a href="#原因分析">原因分析</a></li>
+    <li><a href="#总结">总结</a></li>
+  </ul>
+</nav>
+		</aside>
+		<div class="post-nav thin">
+			<a class="next-post" href="https://wangtu2022.github.io/posts/go/118-leader-generics/">
+				<span class="post-nav-label"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-arrow-left"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>&nbsp;Newer</span><br><span>回归现实：Go Leader 对 1.18 泛型的期望</span>
+			</a>
+			<a class="prev-post" href="https://wangtu2022.github.io/posts/go/generics-apis/">
+				<span class="post-nav-label">Older&nbsp;<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-arrow-right"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg></span><br><span>出泛型后 API 怎么办？Go 开发者要注意了</span>
+			</a>
+		</div>
+		<div id="comments" class="thin">
+</div>
+	</main>
+
+	<footer id="site-footer" class="section-inner thin animated fadeIn faster">
+		<p>&copy; 2022 <a href="https://wangtu2022.github.io/">煎鱼</a> &#183; <a href="http://www.beian.miit.gov.cn/">粤ICP备19076352号</a></p>
+		<p>
+			Made with <a href="https://gohugo.io/" target="_blank" rel="noopener">Hugo</a> &#183; Theme <a href="https://github.com/Track3/hermit" target="_blank" rel="noopener">Hermit</a> &#183; <a href="https://wangtu2022.github.io/posts/index.xml" target="_blank" title="rss"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-rss"><path d="M4 11a9 9 0 0 1 9 9"></path><path d="M4 4a16 16 0 0 1 16 16"></path><circle cx="5" cy="19" r="1"></circle></svg></a>
+		</p>
+	</footer>
+
+
+
+	<script src="https://wangtu2022.github.io/js/bundle.min.580988ed2982bcbb74a1773c7abea97b43e4c43b9324e10cda0813ec6ec4bb67.js" integrity="sha256-WAmI7SmCvLt0oXc8er6pe0PkxDuTJOEM2ggT7G7Eu2c=" crossorigin="anonymous"></script>
+	
+<script type="application/javascript">
+var doNotTrack = false;
+if (!doNotTrack) {
+	window.ga=window.ga||function(){(ga.q=ga.q||[]).push(arguments)};ga.l=+new Date;
+	ga('create', 'UA-166045776-1', 'auto');
+	
+	ga('send', 'pageview');
+}
+</script>
+<script async src='https://www.google-analytics.com/analytics.js'></script>
+
+
+</body>
+
+</html>

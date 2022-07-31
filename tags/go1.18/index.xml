@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>go1.18 on 煎鱼</title>
+    <link>https://wangtu2022.github.io/tags/go1.18/</link>
+    <description>Recent content in go1.18 on 煎鱼</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>zh-hans</language>
+    <copyright>This work is licensed under a Creative Commons Attribution-NonCommercial 4.0 International License.</copyright>
+    <lastBuildDate>Sat, 05 Feb 2022 16:00:00 +0800</lastBuildDate><atom:link href="https://wangtu2022.github.io/tags/go1.18/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>Go1.18 新特性：多 Module 工作区模式</title>
+      <link>https://wangtu2022.github.io/posts/go/118-module/</link>
+      <pubDate>Sat, 05 Feb 2022 16:00:00 +0800</pubDate>
+      
+      <guid>https://wangtu2022.github.io/posts/go/118-module/</guid>
+      <description>大家好，我是煎鱼。
+Go 的依赖管理，也就是 Go Module。从推出到现在，也已经有了一定的年头了，吐槽一直很多，官方也不断地在进行完善。
+Go1.18 将会推出一个新特性：Multi-Module Workspaces，用于支持 Module 多工作区，能解决以往的一系列问题。
+今天将由煎鱼带大家一起深入学习。
+背景 在日常使用 Go 工程时，总会遇到 2 个经典问题，特别的折腾人。
+如下：
+依赖本地 replace module。 依赖本地未发布的 module。 replace module 第一个场景：像是平时在 Go 工程中，我们为了解决一些本地依赖，或是定制化代码。会在 go.mod 文件中使用 replace 做替换。</description>
+    </item>
+    
+  </channel>
+</rss>

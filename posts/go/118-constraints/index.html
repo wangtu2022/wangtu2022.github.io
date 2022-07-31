@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="zh-hans">
+
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<meta http-equiv="X-UA-Compatible" content="ie=edge">
+	<meta name="theme-color" content="#494f5c">
+	<meta name="msapplication-TileColor" content="#494f5c">
+<meta itemprop="name" content="Go 新语法挺丑？最新的泛型类型约束介绍">
+<meta itemprop="description" content="大家好，我是煎鱼。
+近期我们在分享《3 件与 Go 开发者有关的大小事》时，里面有一部分有提到 Go 泛型的约束类型语法又又又变了。
+在评论区里看到不少的读者朋友大呼泛型的新类型约束语法挺丑，不如原本的好&hellip;
+如下：
+为此，今天煎鱼就带大家来看看，为什么会发生泛型的新语法会这种改变？
+问题背景 原本 @Ian Lance Taylor 设计的的泛型类型关键字如下：
+type T interface { type int, int8, int16, int32, int64, uint, uint8, uint16, uint32, uint64, uintptr, float32, float64, complex64, complex128, string } 看起来好像非常 “顺眼”。但在《proposal: Go 2: sum types using interface type lists》中社区进行了热烈的讨论。"><meta itemprop="datePublished" content="2021-12-31T12:55:19+08:00" />
+<meta itemprop="dateModified" content="2021-12-31T12:55:19+08:00" />
+<meta itemprop="wordCount" content="368">
+<meta itemprop="keywords" content="go," /><meta property="og:title" content="Go 新语法挺丑？最新的泛型类型约束介绍" />
+<meta property="og:description" content="大家好，我是煎鱼。
+近期我们在分享《3 件与 Go 开发者有关的大小事》时，里面有一部分有提到 Go 泛型的约束类型语法又又又变了。
+在评论区里看到不少的读者朋友大呼泛型的新类型约束语法挺丑，不如原本的好&hellip;
+如下：
+为此，今天煎鱼就带大家来看看，为什么会发生泛型的新语法会这种改变？
+问题背景 原本 @Ian Lance Taylor 设计的的泛型类型关键字如下：
+type T interface { type int, int8, int16, int32, int64, uint, uint8, uint16, uint32, uint64, uintptr, float32, float64, complex64, complex128, string } 看起来好像非常 “顺眼”。但在《proposal: Go 2: sum types using interface type lists》中社区进行了热烈的讨论。" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://wangtu2022.github.io/posts/go/118-constraints/" /><meta property="article:section" content="posts" />
+<meta property="article:published_time" content="2021-12-31T12:55:19+08:00" />
+<meta property="article:modified_time" content="2021-12-31T12:55:19+08:00" />
+
+<meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="Go 新语法挺丑？最新的泛型类型约束介绍"/>
+<meta name="twitter:description" content="大家好，我是煎鱼。
+近期我们在分享《3 件与 Go 开发者有关的大小事》时，里面有一部分有提到 Go 泛型的约束类型语法又又又变了。
+在评论区里看到不少的读者朋友大呼泛型的新类型约束语法挺丑，不如原本的好&hellip;
+如下：
+为此，今天煎鱼就带大家来看看，为什么会发生泛型的新语法会这种改变？
+问题背景 原本 @Ian Lance Taylor 设计的的泛型类型关键字如下：
+type T interface { type int, int8, int16, int32, int64, uint, uint8, uint16, uint32, uint64, uintptr, float32, float64, complex64, complex128, string } 看起来好像非常 “顺眼”。但在《proposal: Go 2: sum types using interface type lists》中社区进行了热烈的讨论。"/>
+
+	<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+	<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+	<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+	<link rel="manifest" href="/site.webmanifest">
+	<link rel="mask-icon" href="/safari-pinned-tab.svg" color="">
+	<link rel="shortcut icon" href="/favicon.ico">
+
+	<title>Go 新语法挺丑？最新的泛型类型约束介绍</title>
+	<link rel="stylesheet" href="https://wangtu2022.github.io/css/style.min.d3141168199607bf3a517216ce3c263814eecdbc8fca72a9a88700799a838219.css" integrity="sha256-0xQRaBmWB786UXIWzjwmOBTuzbyPynKpqIcAeZqDghk=" crossorigin="anonymous">
+	
+	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.1/css/all.min.css">
+	<link rel="stylesheet" href="https://wangtu2022.github.io/css/styles.css">
+</head>
+
+<body id="page">
+	
+	<header id="site-header" class="animated slideInUp">
+		<div class="hdr-wrapper section-inner">
+			<div class="hdr-left">
+				<div class="site-branding">
+					<a href="https://wangtu2022.github.io/">煎鱼</a>
+				</div>
+				<nav class="site-nav hide-in-mobile">
+					
+				<a href="https://wangtu2022.github.io/posts/">文章</a>
+				<a href="https://wangtu2022.github.io/tags/">标签</a>
+				<a href="https://wangtu2022.github.io/about/">关于</a>
+
+				</nav>
+			</div>
+			<div class="hdr-right hdr-icons">
+				<button id="toc-btn" class="hdr-btn desktop-only-ib" title="Table of Contents"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-list"><line x1="8" y1="6" x2="21" y2="6"></line><line x1="8" y1="12" x2="21" y2="12"></line><line x1="8" y1="18" x2="21" y2="18"></line><line x1="3" y1="6" x2="3" y2="6"></line><line x1="3" y1="12" x2="3" y2="12"></line><line x1="3" y1="18" x2="3" y2="18"></line></svg></button><span class="hdr-social hide-in-mobile"><a href="https://github.com/eddycjy" target="_blank" rel="noopener me" title="Github"><svg xmlns="http://www.w3.org/2000/svg" class="feather" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"></path></svg></a></span><button id="menu-btn" class="hdr-btn" title="Menu"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-menu"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg></button>
+			</div>
+		</div>
+	</header>
+	<div id="mobile-menu" class="animated fast">
+		<ul>
+			<li><a href="https://wangtu2022.github.io/posts/">文章</a></li>
+			<li><a href="https://wangtu2022.github.io/tags/">标签</a></li>
+			<li><a href="https://wangtu2022.github.io/about/">关于</a></li>
+		</ul>
+	</div>
+
+
+	<main class="site-main section-inner animated fadeIn faster">
+		<article class="thin">
+			<header class="post-header">
+				<div class="post-meta"><span>Dec 31, 2021</span></div>
+				<h1>Go 新语法挺丑？最新的泛型类型约束介绍</h1>
+			</header>
+			<div class="content">
+				<p>大家好，我是煎鱼。</p>
+<p>近期我们在分享《<a href="https://mp.weixin.qq.com/s/22TeQOUjf_glPX3QLPX8yw">3 件与 Go 开发者有关的大小事</a>》时，里面有一部分有提到 Go 泛型的约束类型语法又又又变了。</p>
+<p>在评论区里看到不少的读者朋友大呼泛型的新类型约束语法挺丑，不如原本的好&hellip;</p>
+<p>如下：</p>
+<p><img src="https://files.mdnice.com/user/3610/8e734a8f-612c-41c3-a0cd-8a5fe6eea483.png" alt=""></p>
+<p>为此，今天煎鱼就带大家来看看，为什么会发生泛型的新语法会这种改变？</p>
+<h2 id="问题背景">问题背景<a href="#问题背景" class="anchor" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 7h3a5 5 0 0 1 5 5 5 5 0 0 1-5 5h-3m-6 0H6a5 5 0 0 1-5-5 5 5 0 0 1 5-5h3"></path><line x1="8" y1="12" x2="16" y2="12"></line></svg></a></h2>
+<p>原本 @Ian Lance Taylor 设计的的泛型类型关键字如下：</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-golang" data-lang="golang"><span class="line"><span class="cl"><span class="kd">type</span> <span class="nx">T</span> <span class="kd">interface</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl"> <span class="kd">type</span> <span class="kt">int</span><span class="p">,</span> <span class="kt">int8</span><span class="p">,</span> <span class="kt">int16</span><span class="p">,</span> <span class="kt">int32</span><span class="p">,</span> <span class="kt">int64</span><span class="p">,</span> <span class="kt">uint</span><span class="p">,</span> <span class="kt">uint8</span><span class="p">,</span> <span class="kt">uint16</span><span class="p">,</span> <span class="kt">uint32</span><span class="p">,</span> <span class="kt">uint64</span><span class="p">,</span> <span class="kt">uintptr</span><span class="p">,</span> <span class="kt">float32</span><span class="p">,</span> <span class="kt">float64</span><span class="p">,</span> <span class="kt">complex64</span><span class="p">,</span> <span class="kt">complex128</span><span class="p">,</span> <span class="kt">string</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span></code></pre></div><p>看起来好像非常 “顺眼”。但在《<a href="https://github.com/golang/go/issues/41716" title="proposal: Go 2: sum types using interface type lists">proposal: Go 2: sum types using interface type lists</a>》中社区进行了热烈的讨论。</p>
+<p>认为该类型约束的关键字，过于 “模棱两可”。像是 @Damien Neil 所提出的以下两个例子。</p>
+<p>结构体的例子：</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-golang" data-lang="golang"><span class="line"><span class="cl"><span class="kn">package</span> <span class="nx">p</span>
+</span></span><span class="line"><span class="cl"><span class="kd">type</span> <span class="nx">mustIncludeDefaultCase</span> <span class="kd">struct</span><span class="p">{}</span>
+</span></span><span class="line"><span class="cl"><span class="kd">type</span> <span class="nx">MySum</span> <span class="kd">interface</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">  <span class="kd">type</span> <span class="kt">int</span><span class="p">,</span> <span class="kt">float64</span><span class="p">,</span> <span class="nx">mustIncludeDefaultCase</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span></code></pre></div><p>不明确的点之一，如果类型列表包含一个未导出的类型，那又应该是如何处理呢？</p>
+<p>接口的例子：</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-golang" data-lang="golang"><span class="line"><span class="cl"><span class="kd">type</span> <span class="nx">T</span> <span class="kd">interface</span> <span class="p">{</span> <span class="kd">type</span> <span class="kt">int16</span><span class="p">,</span> <span class="kt">int32</span> <span class="p">}</span>
+</span></span><span class="line"><span class="cl"><span class="kd">func</span> <span class="nf">main</span><span class="p">()</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">  <span class="kd">var</span> <span class="nx">x</span> <span class="nx">T</span>
+</span></span><span class="line"><span class="cl">  <span class="k">switch</span> <span class="nx">x</span><span class="p">.(</span><span class="kd">type</span><span class="p">)</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">  <span class="k">case</span> <span class="kt">int16</span><span class="p">:</span>
+</span></span><span class="line"><span class="cl">  <span class="k">case</span> <span class="kt">int32</span><span class="p">:</span>
+</span></span><span class="line"><span class="cl">  <span class="p">}</span> 
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span></code></pre></div><p>你认为程序会跑进哪个 switch-case 的代码块里呢，是 int16，还是 int32？</p>
+<p>不，都不会，变量 x 是 nil，如此迷惑。</p>
+<p>在社区讨论中，发现设计与真实场景一结合，发现这个类型规则在普通的接口类型、在约束中使用也太微妙了。</p>
+<p>用类型列表嵌入接口时的行为也很奇怪。认为可以做的更好，那就是 “更显式”。</p>
+<h2 id="新提案">新提案<a href="#新提案" class="anchor" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 7h3a5 5 0 0 1 5 5 5 5 0 0 1-5 5h-3m-6 0H6a5 5 0 0 1-5-5 5 5 0 0 1 5-5h3"></path><line x1="8" y1="12" x2="16" y2="12"></line></svg></a></h2>
+<p>为此，Go 泛型的设计者 @Ian Lance Taylor 提出了一个新的提案《<a href="https://github.com/golang/go/issues/45346" title="spec: generics: use type sets to remove type keyword in constraints">spec: generics: use type sets to remove type keyword in constraints</a>》。</p>
+<p>其包含三个新的、更简单的想法来取代泛型提案中定义的类型列表。</p>
+<h3 id="关键名词">关键名词<a href="#关键名词" class="anchor" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 7h3a5 5 0 0 1 5 5 5 5 0 0 1-5 5h-3m-6 0H6a5 5 0 0 1-5-5 5 5 0 0 1 5-5h3"></path><line x1="8" y1="12" x2="16" y2="12"></line></svg></a></h3>
+<p>新语法在泛型处增加一个新概念：接口元素（interface elements），用作约束条件的接口类型，或者被嵌入约束条件的接口类型，允许嵌入一些额外的构造。</p>
+<p>被嵌入的可以是：</p>
+<ul>
+<li>任何类型，而不仅仅是一个接口类型。</li>
+<li>一个新的句法结构，称为近似元素。</li>
+<li>一个新的句法结构，称为联合元素。</li>
+</ul>
+<p>重点名词，我们继续展开讲解，分别是：</p>
+<ul>
+<li>嵌入约束。</li>
+<li>近似元素。</li>
+<li>联合元素。</li>
+<li>接口类型。</li>
+</ul>
+<h3 id="联合元素">联合元素<a href="#联合元素" class="anchor" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 7h3a5 5 0 0 1 5 5 5 5 0 0 1-5 5h-3m-6 0H6a5 5 0 0 1-5-5 5 5 0 0 1 5-5h3"></path><line x1="8" y1="12" x2="16" y2="12"></line></svg></a></h3>
+<p>原先的语法中，类型约束会用逗号分隔的方式来展示。</p>
+<p>如下：</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-golang" data-lang="golang"><span class="line"><span class="cl"><span class="kd">type</span> <span class="kt">int</span><span class="p">,</span> <span class="kt">int8</span><span class="p">,</span> <span class="kt">int16</span><span class="p">,</span> <span class="kt">int32</span><span class="p">,</span> <span class="kt">int64</span>
+</span></span></code></pre></div><p>在新语法中，结合定义为 union element（联合元素），写成一系列由竖线 ”|“ 分隔的类型或近似元素。</p>
+<p>如下：</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-golang" data-lang="golang"><span class="line"><span class="cl"><span class="kd">type</span> <span class="nx">PredeclaredSignedInteger</span> <span class="kd">interface</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">	<span class="kt">int</span> <span class="p">|</span> <span class="kt">int8</span> <span class="p">|</span> <span class="kt">int16</span> <span class="p">|</span> <span class="kt">int32</span> <span class="p">|</span> <span class="kt">int64</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span></code></pre></div><p>常常会和下面讲到的近似元素一起使用。</p>
+<h3 id="近似元素">近似元素<a href="#近似元素" class="anchor" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 7h3a5 5 0 0 1 5 5 5 5 0 0 1-5 5h-3m-6 0H6a5 5 0 0 1-5-5 5 5 0 0 1 5-5h3"></path><line x1="8" y1="12" x2="16" y2="12"></line></svg></a></h3>
+<p>新语法，他的标识符是 “~”，完整用法是 <code>~T</code>。<code>~T</code> 是指底层类型为 T 的所有类型的集合。例如：</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-golang" data-lang="golang"><span class="line"><span class="cl"><span class="kd">type</span> <span class="nx">AnyInt</span> <span class="kd">interface</span><span class="p">{</span> <span class="err">~</span><span class="kt">int</span> <span class="p">}</span>
+</span></span></code></pre></div><p>他的类型集是 <code>~int</code>，也就是所有类型为 int 的类型（如：int、int8、int16、int32、int64）都能够满足这个类型约束的条件。</p>
+<p>再结合以上的分隔来使用，用法为：</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-golang" data-lang="golang"><span class="line"><span class="cl"><span class="kd">type</span> <span class="nx">SignedInteger</span> <span class="kd">interface</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">	<span class="err">~</span><span class="kt">int</span> <span class="p">|</span> <span class="err">~</span><span class="kt">int8</span> <span class="p">|</span> <span class="err">~</span><span class="kt">int16</span> <span class="p">|</span> <span class="err">~</span><span class="kt">int32</span> <span class="p">|</span> <span class="err">~</span><span class="kt">int64</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span></code></pre></div><p>相当于泛型提案中使用的以下类型：</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-golang" data-lang="golang"><span class="line"><span class="cl"><span class="kd">interface</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">	<span class="kd">type</span> <span class="kt">int</span><span class="p">,</span> <span class="kt">int8</span><span class="p">,</span> <span class="kt">int16</span><span class="p">,</span> <span class="kt">int32</span><span class="p">,</span> <span class="kt">int64</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span></code></pre></div><p>新语法只需借助近似标识符 <code>~int</code> 来表达就可以了，更明确的表示了近似匹配，而不是存在隐式理解。</p>
+<h3 id="嵌入约束">嵌入约束<a href="#嵌入约束" class="anchor" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 7h3a5 5 0 0 1 5 5 5 5 0 0 1-5 5h-3m-6 0H6a5 5 0 0 1-5-5 5 5 0 0 1 5-5h3"></path><line x1="8" y1="12" x2="16" y2="12"></line></svg></a></h3>
+<p>一个类型约束可以嵌入另一个约束，联合元素可以包括约束。</p>
+<p>例如：</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-golang" data-lang="golang"><span class="line"><span class="cl"><span class="c1">// Signed is a constraint whose type set is any signed integer type.
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="kd">type</span> <span class="nx">Signed</span> <span class="kd">interface</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">	<span class="err">~</span><span class="kt">int</span> <span class="p">|</span> <span class="err">~</span><span class="kt">int8</span> <span class="p">|</span> <span class="err">~</span><span class="kt">int16</span> <span class="p">|</span> <span class="err">~</span><span class="kt">int32</span> <span class="p">|</span> <span class="err">~</span><span class="kt">int64</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="c1">// Unsigned is a constraint whose type set is any unsigned integer type.
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="kd">type</span> <span class="nx">Unsigned</span> <span class="kd">interface</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">	<span class="err">~</span><span class="kt">uint</span> <span class="p">|</span> <span class="err">~</span><span class="kt">uint8</span> <span class="p">|</span> <span class="err">~</span><span class="kt">uint16</span> <span class="p">|</span> <span class="err">~</span><span class="kt">uint32</span> <span class="p">|</span> <span class="err">~</span><span class="kt">uint64</span> <span class="p">|</span> <span class="err">~</span><span class="kt">uintptr</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="c1">// Float is a constraint whose type set is any floating point type.
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="kd">type</span> <span class="nx">Float</span> <span class="kd">interface</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">	<span class="err">~</span><span class="kt">float32</span> <span class="p">|</span> <span class="err">~</span><span class="kt">float64</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="c1">// Ordered is a constraint whose type set is any ordered type.
+</span></span></span><span class="line"><span class="cl"><span class="c1">// That is, any type that supports the &lt; operator.
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="kd">type</span> <span class="nx">Ordered</span> <span class="kd">interface</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">	<span class="nx">Signed</span> <span class="p">|</span> <span class="nx">Unsigned</span> <span class="p">|</span> <span class="nx">Float</span> <span class="p">|</span> <span class="err">~</span><span class="kt">string</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span></code></pre></div><p>这个很好理解，就是正式支持嵌入约束了。</p>
+<h3 id="接口类型联合约束元素">接口类型（联合约束元素）<a href="#接口类型联合约束元素" class="anchor" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 7h3a5 5 0 0 1 5 5 5 5 0 0 1-5 5h-3m-6 0H6a5 5 0 0 1-5-5 5 5 0 0 1 5-5h3"></path><line x1="8" y1="12" x2="16" y2="12"></line></svg></a></h3>
+<p>在联合元素中，使用接口类型的话。将会把该类型集添加到联合中。</p>
+<p>例如：</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-golang" data-lang="golang"><span class="line"><span class="cl"><span class="kd">type</span> <span class="nx">Stringish</span> <span class="kd">interface</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">	<span class="kt">string</span> <span class="p">|</span> <span class="nx">fmt</span><span class="p">.</span><span class="nx">Stringer</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span></code></pre></div><p>Stringish 的类型集将是字符串类型和所有实现 <code>fmt.Stringer</code> 的类型，任何这些类型（包括 <code>fmt.Stringer</code> 本身）将被允许作为这个约束的类型参数。</p>
+<p>也就是针对接口类型做了特殊的处理。</p>
+<h2 id="总结">总结<a href="#总结" class="anchor" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 7h3a5 5 0 0 1 5 5 5 5 0 0 1-5 5h-3m-6 0H6a5 5 0 0 1-5-5 5 5 0 0 1 5-5h3"></path><line x1="8" y1="12" x2="16" y2="12"></line></svg></a></h2>
+<p>今天这篇文章，主要讲解了 Go 泛型的新语法，其实本质上还是为了解决引入 A 后，出现了 BCD 新问题，又继续引入新的语法和模式来解决。</p>
+<p>整体就是三个观点：</p>
+<ul>
+<li>显式匹配：使用<strong>明确的 &ldquo;~&rdquo; 近似元素，澄清了何时在底层类型上进行匹配</strong>。</li>
+<li>明确含义：<strong>使用 “|” 而不是 “,” 强调这是一个元素的联合</strong>。</li>
+<li>嵌套优化：通过允许约束嵌入非界面元素，类型关键字可以被省略。</li>
+</ul>
+<p>这就是用这两个新语法符号的原因，被嫌丑的新语法标识符 “|” 和 “~” ，其实也是在 issues 的大范围讨论中，由社区贡献出来的。</p>
+<p>算是有利有弊？<strong>你的看法如何，欢迎在评论区留言</strong>：）</p>
+
+			</div>
+			<hr class="post-end">
+			<footer class="post-info">
+				<p>
+					<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-tag meta-icon"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"></path><line x1="7" y1="7" x2="7" y2="7"></line></svg><span class="tag"><a href="https://wangtu2022.github.io/tags/go">go</a></span>
+				</p>
+				<p><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-file-text"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>368 Words</p>
+				<p><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-calendar"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>2021-12-31 12:55 &#43;0800</p>
+			</footer>
+		</article>
+		<aside id="toc">
+			<div class="toc-title">Table of Contents</div>
+			<nav id="TableOfContents">
+  <ul>
+    <li><a href="#问题背景">问题背景</a></li>
+    <li><a href="#新提案">新提案</a>
+      <ul>
+        <li><a href="#关键名词">关键名词</a></li>
+        <li><a href="#联合元素">联合元素</a></li>
+        <li><a href="#近似元素">近似元素</a></li>
+        <li><a href="#嵌入约束">嵌入约束</a></li>
+        <li><a href="#接口类型联合约束元素">接口类型（联合约束元素）</a></li>
+      </ul>
+    </li>
+    <li><a href="#总结">总结</a></li>
+  </ul>
+</nav>
+		</aside>
+		<div class="post-nav thin">
+			<a class="next-post" href="https://wangtu2022.github.io/posts/go/rust-php/">
+				<span class="post-nav-label"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-arrow-left"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>&nbsp;Newer</span><br><span>Rust 内讧，PHP 主力淡出？Go：好好放假</span>
+			</a>
+			<a class="prev-post" href="https://wangtu2022.github.io/posts/go/118-build/">
+				<span class="post-nav-label">Older&nbsp;<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-arrow-right"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg></span><br><span>泛型是双刃剑？Go1.18 编译会慢近 20%</span>
+			</a>
+		</div>
+		<div id="comments" class="thin">
+</div>
+	</main>
+
+	<footer id="site-footer" class="section-inner thin animated fadeIn faster">
+		<p>&copy; 2022 <a href="https://wangtu2022.github.io/">煎鱼</a> &#183; <a href="http://www.beian.miit.gov.cn/">粤ICP备19076352号</a></p>
+		<p>
+			Made with <a href="https://gohugo.io/" target="_blank" rel="noopener">Hugo</a> &#183; Theme <a href="https://github.com/Track3/hermit" target="_blank" rel="noopener">Hermit</a> &#183; <a href="https://wangtu2022.github.io/posts/index.xml" target="_blank" title="rss"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-rss"><path d="M4 11a9 9 0 0 1 9 9"></path><path d="M4 4a16 16 0 0 1 16 16"></path><circle cx="5" cy="19" r="1"></circle></svg></a>
+		</p>
+	</footer>
+
+
+
+	<script src="https://wangtu2022.github.io/js/bundle.min.580988ed2982bcbb74a1773c7abea97b43e4c43b9324e10cda0813ec6ec4bb67.js" integrity="sha256-WAmI7SmCvLt0oXc8er6pe0PkxDuTJOEM2ggT7G7Eu2c=" crossorigin="anonymous"></script>
+	
+<script type="application/javascript">
+var doNotTrack = false;
+if (!doNotTrack) {
+	window.ga=window.ga||function(){(ga.q=ga.q||[]).push(arguments)};ga.l=+new Date;
+	ga('create', 'UA-166045776-1', 'auto');
+	
+	ga('send', 'pageview');
+}
+</script>
+<script async src='https://www.google-analytics.com/analytics.js'></script>
+
+
+</body>
+
+</html>

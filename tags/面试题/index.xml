@@ -1,0 +1,164 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>面试题 on 煎鱼</title>
+    <link>https://wangtu2022.github.io/tags/%E9%9D%A2%E8%AF%95%E9%A2%98/</link>
+    <description>Recent content in 面试题 on 煎鱼</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>zh-hans</language>
+    <copyright>This work is licensed under a Creative Commons Attribution-NonCommercial 4.0 International License.</copyright>
+    <lastBuildDate>Fri, 31 Dec 2021 12:55:08 +0800</lastBuildDate><atom:link href="https://wangtu2022.github.io/tags/%E9%9D%A2%E8%AF%95%E9%A2%98/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>Go 什么时候会触发 GC？</title>
+      <link>https://wangtu2022.github.io/posts/go/when-gc/</link>
+      <pubDate>Fri, 31 Dec 2021 12:55:08 +0800</pubDate>
+      
+      <guid>https://wangtu2022.github.io/posts/go/when-gc/</guid>
+      <description>大家好，我是煎鱼。
+Go 语言作为一门新语言，在早期经常遭到唾弃的就是在垃圾回收（下称：GC）机制中 STW（Stop-The-World）的时间过长。
+那么这个时候，我们又会好奇一点，作为 STW 的起始，Go 语言中什么时候才会触发 GC 呢？
+今天就由煎鱼带大家一起来学习研讨一轮。
+什么是 GC 在计算机科学中，垃圾回收（GC）是一种自动管理内存的机制，垃圾回收器会去尝试回收程序不再使用的对象及其占用的内存。
+最早 John McCarthy 在 1959 年左右发明了垃圾回收，以简化 Lisp 中的手动内存管理的机制（来自 @wikipedia）。
+为什么要 GC 手动管理内存挺麻烦，管错或者管漏内存也很糟糕，将会直接导致程序不稳定（持续泄露）甚至直接崩溃。
+GC 触发场景 GC 触发的场景主要分为两大类，分别是：</description>
+    </item>
+    
+    <item>
+      <title>Go map 如何缩容？</title>
+      <link>https://wangtu2022.github.io/posts/go/map-reset/</link>
+      <pubDate>Fri, 31 Dec 2021 12:55:07 +0800</pubDate>
+      
+      <guid>https://wangtu2022.github.io/posts/go/map-reset/</guid>
+      <description>大家好，我是煎鱼。
+前几天看到 Go 圈子的著名股神（不是我&amp;hellip;），在归类中简单的提到了 Go 语言中 map 的缩容的描述，这让我对其产生了兴趣，想要来一探究竟。
+我们常常喊扩缩容，扩缩容，但社区里都是清一色分析扩容机制，Go 面试官也都是卷 Go 语言 map 的扩容机制&amp;hellip;
+在 Go 语言中的 map 缩容机制是怎么做的呢，今天就由煎鱼带大家一起研讨围观一轮。
+基本分析 在 Go 底层源码 src/runtime/map.go 中，扩缩容的处理方法是 grow 为前缀的方法来处理的。
+其中扩缩容涉及到的是插入元素的操作，对应 mapassign 方法：</description>
+    </item>
+    
+    <item>
+      <title>面试官：为什么 Go 的负载因子是 6.5？</title>
+      <link>https://wangtu2022.github.io/posts/go/map-65/</link>
+      <pubDate>Fri, 31 Dec 2021 12:55:07 +0800</pubDate>
+      
+      <guid>https://wangtu2022.github.io/posts/go/map-65/</guid>
+      <description>大家好，我是煎鱼。
+最近我有一个朋友，在网上看到一个有趣的段子，引发了我一些兴趣。
+如下图：
+听说是在最后的闲聊、吹水、聊人生、乱扯环节了，不是在技术环节了，所以大家也不用太在意什么技术评估法则（别杠）。
+煎鱼作为一名技术号主，看到这里的 6.5，就想给大家挖一挖，这到底是何物，和大家一同学习和增长知识！
+6.5 是什么 实际上在 Go 语言中，就存在 6.5 这一概念，与 map 存在直接关系，因此我们需要先了解 map 的基本数据结构，再介绍 6.5 的背景和由来。
+开始学习 6.5 吧！
+了解 map 底层 我以前在写《深入理解 Go map：初始化和访问元素》时有介绍过 map 的基础数据结构。</description>
+    </item>
+    
+    <item>
+      <title>Go 并发读写 sync.map 的强大之处</title>
+      <link>https://wangtu2022.github.io/posts/go/sync-map/</link>
+      <pubDate>Fri, 31 Dec 2021 12:54:50 +0800</pubDate>
+      
+      <guid>https://wangtu2022.github.io/posts/go/sync-map/</guid>
+      <description>大家好，我是煎鱼。
+在之前的 《为什么 Go map 和 slice 是非线程安全的？》 文章中，我们讨论了 Go 语言的 map 和 slice 非线程安全的问题，基于此引申出了 map 的两种目前在业界使用的最多的并发支持的模式。
+分别是：
+原生 map + 互斥锁或读写锁 mutex。
+标准库 sync.Map（Go1.9及以后）。
+有了选择，总是有选择困难症的，这两种到底怎么选，谁的性能更加的好？我有一个朋友说 标准库 sync.Map 性能菜的很，不要用。我到底听谁的&amp;hellip;
+今天煎鱼就带你揭秘 Go sync.</description>
+    </item>
+    
+    <item>
+      <title>为什么 Go map 和 slice 是非线程安全的？</title>
+      <link>https://wangtu2022.github.io/posts/go/map-slice-concurrency/</link>
+      <pubDate>Fri, 31 Dec 2021 12:54:49 +0800</pubDate>
+      
+      <guid>https://wangtu2022.github.io/posts/go/map-slice-concurrency/</guid>
+      <description>大家好，我是煎鱼。
+初入 Go 语言的大门，有不少的小伙伴会快速的 3 天精通 Go，5 天上手项目，14 天上线业务迭代，21 天排查、定位问题，顺带捎个反省报告。
+其中最常见的初级错误，Go 面试较最爱问的问题之一：
+（来自读者提问）
+为什么在 Go 语言里，map 和 slice 不支持并发读写，也就是是非线程安全的，为什么不支持？
+见招拆招后，紧接着就会开始讨论如何让他们俩 ”冤家“ 支持并发读写？
+今天我们这篇文章就来理一理，了解其前因后果，一起吸鱼学懂 Go 语言。
+非线程安全的例子 slice 我们使用多个 goroutine 对类型为 slice 的变量进行操作，看看结果会变的怎么样。</description>
+    </item>
+    
+    <item>
+      <title>经典面试题：你觉得 Go 在什么时候会抢占 P？</title>
+      <link>https://wangtu2022.github.io/posts/go/gmp-why-p/</link>
+      <pubDate>Thu, 24 Jun 2021 12:42:05 +0800</pubDate>
+      
+      <guid>https://wangtu2022.github.io/posts/go/gmp-why-p/</guid>
+      <description>大家好，我是煎鱼。
+前几天我们有聊到《单核 CPU，开两个 Goroutine，其中一个死循环，会怎么样？》的问题，我们在一个细节部分有提到：
+有新的小伙伴会产生更多的疑问，那就是在 Go 语言中，是如何抢占 P 的呢，这里面是怎么做的？
+今天这篇文章我们就来解密抢占 P。
+调度器的发展史 在 Go 语言中，Goroutine 早期是没有设计成抢占式的，早期 Goroutine 只有读写、主动让出、锁等操作时才会触发调度切换。
+这样有一个严重的问题，就是垃圾回收器进行 STW 时，如果有一个 Goroutine 一直都在阻塞调用，垃圾回收器就会一直等待他，不知道等到什么时候&amp;hellip;
+这种情况下就需要抢占式调度来解决问题。如果一个 Goroutine 运行时间过久，就需要进行抢占来解决。
+这块 Go 语言在 Go1.2 起开始实现抢占式调度器，不断完善直至今日：</description>
+    </item>
+    
+    <item>
+      <title>跟面试官聊 Goroutine 泄露的 6 种方法，真刺激！</title>
+      <link>https://wangtu2022.github.io/posts/go/goroutine-leak/</link>
+      <pubDate>Fri, 11 Jun 2021 12:54:49 +0800</pubDate>
+      
+      <guid>https://wangtu2022.github.io/posts/go/goroutine-leak/</guid>
+      <description>大家好，我是煎鱼。
+前几天分享 Go 群友提问的文章时，有读者在朋友圈下提到，希望我能够针对 Goroutine 泄露这块进行讲解，他在面试的时候经常被问到。
+今天的男主角，就是 Go 语言的著名品牌标识 Goroutine，一个随随便便就能开几十万个快车进车道的大杀器。
+for { go func() {}() } 本文会聚焦于 Goroutine 泄露的 N 种方法，进行详解和说明。
+为什么要问 面试官为啥会问 Goroutine（协程）泄露这种奇特的问题呢？
+可以猜测是：
+Goroutine 实在是使用门槛实在是太低了，随手就一个就能起，出现了不少滥用的情况。例如：并发 map。 Goroutine 本身在 Go 语言的标准库、复合类型、底层源码中应用广泛。例如：HTTP Server 对每一个请求的处理就是一个协程去运行。 很多 Go 工程在线上出事故时，基本 Goroutine 的关联，大家都会作为救火队长，风风火火的跑去看指标、看日志，通过 PProf 采集 Goroutine 运行情况等。</description>
+    </item>
+    
+    <item>
+      <title>你知道 Go 结构体和结构体指针调用有什么区别吗？</title>
+      <link>https://wangtu2022.github.io/posts/go/struct-pointer/</link>
+      <pubDate>Sun, 06 Jun 2021 12:21:30 +0800</pubDate>
+      
+      <guid>https://wangtu2022.github.io/posts/go/struct-pointer/</guid>
+      <description>大家好，我是煎鱼。
+前几天在分享《Go 结构体是否可以比较，为什么？》时，有小伙伴提出了新的问题：
+虽然大家提问题的速度已经超出了本鱼写文章的速度&amp;hellip;不过作为宠粉狂鱼，在此刻清明假期时还是写下了这篇文章。
+我在网上冲浪时搜索了相关问题，发现 6 年前就有 Go 开发者有一模一样的疑问，真是困扰了一代又一代的小伙伴。
+本期的男主角是《Go 结构体和结构体指针调用有什么区别》，希望对大家有所帮助，带来一些思考。
+请在此处默念自己心目中的答案，再和煎鱼一同研讨一波 Go 的技术哲学。
+结构体是什么 在 Go 语言中有个基本类型，开发者们称之为结构体（struct）。是 Go 语言中非常常用的，基本定义：
+type struct_variable_type struct { member definition member definition ... member definition } 简单示例：</description>
+    </item>
+    
+    <item>
+      <title>Go 面试官：单核 CPU，开两个 Goroutine，其中一个死循环，会怎么样？</title>
+      <link>https://wangtu2022.github.io/posts/go/go-tips-goroutineloop/</link>
+      <pubDate>Mon, 05 Apr 2021 16:17:23 +0800</pubDate>
+      
+      <guid>https://wangtu2022.github.io/posts/go/go-tips-goroutineloop/</guid>
+      <description>大家好，我是煎鱼。
+最近金三银四，是面试的季节。在我的 Go 读者交流群里出现了许多小伙伴在讨论自己面试过程中所遇到的一些 Go 面试题。
+今天的男主角，是与 Go 工程师有调度相关的知识，那就是 “单核 CPU，开两个 Goroutine，其中一个死循环，会怎么样？”
+请在此处默念自己心目中的答案，再往和煎鱼一起研讨一波 Go 的技术哲学。
+问题定义 针对这个问题，我们需要把问题剖开来看看，其具有以下几个元素：
+运行 Go 程序的计算机只有一个单核 CPU。 两个 Goroutine 在运行。 一个 Goroutine 死循环。 根据这道题的题意，可大致理解其想要问的是 Go 调度相关的一些知识理解。</description>
+    </item>
+    
+    <item>
+      <title>Go 内存泄露之痛，这篇把 Go timer.After 问题根因讲透了！</title>
+      <link>https://wangtu2022.github.io/posts/go/go-tips-timer-memory/</link>
+      <pubDate>Mon, 05 Apr 2021 16:16:47 +0800</pubDate>
+      
+      <guid>https://wangtu2022.github.io/posts/go/go-tips-timer-memory/</guid>
+      <description>大家好，我是煎鱼。
+前几天在公众号分享了一篇 Go timer 源码解析的文章《难以驾驭的 Go timer，一文带你参透计时器的奥秘》。
+在评论区有小伙伴提到了经典的 timer.After 泄露问题，希望我能聊聊，这是一个不能不知的一个大 “坑”。
+今天这篇文章煎鱼就带大家来研讨一下这个问题。
+timer.After 今天是男主角是Go 标准库 time 所提供的 After 方法。函数签名如下：
+func After(d Duration) &amp;lt;-chan Time 该方法可以在一定时间（根据所传入的 Duration）后主动返回 time.Time 类型的 channel 消息。</description>
+    </item>
+    
+  </channel>
+</rss>

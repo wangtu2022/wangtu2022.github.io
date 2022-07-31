@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="zh-hans">
+
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<meta http-equiv="X-UA-Compatible" content="ie=edge">
+	<meta name="theme-color" content="#494f5c">
+	<meta name="msapplication-TileColor" content="#494f5c">
+<meta itemprop="name" content="Go 插件系统，一个凉了快半截的特性？">
+<meta itemprop="description" content="大家好，我是煎鱼。
+在 Go 语言中，有一个好像很好用，但却比较少人提及的功能，那就是 Go Plugin。目前在 Go 工程中普遍还没广泛的使用起来，覆盖率不高。
+前段时间小咸鱼的同事问了他这玩具怎么用，他正想甩出一个链接，但发现&hellip;煎鱼竟然没写过，这不，Go 知识板块的文章地图得补全。
+今天煎鱼就大家一起学习 Go Plugin！
+是什么 Go Team 最早在 Go1.7 实验，在 Go1.8 正式引入了 Go Plugin 的机制。于 2016 年发布，一开始仅支持 Linux 实现：
+Go Plugin 机制实现了 Go 插件的加载和符号解析，能够支持将我们所编写的 Go 包编译为共享库（."><meta itemprop="datePublished" content="2021-12-31T12:54:59+08:00" />
+<meta itemprop="dateModified" content="2021-12-31T12:54:59+08:00" />
+<meta itemprop="wordCount" content="312">
+<meta itemprop="keywords" content="go," /><meta property="og:title" content="Go 插件系统，一个凉了快半截的特性？" />
+<meta property="og:description" content="大家好，我是煎鱼。
+在 Go 语言中，有一个好像很好用，但却比较少人提及的功能，那就是 Go Plugin。目前在 Go 工程中普遍还没广泛的使用起来，覆盖率不高。
+前段时间小咸鱼的同事问了他这玩具怎么用，他正想甩出一个链接，但发现&hellip;煎鱼竟然没写过，这不，Go 知识板块的文章地图得补全。
+今天煎鱼就大家一起学习 Go Plugin！
+是什么 Go Team 最早在 Go1.7 实验，在 Go1.8 正式引入了 Go Plugin 的机制。于 2016 年发布，一开始仅支持 Linux 实现：
+Go Plugin 机制实现了 Go 插件的加载和符号解析，能够支持将我们所编写的 Go 包编译为共享库（." />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://wangtu2022.github.io/posts/go/plugin/" /><meta property="article:section" content="posts" />
+<meta property="article:published_time" content="2021-12-31T12:54:59+08:00" />
+<meta property="article:modified_time" content="2021-12-31T12:54:59+08:00" />
+
+<meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="Go 插件系统，一个凉了快半截的特性？"/>
+<meta name="twitter:description" content="大家好，我是煎鱼。
+在 Go 语言中，有一个好像很好用，但却比较少人提及的功能，那就是 Go Plugin。目前在 Go 工程中普遍还没广泛的使用起来，覆盖率不高。
+前段时间小咸鱼的同事问了他这玩具怎么用，他正想甩出一个链接，但发现&hellip;煎鱼竟然没写过，这不，Go 知识板块的文章地图得补全。
+今天煎鱼就大家一起学习 Go Plugin！
+是什么 Go Team 最早在 Go1.7 实验，在 Go1.8 正式引入了 Go Plugin 的机制。于 2016 年发布，一开始仅支持 Linux 实现：
+Go Plugin 机制实现了 Go 插件的加载和符号解析，能够支持将我们所编写的 Go 包编译为共享库（."/>
+
+	<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+	<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+	<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+	<link rel="manifest" href="/site.webmanifest">
+	<link rel="mask-icon" href="/safari-pinned-tab.svg" color="">
+	<link rel="shortcut icon" href="/favicon.ico">
+
+	<title>Go 插件系统，一个凉了快半截的特性？</title>
+	<link rel="stylesheet" href="https://wangtu2022.github.io/css/style.min.d3141168199607bf3a517216ce3c263814eecdbc8fca72a9a88700799a838219.css" integrity="sha256-0xQRaBmWB786UXIWzjwmOBTuzbyPynKpqIcAeZqDghk=" crossorigin="anonymous">
+	
+	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.1/css/all.min.css">
+	<link rel="stylesheet" href="https://wangtu2022.github.io/css/styles.css">
+</head>
+
+<body id="page">
+	
+	<header id="site-header" class="animated slideInUp">
+		<div class="hdr-wrapper section-inner">
+			<div class="hdr-left">
+				<div class="site-branding">
+					<a href="https://wangtu2022.github.io/">煎鱼</a>
+				</div>
+				<nav class="site-nav hide-in-mobile">
+					
+				<a href="https://wangtu2022.github.io/posts/">文章</a>
+				<a href="https://wangtu2022.github.io/tags/">标签</a>
+				<a href="https://wangtu2022.github.io/about/">关于</a>
+
+				</nav>
+			</div>
+			<div class="hdr-right hdr-icons">
+				<button id="toc-btn" class="hdr-btn desktop-only-ib" title="Table of Contents"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-list"><line x1="8" y1="6" x2="21" y2="6"></line><line x1="8" y1="12" x2="21" y2="12"></line><line x1="8" y1="18" x2="21" y2="18"></line><line x1="3" y1="6" x2="3" y2="6"></line><line x1="3" y1="12" x2="3" y2="12"></line><line x1="3" y1="18" x2="3" y2="18"></line></svg></button><span class="hdr-social hide-in-mobile"><a href="https://github.com/eddycjy" target="_blank" rel="noopener me" title="Github"><svg xmlns="http://www.w3.org/2000/svg" class="feather" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"></path></svg></a></span><button id="menu-btn" class="hdr-btn" title="Menu"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-menu"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg></button>
+			</div>
+		</div>
+	</header>
+	<div id="mobile-menu" class="animated fast">
+		<ul>
+			<li><a href="https://wangtu2022.github.io/posts/">文章</a></li>
+			<li><a href="https://wangtu2022.github.io/tags/">标签</a></li>
+			<li><a href="https://wangtu2022.github.io/about/">关于</a></li>
+		</ul>
+	</div>
+
+
+	<main class="site-main section-inner animated fadeIn faster">
+		<article class="thin">
+			<header class="post-header">
+				<div class="post-meta"><span>Dec 31, 2021</span></div>
+				<h1>Go 插件系统，一个凉了快半截的特性？</h1>
+			</header>
+			<div class="content">
+				<p>大家好，我是煎鱼。</p>
+<p>在 Go 语言中，有一个好像很好用，但却比较少人提及的功能，那就是 Go Plugin。目前在 Go 工程中普遍还没广泛的使用起来，覆盖率不高。</p>
+<p>前段时间小咸鱼的同事问了他这玩具怎么用，他正想甩出一个链接，但发现&hellip;煎鱼竟然没写过，这不，Go 知识板块的文章地图得补全。</p>
+<p>今天煎鱼就大家一起学习 Go Plugin！</p>
+<h2 id="是什么">是什么<a href="#是什么" class="anchor" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 7h3a5 5 0 0 1 5 5 5 5 0 0 1-5 5h-3m-6 0H6a5 5 0 0 1-5-5 5 5 0 0 1 5-5h3"></path><line x1="8" y1="12" x2="16" y2="12"></line></svg></a></h2>
+<p>Go Team 最早在 Go1.7 实验，在 Go1.8 正式引入了 Go Plugin 的机制。于 2016 年发布，一开始仅支持 Linux 实现：</p>
+<p><img src="https://files.mdnice.com/user/3610/9a791ced-39db-4f09-a027-60569ccc95dd.png" alt=""></p>
+<p>Go Plugin 机制实现了 Go 插件的加载和符号解析，能够支持将我们所编写的 Go 包编译为共享库（.so）。</p>
+<p>这样 Go 工程就可以加载所编译好的 Go Plugin（已经变成了共享库文件），在程序中调用共享库中的函数、常量、变量等使用。也称其为 Go 语言中的热插拔的插件系统。</p>
+<p>截止 Go1.17 为止，Go Plugin 仅支持在 Linux、FreeBSD 和 MacOS 上运行，还不支持 Windows。</p>
+<h2 id="为什么需要">为什么需要<a href="#为什么需要" class="anchor" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 7h3a5 5 0 0 1 5 5 5 5 0 0 1-5 5h-3m-6 0H6a5 5 0 0 1-5-5 5 5 0 0 1 5-5h3"></path><line x1="8" y1="12" x2="16" y2="12"></line></svg></a></h2>
+<p>Go 语言是静态语言，正常我们写一个程序，分如下两个角度来看：</p>
+<ul>
+<li>从代码编写的角度来看：我们在程序编写的时候就已经把所有的功能实现给确定了，不会发生什么根本性的变化。</li>
+<li>从程序的角度来看：在 Go 进行编译时，就已经把所有引用的标准库、第三方库等都编译打包好进二进制文件了，因此也就无法在运行时去动态加载，所以没法有其它的可能性。</li>
+</ul>
+<p>那么为什么需要 Go Plugin 呢，原因如下：</p>
+<ul>
+<li>可插拔的插件：程序能够随时的安装插件，也能够卸载他，获得更多运行时的自定义能力。</li>
+<li>可动态加载运行时模块：随时安装了插件，自然也就需要可自行决定运行哪个插件的模块了。</li>
+<li>可独立开发插件、模块：主系统和子插件，可能由不同的团队开发和提供，也更有价值。</li>
+</ul>
+<p>其实本质上还是<strong>希望程序能够在运行时实现动态的外部加载</strong>，根据不同的条件、场景加载不同的插件功能。</p>
+<h2 id="使用方法">使用方法<a href="#使用方法" class="anchor" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 7h3a5 5 0 0 1 5 5 5 5 0 0 1-5 5h-3m-6 0H6a5 5 0 0 1-5-5 5 5 0 0 1 5-5h3"></path><line x1="8" y1="12" x2="16" y2="12"></line></svg></a></h2>
+<h3 id="通用概念">通用概念<a href="#通用概念" class="anchor" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 7h3a5 5 0 0 1 5 5 5 5 0 0 1-5 5h-3m-6 0H6a5 5 0 0 1-5-5 5 5 0 0 1 5-5h3"></path><line x1="8" y1="12" x2="16" y2="12"></line></svg></a></h3>
+<p>Go 官方给出的例子非常简单，只需要在 Go 编译时指定为插件就可以了。</p>
+<p>编译的命令例子如下：</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-golang" data-lang="golang"><span class="line"><span class="cl"><span class="k">go</span> <span class="nx">build</span> <span class="o">-</span><span class="nx">buildmode</span><span class="p">=</span><span class="nx">plugin</span>
+</span></span></code></pre></div><p>当一个插件初次被打开时，所有尚未成为程序一部分的包的init函数被调用。不过主函数不被运行。需要注意<strong>一个插件只会被初始化一次，插件不能被关闭</strong>。</p>
+<p>其共有如下几个 API：</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-golang" data-lang="golang"><span class="line"><span class="cl"><span class="kd">type</span> <span class="nx">Plugin</span>
+</span></span><span class="line"><span class="cl">    <span class="kd">func</span> <span class="nf">Open</span><span class="p">(</span><span class="nx">path</span> <span class="kt">string</span><span class="p">)</span> <span class="p">(</span><span class="o">*</span><span class="nx">Plugin</span><span class="p">,</span> <span class="kt">error</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">    <span class="kd">func</span> <span class="p">(</span><span class="nx">p</span> <span class="o">*</span><span class="nx">Plugin</span><span class="p">)</span> <span class="nf">Lookup</span><span class="p">(</span><span class="nx">symName</span> <span class="kt">string</span><span class="p">)</span> <span class="p">(</span><span class="nx">Symbol</span><span class="p">,</span> <span class="kt">error</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="kd">type</span> <span class="nx">Symbol</span>
+</span></span></code></pre></div><ul>
+<li>Plugin.Open：开启一个 Go 插件。如果一个路径已经被打开，那么将返回现有的 <code>*Plugin</code>。</li>
+<li>Plugin.Lookup：在插件中搜索名所传入的符号，符号是任何导出的变量或函数。如果没有找到该符号，它会报告一个错误。</li>
+</ul>
+<p>主要就是细分为插件和符号，符号（Symbol）本身是一个 interface，在调用 Plugin 相关方法后还是需要进一步断言才能使用。</p>
+<h3 id="实际编写">实际编写<a href="#实际编写" class="anchor" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 7h3a5 5 0 0 1 5 5 5 5 0 0 1-5 5h-3m-6 0H6a5 5 0 0 1-5-5 5 5 0 0 1 5-5h3"></path><line x1="8" y1="12" x2="16" y2="12"></line></svg></a></h3>
+<p>了解基本定义后，我们定义一个插件，一般我们会有个 plugins/ 的目录，作为主程序的附属插件集。</p>
+<p>插件的代码如下：</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-golang" data-lang="golang"><span class="line"><span class="cl"><span class="kn">package</span> <span class="nx">main</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="kn">import</span> <span class="s">&#34;fmt&#34;</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="kd">var</span> <span class="nx">V</span> <span class="kt">int</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="kd">func</span> <span class="nf">F</span><span class="p">()</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">	<span class="nx">fmt</span><span class="p">.</span><span class="nf">Printf</span><span class="p">(</span><span class="s">&#34;脑子进了 %d 次煎鱼 \n&#34;</span><span class="p">,</span> <span class="nx">V</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span></code></pre></div><p>包名必须为 main，在该插件根目录运行：</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-golang" data-lang="golang"><span class="line"><span class="cl"><span class="k">go</span> <span class="nx">build</span> <span class="o">-</span><span class="nx">buildmode</span><span class="p">=</span><span class="nx">plugin</span> <span class="o">-</span><span class="nx">o</span> <span class="nx">plugin</span><span class="p">.</span><span class="nx">so</span> <span class="nx">main</span><span class="p">.</span><span class="k">go</span>
+</span></span></code></pre></div><p>就可以看到在编译的目录下多出了 <code>plugin.so</code> 文件，这就是这个插件经过编译后的动态库 .so 文件。</p>
+<p>随后只需在主程序加载这个插件就可以了，如下：</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-golang" data-lang="golang"><span class="line"><span class="cl"><span class="kn">import</span> <span class="p">(</span>
+</span></span><span class="line"><span class="cl">	<span class="s">&#34;plugin&#34;</span>
+</span></span><span class="line"><span class="cl"><span class="p">)</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="kd">func</span> <span class="nf">main</span><span class="p">()</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">	<span class="nx">p</span><span class="p">,</span> <span class="nx">err</span> <span class="o">:=</span> <span class="nx">plugin</span><span class="p">.</span><span class="nf">Open</span><span class="p">(</span><span class="s">&#34;plugin.so&#34;</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">	<span class="k">if</span> <span class="nx">err</span> <span class="o">!=</span> <span class="kc">nil</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">		<span class="nb">panic</span><span class="p">(</span><span class="nx">err</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">	<span class="p">}</span>
+</span></span><span class="line"><span class="cl">	<span class="nx">v</span><span class="p">,</span> <span class="nx">err</span> <span class="o">:=</span> <span class="nx">p</span><span class="p">.</span><span class="nf">Lookup</span><span class="p">(</span><span class="s">&#34;V&#34;</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">	<span class="k">if</span> <span class="nx">err</span> <span class="o">!=</span> <span class="kc">nil</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">		<span class="nb">panic</span><span class="p">(</span><span class="nx">err</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">	<span class="p">}</span>
+</span></span><span class="line"><span class="cl">	<span class="nx">f</span><span class="p">,</span> <span class="nx">err</span> <span class="o">:=</span> <span class="nx">p</span><span class="p">.</span><span class="nf">Lookup</span><span class="p">(</span><span class="s">&#34;F&#34;</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">	<span class="k">if</span> <span class="nx">err</span> <span class="o">!=</span> <span class="kc">nil</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">		<span class="nb">panic</span><span class="p">(</span><span class="nx">err</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">	<span class="p">}</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">	<span class="o">*</span><span class="nx">v</span><span class="p">.(</span><span class="o">*</span><span class="kt">int</span><span class="p">)</span> <span class="p">=</span> <span class="mi">999</span>
+</span></span><span class="line"><span class="cl">	<span class="nx">f</span><span class="p">.(</span><span class="kd">func</span><span class="p">())()</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span></code></pre></div><p>输出结果：</p>
+<pre tabindex="0"><code>脑子进了 999 次煎鱼 
+</code></pre><p>在程序中，我们先调用了 <code>plugin.Open</code> 方法打开了前面所编译的 <code>plugin.so</code> 动态库。</p>
+<p>紧接着调用 <code>plugin.Lookup</code> 方法，定位到了变量 V 和 方法 F，但由于其返回值都是 Symbol（interface），因此我们需要对其进行类型断言，随时才可以调用和使用。</p>
+<p>至此完成了一个插件的基本使用。</p>
+<h2 id="为什么不被需要">为什么不被需要<a href="#为什么不被需要" class="anchor" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 7h3a5 5 0 0 1 5 5 5 5 0 0 1-5 5h-3m-6 0H6a5 5 0 0 1-5-5 5 5 0 0 1 5-5h3"></path><line x1="8" y1="12" x2="16" y2="12"></line></svg></a></h2>
+<p>在前面我们提到了大量 Go Plugin 的优点，也演示了其 Plugin 代码编写起来有多么的简单和方便。</p>
+<p>但，<strong>为什么 Go Plugin 已经发布了 4 年依然没有被大规模应用</strong>，甚至对于不少业务开发来讲是不被需要的呢，或是压根不知道有这东西？</p>
+<p>究其原因，我个人认为一个东西的广泛应用要至少符合以下三大点：</p>
+<ul>
+<li>基数：需要的场景多。</li>
+<li>上手：方便且易用。</li>
+<li>质量：没有大问题。</li>
+</ul>
+<p>比较折腾的人的是，Go Plugin 这三大点都欠一些火候，综合导致了该功能的没有大规模应用。</p>
+<p>像是要应用 Go Plugin 有诸如下约束：</p>
+<ul>
+<li>环境问题：不支持 Windows 等（暂无计划，#19282），MacOS 有些问题，一开始只支持 Linux，其他的也是后面慢慢增加的支持。</li>
+<li>Go 版本问题：Plugin 构建环境和第三方包的依赖版本需要保持一致。</li>
+<li>特性问题：Plugin 特性的缺失，例如不支持插件的关闭，暂时无新计划支持（#20461）。</li>
+</ul>
+<h2 id="总结">总结<a href="#总结" class="anchor" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 7h3a5 5 0 0 1 5 5 5 5 0 0 1-5 5h-3m-6 0H6a5 5 0 0 1-5-5 5 5 0 0 1 5-5h3"></path><line x1="8" y1="12" x2="16" y2="12"></line></svg></a></h2>
+<p>在 Go issues 中畅游时，能看到许多小伙伴在以往 4 年踩过的坑和无奈。甚至有一个高赞回答（#19282）表示：<strong>插件功能主要是一个技术演示，由于一些不道德的原因，被作为语言的稳定功能发布</strong>（The plugin feature is mostly a tech demo that for some unholy reason got released as a stable feature of the language.）。</p>
+<p>目前 Go Plugin 并不是 Go Team 的优先事项，在 Windows/Mac 的支持存在问题。GOPATH 有问题，不同 GO 版本也有问题。更是建议如果您想要插件，请走较慢的 grpc 路线，因为它们是有效的插件。</p>
+<p>也可以参考为数不多的一些 Go Plugin 用户的方案，例如：tidb。</p>
+<p>但如果要正式使用，是需要慎重考虑，又或是再等等&hellip;等更完善的那一天？</p>
+<h2 id="参考">参考<a href="#参考" class="anchor" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 7h3a5 5 0 0 1 5 5 5 5 0 0 1-5 5h-3m-6 0H6a5 5 0 0 1-5-5 5 5 0 0 1 5-5h3"></path><line x1="8" y1="12" x2="16" y2="12"></line></svg></a></h2>
+<ul>
+<li><a href="https://golang.org/pkg/plugin/">Go Package plugin</a></li>
+<li><a href="https://www.reddit.com/r/golang/comments/bsoa4e/why_is_there_no_windows_support_for_plugins/">Why is there no windows support for plugins?</a></li>
+<li><a href="https://github.com/golang/go/issues/19282">plugin: add Windows support</a></li>
+<li><a href="https://github.com/golang/go/issues/20461">plugin: Add support for closing plugins</a></li>
+<li><a href="https://www.zhihu.com/question/51650593">如何评价 Go 标准库中新增的 plugin 包？</a></li>
+<li><a href="https://mp.weixin.qq.com/s/yBosg0q0V_-wYk9G2GiVTw">一文搞懂Go语言的plugin</a></li>
+</ul>
+
+			</div>
+			<hr class="post-end">
+			<footer class="post-info">
+				<p>
+					<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-tag meta-icon"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"></path><line x1="7" y1="7" x2="7" y2="7"></line></svg><span class="tag"><a href="https://wangtu2022.github.io/tags/go">go</a></span>
+				</p>
+				<p><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-file-text"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>312 Words</p>
+				<p><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-calendar"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>2021-12-31 12:54 &#43;0800</p>
+			</footer>
+		</article>
+		<aside id="toc">
+			<div class="toc-title">Table of Contents</div>
+			<nav id="TableOfContents">
+  <ul>
+    <li><a href="#是什么">是什么</a></li>
+    <li><a href="#为什么需要">为什么需要</a></li>
+    <li><a href="#使用方法">使用方法</a>
+      <ul>
+        <li><a href="#通用概念">通用概念</a></li>
+        <li><a href="#实际编写">实际编写</a></li>
+      </ul>
+    </li>
+    <li><a href="#为什么不被需要">为什么不被需要</a></li>
+    <li><a href="#总结">总结</a></li>
+    <li><a href="#参考">参考</a></li>
+  </ul>
+</nav>
+		</aside>
+		<div class="post-nav thin">
+			<a class="next-post" href="https://wangtu2022.github.io/posts/go/runtimepark/">
+				<span class="post-nav-label"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-arrow-left"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>&nbsp;Newer</span><br><span>Goroutine 一泄露就看到他，这是个什么？</span>
+			</a>
+			<a class="prev-post" href="https://wangtu2022.github.io/posts/go/len/">
+				<span class="post-nav-label">Older&nbsp;<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-arrow-right"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg></span><br><span>迷惑了，Go len() 是怎么计算出来的？</span>
+			</a>
+		</div>
+		<div id="comments" class="thin">
+</div>
+	</main>
+
+	<footer id="site-footer" class="section-inner thin animated fadeIn faster">
+		<p>&copy; 2022 <a href="https://wangtu2022.github.io/">煎鱼</a> &#183; <a href="http://www.beian.miit.gov.cn/">粤ICP备19076352号</a></p>
+		<p>
+			Made with <a href="https://gohugo.io/" target="_blank" rel="noopener">Hugo</a> &#183; Theme <a href="https://github.com/Track3/hermit" target="_blank" rel="noopener">Hermit</a> &#183; <a href="https://wangtu2022.github.io/posts/index.xml" target="_blank" title="rss"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-rss"><path d="M4 11a9 9 0 0 1 9 9"></path><path d="M4 4a16 16 0 0 1 16 16"></path><circle cx="5" cy="19" r="1"></circle></svg></a>
+		</p>
+	</footer>
+
+
+
+	<script src="https://wangtu2022.github.io/js/bundle.min.580988ed2982bcbb74a1773c7abea97b43e4c43b9324e10cda0813ec6ec4bb67.js" integrity="sha256-WAmI7SmCvLt0oXc8er6pe0PkxDuTJOEM2ggT7G7Eu2c=" crossorigin="anonymous"></script>
+	
+<script type="application/javascript">
+var doNotTrack = false;
+if (!doNotTrack) {
+	window.ga=window.ga||function(){(ga.q=ga.q||[]).push(arguments)};ga.l=+new Date;
+	ga('create', 'UA-166045776-1', 'auto');
+	
+	ga('send', 'pageview');
+}
+</script>
+<script async src='https://www.google-analytics.com/analytics.js'></script>
+
+
+</body>
+
+</html>

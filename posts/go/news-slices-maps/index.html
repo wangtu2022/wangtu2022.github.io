@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="zh-hans">
+
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<meta http-equiv="X-UA-Compatible" content="ie=edge">
+	<meta name="theme-color" content="#494f5c">
+	<meta name="msapplication-TileColor" content="#494f5c">
+<meta itemprop="name" content="Go 提案：增加泛型版 slices 和 maps 新包">
+<meta itemprop="description" content="大家好，我是煎鱼。
+现在是 2021 年 8 月份了，根据 Go 语言发布周期的 2，8 原则。Go 1.17 即将发布，在写这篇文章时，现在已经进行到了 rc2：
+这意味着离 Go1.18 释出泛型的正式支持又近了一点点，社区中讨论泛型相关的周边功能的声音又多了起来。
+今天要讨论的泛型版功能支持也是如此，分别包含：map（#47330）、slice（#45955）、container/set（#47331） 三种通用类型的支持。
+我们主要展开 maps 和 slices，其余的都大同小异，理解核心思想就好。
+maps 该提案建议定义一个新的包 maps，它将提供可用于任何类型的 map 的函数：
+下面的描述侧重于描述 API 的提供："><meta itemprop="datePublished" content="2021-12-31T12:54:57+08:00" />
+<meta itemprop="dateModified" content="2021-12-31T12:54:57+08:00" />
+<meta itemprop="wordCount" content="330">
+<meta itemprop="keywords" content="go," /><meta property="og:title" content="Go 提案：增加泛型版 slices 和 maps 新包" />
+<meta property="og:description" content="大家好，我是煎鱼。
+现在是 2021 年 8 月份了，根据 Go 语言发布周期的 2，8 原则。Go 1.17 即将发布，在写这篇文章时，现在已经进行到了 rc2：
+这意味着离 Go1.18 释出泛型的正式支持又近了一点点，社区中讨论泛型相关的周边功能的声音又多了起来。
+今天要讨论的泛型版功能支持也是如此，分别包含：map（#47330）、slice（#45955）、container/set（#47331） 三种通用类型的支持。
+我们主要展开 maps 和 slices，其余的都大同小异，理解核心思想就好。
+maps 该提案建议定义一个新的包 maps，它将提供可用于任何类型的 map 的函数：
+下面的描述侧重于描述 API 的提供：" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://wangtu2022.github.io/posts/go/news-slices-maps/" /><meta property="article:section" content="posts" />
+<meta property="article:published_time" content="2021-12-31T12:54:57+08:00" />
+<meta property="article:modified_time" content="2021-12-31T12:54:57+08:00" />
+
+<meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="Go 提案：增加泛型版 slices 和 maps 新包"/>
+<meta name="twitter:description" content="大家好，我是煎鱼。
+现在是 2021 年 8 月份了，根据 Go 语言发布周期的 2，8 原则。Go 1.17 即将发布，在写这篇文章时，现在已经进行到了 rc2：
+这意味着离 Go1.18 释出泛型的正式支持又近了一点点，社区中讨论泛型相关的周边功能的声音又多了起来。
+今天要讨论的泛型版功能支持也是如此，分别包含：map（#47330）、slice（#45955）、container/set（#47331） 三种通用类型的支持。
+我们主要展开 maps 和 slices，其余的都大同小异，理解核心思想就好。
+maps 该提案建议定义一个新的包 maps，它将提供可用于任何类型的 map 的函数：
+下面的描述侧重于描述 API 的提供："/>
+
+	<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+	<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+	<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+	<link rel="manifest" href="/site.webmanifest">
+	<link rel="mask-icon" href="/safari-pinned-tab.svg" color="">
+	<link rel="shortcut icon" href="/favicon.ico">
+
+	<title>Go 提案：增加泛型版 slices 和 maps 新包</title>
+	<link rel="stylesheet" href="https://wangtu2022.github.io/css/style.min.d3141168199607bf3a517216ce3c263814eecdbc8fca72a9a88700799a838219.css" integrity="sha256-0xQRaBmWB786UXIWzjwmOBTuzbyPynKpqIcAeZqDghk=" crossorigin="anonymous">
+	
+	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.1/css/all.min.css">
+	<link rel="stylesheet" href="https://wangtu2022.github.io/css/styles.css">
+</head>
+
+<body id="page">
+	
+	<header id="site-header" class="animated slideInUp">
+		<div class="hdr-wrapper section-inner">
+			<div class="hdr-left">
+				<div class="site-branding">
+					<a href="https://wangtu2022.github.io/">煎鱼</a>
+				</div>
+				<nav class="site-nav hide-in-mobile">
+					
+				<a href="https://wangtu2022.github.io/posts/">文章</a>
+				<a href="https://wangtu2022.github.io/tags/">标签</a>
+				<a href="https://wangtu2022.github.io/about/">关于</a>
+
+				</nav>
+			</div>
+			<div class="hdr-right hdr-icons">
+				<button id="toc-btn" class="hdr-btn desktop-only-ib" title="Table of Contents"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-list"><line x1="8" y1="6" x2="21" y2="6"></line><line x1="8" y1="12" x2="21" y2="12"></line><line x1="8" y1="18" x2="21" y2="18"></line><line x1="3" y1="6" x2="3" y2="6"></line><line x1="3" y1="12" x2="3" y2="12"></line><line x1="3" y1="18" x2="3" y2="18"></line></svg></button><span class="hdr-social hide-in-mobile"><a href="https://github.com/eddycjy" target="_blank" rel="noopener me" title="Github"><svg xmlns="http://www.w3.org/2000/svg" class="feather" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"></path></svg></a></span><button id="menu-btn" class="hdr-btn" title="Menu"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-menu"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg></button>
+			</div>
+		</div>
+	</header>
+	<div id="mobile-menu" class="animated fast">
+		<ul>
+			<li><a href="https://wangtu2022.github.io/posts/">文章</a></li>
+			<li><a href="https://wangtu2022.github.io/tags/">标签</a></li>
+			<li><a href="https://wangtu2022.github.io/about/">关于</a></li>
+		</ul>
+	</div>
+
+
+	<main class="site-main section-inner animated fadeIn faster">
+		<article class="thin">
+			<header class="post-header">
+				<div class="post-meta"><span>Dec 31, 2021</span></div>
+				<h1>Go 提案：增加泛型版 slices 和 maps 新包</h1>
+			</header>
+			<div class="content">
+				<p>大家好，我是煎鱼。</p>
+<p>现在是 2021 年 8 月份了，根据 Go 语言发布周期的 2，8 原则。Go 1.17 即将发布，在写这篇文章时，现在已经进行到了 rc2：</p>
+<p><img src="https://files.mdnice.com/user/3610/ced4caa3-98ac-4c8a-8077-c72e11f69b56.png" alt=""></p>
+<p>这意味着离 Go1.18 释出泛型的正式支持又近了一点点，社区中讨论泛型相关的周边功能的声音又多了起来。</p>
+<p>今天要讨论的泛型版功能支持也是如此，分别包含：map（#47330）、slice（#45955）、container/set（#47331） 三种通用类型的支持。</p>
+<p>我们主要展开 maps 和 slices，其余的都大同小异，理解核心思想就好。</p>
+<h2 id="maps">maps<a href="#maps" class="anchor" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 7h3a5 5 0 0 1 5 5 5 5 0 0 1-5 5h-3m-6 0H6a5 5 0 0 1-5-5 5 5 0 0 1 5-5h3"></path><line x1="8" y1="12" x2="16" y2="12"></line></svg></a></h2>
+<p>该提案建议定义一个新的包 maps，它将提供可用于任何类型的 map 的函数：</p>
+<p><img src="https://files.mdnice.com/user/3610/fc067e0f-0972-4f92-898e-d64404b5bfa4.png" alt=""></p>
+<p>下面的描述侧重于描述 API 的提供：</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-golang" data-lang="golang"><span class="line"><span class="cl"><span class="kn">package</span> <span class="nx">maps</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="kd">func</span> <span class="nx">Keys</span><span class="p">[</span><span class="nx">K</span> <span class="nx">comparable</span><span class="p">,</span> <span class="nx">V</span> <span class="nx">any</span><span class="p">](</span><span class="nx">m</span> <span class="kd">map</span><span class="p">[</span><span class="nx">K</span><span class="p">]</span><span class="nx">V</span><span class="p">)</span> <span class="p">[]</span><span class="nx">K</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="kd">func</span> <span class="nx">Values</span><span class="p">[</span><span class="nx">K</span> <span class="nx">comparable</span><span class="p">,</span> <span class="nx">V</span> <span class="nx">any</span><span class="p">](</span><span class="nx">m</span> <span class="kd">map</span><span class="p">[</span><span class="nx">K</span><span class="p">]</span><span class="nx">V</span><span class="p">)</span> <span class="p">[]</span><span class="nx">V</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="kd">func</span> <span class="nx">Equal</span><span class="p">[</span><span class="nx">K</span><span class="p">,</span> <span class="nx">V</span> <span class="nx">comparable</span><span class="p">](</span><span class="nx">m1</span><span class="p">,</span> <span class="nx">m2</span> <span class="kd">map</span><span class="p">[</span><span class="nx">K</span><span class="p">]</span><span class="nx">V</span><span class="p">)</span> <span class="kt">bool</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="kd">func</span> <span class="nx">EqualFunc</span><span class="p">[</span><span class="nx">K</span> <span class="nx">comparable</span><span class="p">,</span> <span class="nx">V1</span><span class="p">,</span> <span class="nx">V2</span> <span class="nx">any</span><span class="p">](</span><span class="nx">m1</span> <span class="kd">map</span><span class="p">[</span><span class="nx">K</span><span class="p">]</span><span class="nx">V1</span><span class="p">,</span> <span class="nx">m2</span> <span class="kd">map</span><span class="p">[</span><span class="nx">K</span><span class="p">]</span><span class="nx">V2</span><span class="p">,</span> <span class="nx">cmp</span> <span class="kd">func</span><span class="p">(</span><span class="nx">V1</span><span class="p">,</span> <span class="nx">V2</span><span class="p">)</span> <span class="kt">bool</span><span class="p">)</span> <span class="kt">bool</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="kd">func</span> <span class="nx">Clear</span><span class="p">[</span><span class="nx">K</span> <span class="nx">comparable</span><span class="p">,</span> <span class="nx">V</span> <span class="nx">any</span><span class="p">](</span><span class="nx">m</span> <span class="kd">map</span><span class="p">[</span><span class="nx">K</span><span class="p">]</span><span class="nx">V</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="kd">func</span> <span class="nx">Clone</span><span class="p">[</span><span class="nx">K</span> <span class="nx">comparable</span><span class="p">,</span> <span class="nx">V</span> <span class="nx">any</span><span class="p">](</span><span class="nx">m</span> <span class="kd">map</span><span class="p">[</span><span class="nx">K</span><span class="p">]</span><span class="nx">V</span><span class="p">)</span> <span class="kd">map</span><span class="p">[</span><span class="nx">K</span><span class="p">]</span><span class="nx">V</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="kd">func</span> <span class="nx">Add</span><span class="p">[</span><span class="nx">K</span> <span class="nx">comparable</span><span class="p">,</span> <span class="nx">V</span> <span class="nx">any</span><span class="p">](</span><span class="nx">dst</span><span class="p">,</span> <span class="nx">src</span> <span class="kd">map</span><span class="p">[</span><span class="nx">K</span><span class="p">]</span><span class="nx">V</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="kd">func</span> <span class="nx">Filter</span><span class="p">[</span><span class="nx">K</span> <span class="nx">comparable</span><span class="p">,</span> <span class="nx">V</span> <span class="nx">any</span><span class="p">](</span><span class="nx">m</span> <span class="kd">map</span><span class="p">[</span><span class="nx">K</span><span class="p">]</span><span class="nx">V</span><span class="p">,</span> <span class="nx">keep</span> <span class="kd">func</span><span class="p">(</span><span class="nx">K</span><span class="p">,</span> <span class="nx">V</span><span class="p">)</span> <span class="kt">bool</span><span class="p">)</span>
+</span></span></code></pre></div><ul>
+<li>Keys：返回 map 的键值。这些键将是一个不确定的顺序。</li>
+<li>Values：返回 map 值。这些值将以不确定的顺序出现。</li>
+<li>Equal：匹配两个 map 是否包含相同的键/值对。</li>
+<li>EqualFunc：EqualFunc 与 Equal 类似，但使用 cmp 进行数值比较。</li>
+<li>Clear：从 map 中清除所有条目，使其为空。</li>
+<li>Clone：返回一个 map 的副本，这是一个浅层克隆。新的键和值使用普通的赋值来设置。</li>
+<li>Add：将 src 中的所有键/值对添加到 dst 中。当 src 中的一个键已经存在于 dst 中时，dst 中的值将被 src 中的键相关的值覆盖。</li>
+<li>Filter：过滤器从 map 中删除任何 keep 返回结果为 false 的键/值对。</li>
+</ul>
+<h2 id="slice">slice<a href="#slice" class="anchor" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 7h3a5 5 0 0 1 5 5 5 5 0 0 1-5 5h-3m-6 0H6a5 5 0 0 1-5-5 5 5 0 0 1 5-5h3"></path><line x1="8" y1="12" x2="16" y2="12"></line></svg></a></h2>
+<p>该提案建议定义一个新的包 slices，它将提供可用于任何类型的 slice 的函数：</p>
+<p><img src="https://files.mdnice.com/user/3610/8086fdea-63ee-4c73-aa4b-95b3c647d8e6.png" alt=""></p>
+<p>下面的描述侧重于描述 API 的提供：</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-golang" data-lang="golang"><span class="line"><span class="cl"><span class="kn">package</span> <span class="nx">slices</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="kn">import</span> <span class="s">&#34;constraint&#34;</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="kd">func</span> <span class="nx">Equal</span><span class="p">[</span><span class="nx">T</span> <span class="nx">comparable</span><span class="p">](</span><span class="nx">s1</span><span class="p">,</span> <span class="nx">s2</span> <span class="p">[]</span><span class="nx">T</span><span class="p">)</span> <span class="kt">bool</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="kd">func</span> <span class="nx">EqualFunc</span><span class="p">[</span><span class="nx">T1</span><span class="p">,</span> <span class="nx">T2</span> <span class="nx">any</span><span class="p">](</span><span class="nx">s1</span> <span class="p">[]</span><span class="nx">T1</span><span class="p">,</span> <span class="nx">s2</span> <span class="p">[]</span><span class="nx">T2</span><span class="p">,</span> <span class="nx">eq</span> <span class="kd">func</span><span class="p">(</span><span class="nx">T1</span><span class="p">,</span> <span class="nx">T2</span><span class="p">)</span> <span class="kt">bool</span><span class="p">)</span> <span class="kt">bool</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="kd">func</span> <span class="nx">Compare</span><span class="p">[</span><span class="nx">T</span> <span class="nx">constraints</span><span class="p">.</span><span class="nx">Ordered</span><span class="p">](</span><span class="nx">s1</span><span class="p">,</span> <span class="nx">s2</span> <span class="p">[]</span><span class="nx">T</span><span class="p">)</span> <span class="kt">int</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="kd">func</span> <span class="nx">CompareFunc</span><span class="p">[</span><span class="nx">T</span> <span class="nx">any</span><span class="p">](</span><span class="nx">s1</span><span class="p">,</span> <span class="nx">s2</span> <span class="p">[]</span><span class="nx">T</span><span class="p">,</span> <span class="nx">cmp</span> <span class="kd">func</span><span class="p">(</span><span class="nx">T</span><span class="p">,</span> <span class="nx">T</span><span class="p">)</span> <span class="kt">int</span><span class="p">)</span> <span class="kt">int</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="kd">func</span> <span class="nx">Index</span><span class="p">[</span><span class="nx">T</span> <span class="nx">comparable</span><span class="p">](</span><span class="nx">s</span> <span class="p">[]</span><span class="nx">T</span><span class="p">,</span> <span class="nx">v</span> <span class="nx">T</span><span class="p">)</span> <span class="kt">int</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="kd">func</span> <span class="nx">IndexFunc</span><span class="p">[</span><span class="nx">T</span> <span class="nx">any</span><span class="p">](</span><span class="nx">s</span> <span class="p">[]</span><span class="nx">T</span><span class="p">,</span> <span class="nx">f</span> <span class="kd">func</span><span class="p">(</span><span class="nx">T</span><span class="p">)</span> <span class="kt">bool</span><span class="p">)</span> <span class="kt">int</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="kd">func</span> <span class="nx">Contains</span><span class="p">[</span><span class="nx">T</span> <span class="nx">comparable</span><span class="p">](</span><span class="nx">s</span> <span class="p">[]</span><span class="nx">T</span><span class="p">,</span> <span class="nx">v</span> <span class="nx">T</span><span class="p">)</span> <span class="kt">bool</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="kd">func</span> <span class="nx">Insert</span><span class="p">[</span><span class="nx">S</span> <span class="nx">constraints</span><span class="p">.</span><span class="nx">Slice</span><span class="p">[</span><span class="nx">T</span><span class="p">],</span> <span class="nx">T</span> <span class="nx">any</span><span class="p">](</span><span class="nx">s</span> <span class="nx">S</span><span class="p">,</span> <span class="nx">i</span> <span class="kt">int</span><span class="p">,</span> <span class="nx">v</span> <span class="o">...</span><span class="nx">T</span><span class="p">)</span> <span class="nx">S</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="kd">func</span> <span class="nx">Delete</span><span class="p">[</span><span class="nx">S</span> <span class="nx">constraints</span><span class="p">.</span><span class="nx">Slice</span><span class="p">[</span><span class="nx">T</span><span class="p">],</span> <span class="nx">T</span> <span class="nx">any</span><span class="p">](</span><span class="nx">s</span> <span class="nx">S</span><span class="p">,</span> <span class="nx">i</span><span class="p">,</span> <span class="nx">j</span> <span class="kt">int</span><span class="p">)</span> <span class="nx">S</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="kd">func</span> <span class="nx">Clone</span><span class="p">[</span><span class="nx">S</span> <span class="nx">constraints</span><span class="p">.</span><span class="nx">Slice</span><span class="p">[</span><span class="nx">T</span><span class="p">],</span> <span class="nx">T</span> <span class="nx">any</span><span class="p">](</span><span class="nx">s</span> <span class="nx">S</span><span class="p">)</span> <span class="nx">S</span>
+</span></span></code></pre></div><ul>
+<li>Equal：检查两个切片是否相等，以长度和元素值来比较。</li>
+<li>EqualFunc：检查两个切片是否相等，以所传入的匹配函数来比较。</li>
+<li>Compare/CompareFunc：
+<ul>
+<li>Compare 比较两个切片 s1 和 s2 的元素。</li>
+<li>CompareFunc 与 Compare 类似，在每一对元素上使用所传入的比较函数。</li>
+</ul>
+</li>
+<li>Index：
+<ul>
+<li>Index 返回值 v 在切片 s 中第一次出现的索引，如果不存在，则返回-1。</li>
+<li>IndexFunc 返回满足f(c)的第一个元素在s中的索引，如果没有则返回-1。</li>
+</ul>
+</li>
+<li>Contains：检查值 v 是否存在于切片 s 中。</li>
+</ul>
+<p>插入、删除、克隆的 API 比较常见，这里我就不展开了。在通用类型的切片有一些比较特殊的 API：</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-golang" data-lang="golang"><span class="line"><span class="cl"><span class="kd">func</span> <span class="nx">Compact</span><span class="p">[</span><span class="nx">S</span> <span class="nx">constraints</span><span class="p">.</span><span class="nx">Slice</span><span class="p">[</span><span class="nx">T</span><span class="p">],</span> <span class="nx">T</span> <span class="nx">comparable</span><span class="p">](</span><span class="nx">s</span> <span class="nx">S</span><span class="p">)</span> <span class="nx">S</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="kd">func</span> <span class="nx">CompactFunc</span><span class="p">[</span><span class="nx">S</span> <span class="nx">constraints</span><span class="p">.</span><span class="nx">Slice</span><span class="p">[</span><span class="nx">T</span><span class="p">],</span> <span class="nx">T</span> <span class="nx">any</span><span class="p">](</span><span class="nx">s</span> <span class="nx">S</span><span class="p">,</span> <span class="nx">cmp</span> <span class="kd">func</span><span class="p">(</span><span class="nx">T</span><span class="p">,</span> <span class="nx">T</span><span class="p">)</span> <span class="kt">bool</span><span class="p">)</span> <span class="nx">S</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="kd">func</span> <span class="nx">Grow</span><span class="p">[</span><span class="nx">S</span> <span class="nx">constraints</span><span class="p">.</span><span class="nx">Slice</span><span class="p">[</span><span class="nx">T</span><span class="p">],</span> <span class="nx">T</span> <span class="nx">any</span><span class="p">](</span><span class="nx">s</span> <span class="nx">S</span><span class="p">,</span> <span class="nx">n</span> <span class="kt">int</span><span class="p">)</span> <span class="nx">S</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="kd">func</span> <span class="nx">Clip</span><span class="p">[</span><span class="nx">S</span> <span class="nx">constraints</span><span class="p">.</span><span class="nx">Slice</span><span class="p">[</span><span class="nx">T</span><span class="p">],</span> <span class="nx">T</span> <span class="nx">any</span><span class="p">](</span><span class="nx">s</span> <span class="nx">S</span><span class="p">)</span> <span class="nx">S</span>
+</span></span></code></pre></div><ul>
+<li>Compact/CompactFunc：
+<ul>
+<li>Compact 将连续运行的相等元素替换为单一的副本。这就像 Unix 中的 uniq 命令。会直接修改切片 s 的内容，不会重新创建一个。</li>
+<li>CompactFunc 与 Compact 方法类似，但是使用一个比较函数来匹配。</li>
+</ul>
+</li>
+<li>Grow：如果有必要，Grow 会增长切片的容量，以保证另外 n 个元素的空间。在 Grow(n) 之后，至少有 n 个元素可以被添加到分片中而不需要再分配。如果 n 是负数或者太大，无法分配内存，Grow 将陷入恐慌。</li>
+<li>Clip：从切片中移除未使用的容量，返回s[:len(s):len(s)]。</li>
+</ul>
+<h2 id="总结">总结<a href="#总结" class="anchor" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 7h3a5 5 0 0 1 5 5 5 5 0 0 1-5 5h-3m-6 0H6a5 5 0 0 1-5-5 5 5 0 0 1 5-5h3"></path><line x1="8" y1="12" x2="16" y2="12"></line></svg></a></h2>
+<p>如果这些提议被接受，这几个新包将被包含在实现泛型后的第一个Go版本中（我们目前预计将是Go 1.18）。</p>
+<p>从 issues 的讨论来看，通用类型的新包支持很大概率会实现，主要争议在实现细节，例如：性能、命名、规范等。</p>
+<p>实现后值得期待，又是一次生产力的优化！</p>
+
+			</div>
+			<hr class="post-end">
+			<footer class="post-info">
+				<p>
+					<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-tag meta-icon"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"></path><line x1="7" y1="7" x2="7" y2="7"></line></svg><span class="tag"><a href="https://wangtu2022.github.io/tags/go">go</a></span>
+				</p>
+				<p><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-file-text"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>330 Words</p>
+				<p><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-calendar"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>2021-12-31 12:54 &#43;0800</p>
+			</footer>
+		</article>
+		<aside id="toc">
+			<div class="toc-title">Table of Contents</div>
+			<nav id="TableOfContents">
+  <ul>
+    <li><a href="#maps">maps</a></li>
+    <li><a href="#slice">slice</a></li>
+    <li><a href="#总结">总结</a></li>
+  </ul>
+</nav>
+		</aside>
+		<div class="post-nav thin">
+			<a class="next-post" href="https://wangtu2022.github.io/posts/go/len/">
+				<span class="post-nav-label"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-arrow-left"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>&nbsp;Newer</span><br><span>迷惑了，Go len() 是怎么计算出来的？</span>
+			</a>
+			<a class="prev-post" href="https://wangtu2022.github.io/posts/go/delve/">
+				<span class="post-nav-label">Older&nbsp;<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-arrow-right"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg></span><br><span>一个 Demo 学会使用 Go Delve 调试</span>
+			</a>
+		</div>
+		<div id="comments" class="thin">
+</div>
+	</main>
+
+	<footer id="site-footer" class="section-inner thin animated fadeIn faster">
+		<p>&copy; 2022 <a href="https://wangtu2022.github.io/">煎鱼</a> &#183; <a href="http://www.beian.miit.gov.cn/">粤ICP备19076352号</a></p>
+		<p>
+			Made with <a href="https://gohugo.io/" target="_blank" rel="noopener">Hugo</a> &#183; Theme <a href="https://github.com/Track3/hermit" target="_blank" rel="noopener">Hermit</a> &#183; <a href="https://wangtu2022.github.io/posts/index.xml" target="_blank" title="rss"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-rss"><path d="M4 11a9 9 0 0 1 9 9"></path><path d="M4 4a16 16 0 0 1 16 16"></path><circle cx="5" cy="19" r="1"></circle></svg></a>
+		</p>
+	</footer>
+
+
+
+	<script src="https://wangtu2022.github.io/js/bundle.min.580988ed2982bcbb74a1773c7abea97b43e4c43b9324e10cda0813ec6ec4bb67.js" integrity="sha256-WAmI7SmCvLt0oXc8er6pe0PkxDuTJOEM2ggT7G7Eu2c=" crossorigin="anonymous"></script>
+	
+<script type="application/javascript">
+var doNotTrack = false;
+if (!doNotTrack) {
+	window.ga=window.ga||function(){(ga.q=ga.q||[]).push(arguments)};ga.l=+new Date;
+	ga('create', 'UA-166045776-1', 'auto');
+	
+	ga('send', 'pageview');
+}
+</script>
+<script async src='https://www.google-analytics.com/analytics.js'></script>
+
+
+</body>
+
+</html>

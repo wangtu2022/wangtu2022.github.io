@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="zh-hans">
+
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<meta http-equiv="X-UA-Compatible" content="ie=edge">
+	<meta name="theme-color" content="#494f5c">
+	<meta name="msapplication-TileColor" content="#494f5c">
+<meta itemprop="name" content="Goroutine 一泄露就看到他，这是个什么？">
+<meta itemprop="description" content="大家好，我是煎鱼。
+作为一个 Go 语言的使用大户，常常就有人冷不丁的，一下就泄露了&hellip;泄露了啥？
+表象来看当然是 goroutine 泄露了，这时候就会有小伙伴开始跑去拉取 PProf。就会看到类似下面这张图：
+重点会看到 runtime.gopark 这个函数，在所有的 goroutine 泄露中都会看到有，并且都会是大头。
+既然是大头，也就会有许多朋友以为他是泄漏点，在那一顿猛查，那这个函数到底是什么，作用是？
+runtime.gopark 是何物 想要知道 runtime.gopark 函数是作用，最快的办法就是看源码了。其实现细节在 src/runtime/proc.go 文件中。
+源代码如下：
+func gopark(unlockf func(*g, unsafe.Pointer) bool, lock unsafe.Pointer, reason waitReason, traceEv byte, traceskip int) { mp := acquirem() gp := mp."><meta itemprop="datePublished" content="2021-12-31T12:55:01+08:00" />
+<meta itemprop="dateModified" content="2021-12-31T12:55:01+08:00" />
+<meta itemprop="wordCount" content="191">
+<meta itemprop="keywords" content="go," /><meta property="og:title" content="Goroutine 一泄露就看到他，这是个什么？" />
+<meta property="og:description" content="大家好，我是煎鱼。
+作为一个 Go 语言的使用大户，常常就有人冷不丁的，一下就泄露了&hellip;泄露了啥？
+表象来看当然是 goroutine 泄露了，这时候就会有小伙伴开始跑去拉取 PProf。就会看到类似下面这张图：
+重点会看到 runtime.gopark 这个函数，在所有的 goroutine 泄露中都会看到有，并且都会是大头。
+既然是大头，也就会有许多朋友以为他是泄漏点，在那一顿猛查，那这个函数到底是什么，作用是？
+runtime.gopark 是何物 想要知道 runtime.gopark 函数是作用，最快的办法就是看源码了。其实现细节在 src/runtime/proc.go 文件中。
+源代码如下：
+func gopark(unlockf func(*g, unsafe.Pointer) bool, lock unsafe.Pointer, reason waitReason, traceEv byte, traceskip int) { mp := acquirem() gp := mp." />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://wangtu2022.github.io/posts/go/runtimepark/" /><meta property="article:section" content="posts" />
+<meta property="article:published_time" content="2021-12-31T12:55:01+08:00" />
+<meta property="article:modified_time" content="2021-12-31T12:55:01+08:00" />
+
+<meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="Goroutine 一泄露就看到他，这是个什么？"/>
+<meta name="twitter:description" content="大家好，我是煎鱼。
+作为一个 Go 语言的使用大户，常常就有人冷不丁的，一下就泄露了&hellip;泄露了啥？
+表象来看当然是 goroutine 泄露了，这时候就会有小伙伴开始跑去拉取 PProf。就会看到类似下面这张图：
+重点会看到 runtime.gopark 这个函数，在所有的 goroutine 泄露中都会看到有，并且都会是大头。
+既然是大头，也就会有许多朋友以为他是泄漏点，在那一顿猛查，那这个函数到底是什么，作用是？
+runtime.gopark 是何物 想要知道 runtime.gopark 函数是作用，最快的办法就是看源码了。其实现细节在 src/runtime/proc.go 文件中。
+源代码如下：
+func gopark(unlockf func(*g, unsafe.Pointer) bool, lock unsafe.Pointer, reason waitReason, traceEv byte, traceskip int) { mp := acquirem() gp := mp."/>
+
+	<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+	<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+	<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+	<link rel="manifest" href="/site.webmanifest">
+	<link rel="mask-icon" href="/safari-pinned-tab.svg" color="">
+	<link rel="shortcut icon" href="/favicon.ico">
+
+	<title>Goroutine 一泄露就看到他，这是个什么？</title>
+	<link rel="stylesheet" href="https://wangtu2022.github.io/css/style.min.d3141168199607bf3a517216ce3c263814eecdbc8fca72a9a88700799a838219.css" integrity="sha256-0xQRaBmWB786UXIWzjwmOBTuzbyPynKpqIcAeZqDghk=" crossorigin="anonymous">
+	
+	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.1/css/all.min.css">
+	<link rel="stylesheet" href="https://wangtu2022.github.io/css/styles.css">
+</head>
+
+<body id="page">
+	
+	<header id="site-header" class="animated slideInUp">
+		<div class="hdr-wrapper section-inner">
+			<div class="hdr-left">
+				<div class="site-branding">
+					<a href="https://wangtu2022.github.io/">煎鱼</a>
+				</div>
+				<nav class="site-nav hide-in-mobile">
+					
+				<a href="https://wangtu2022.github.io/posts/">文章</a>
+				<a href="https://wangtu2022.github.io/tags/">标签</a>
+				<a href="https://wangtu2022.github.io/about/">关于</a>
+
+				</nav>
+			</div>
+			<div class="hdr-right hdr-icons">
+				<button id="toc-btn" class="hdr-btn desktop-only-ib" title="Table of Contents"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-list"><line x1="8" y1="6" x2="21" y2="6"></line><line x1="8" y1="12" x2="21" y2="12"></line><line x1="8" y1="18" x2="21" y2="18"></line><line x1="3" y1="6" x2="3" y2="6"></line><line x1="3" y1="12" x2="3" y2="12"></line><line x1="3" y1="18" x2="3" y2="18"></line></svg></button><span class="hdr-social hide-in-mobile"><a href="https://github.com/eddycjy" target="_blank" rel="noopener me" title="Github"><svg xmlns="http://www.w3.org/2000/svg" class="feather" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"></path></svg></a></span><button id="menu-btn" class="hdr-btn" title="Menu"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-menu"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg></button>
+			</div>
+		</div>
+	</header>
+	<div id="mobile-menu" class="animated fast">
+		<ul>
+			<li><a href="https://wangtu2022.github.io/posts/">文章</a></li>
+			<li><a href="https://wangtu2022.github.io/tags/">标签</a></li>
+			<li><a href="https://wangtu2022.github.io/about/">关于</a></li>
+		</ul>
+	</div>
+
+
+	<main class="site-main section-inner animated fadeIn faster">
+		<article class="thin">
+			<header class="post-header">
+				<div class="post-meta"><span>Dec 31, 2021</span></div>
+				<h1>Goroutine 一泄露就看到他，这是个什么？</h1>
+			</header>
+			<div class="content">
+				<p>大家好，我是煎鱼。</p>
+<p>作为一个 Go 语言的使用大户，常常就有人冷不丁的，一下就泄露了&hellip;泄露了啥？</p>
+<p>表象来看当然是 goroutine 泄露了，这时候就会有小伙伴开始跑去拉取 PProf。就会看到类似下面这张图：</p>
+<p><img src="https://files.mdnice.com/user/3610/78c8dadf-4f5c-4dfe-be36-d39bfa9d13d3.png" alt=""></p>
+<p>重点会看到 <code>runtime.gopark</code> 这个函数，在所有的 goroutine 泄露中都会看到有，并且都会是大头。</p>
+<p>既然是大头，也就会有许多朋友以为他是泄漏点，在那一顿猛查，那这个函数到底是什么，作用是？</p>
+<h2 id="runtimegopark-是何物">runtime.gopark 是何物<a href="#runtimegopark-是何物" class="anchor" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 7h3a5 5 0 0 1 5 5 5 5 0 0 1-5 5h-3m-6 0H6a5 5 0 0 1-5-5 5 5 0 0 1 5-5h3"></path><line x1="8" y1="12" x2="16" y2="12"></line></svg></a></h2>
+<p>想要知道 <code>runtime.gopark</code> 函数是作用，最快的办法就是看源码了。其实现细节在 src/runtime/proc.go 文件中。</p>
+<p>源代码如下：</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-golang" data-lang="golang"><span class="line"><span class="cl"><span class="kd">func</span> <span class="nf">gopark</span><span class="p">(</span><span class="nx">unlockf</span> <span class="kd">func</span><span class="p">(</span><span class="o">*</span><span class="nx">g</span><span class="p">,</span> <span class="nx">unsafe</span><span class="p">.</span><span class="nx">Pointer</span><span class="p">)</span> <span class="kt">bool</span><span class="p">,</span> <span class="nx">lock</span> <span class="nx">unsafe</span><span class="p">.</span><span class="nx">Pointer</span><span class="p">,</span> <span class="nx">reason</span> <span class="nx">waitReason</span><span class="p">,</span> <span class="nx">traceEv</span> <span class="kt">byte</span><span class="p">,</span> <span class="nx">traceskip</span> <span class="kt">int</span><span class="p">)</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">	<span class="nx">mp</span> <span class="o">:=</span> <span class="nf">acquirem</span><span class="p">()</span>
+</span></span><span class="line"><span class="cl">	<span class="nx">gp</span> <span class="o">:=</span> <span class="nx">mp</span><span class="p">.</span><span class="nx">curg</span>
+</span></span><span class="line"><span class="cl">	<span class="nx">status</span> <span class="o">:=</span> <span class="nf">readgstatus</span><span class="p">(</span><span class="nx">gp</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">	<span class="nx">mp</span><span class="p">.</span><span class="nx">waitlock</span> <span class="p">=</span> <span class="nx">lock</span>
+</span></span><span class="line"><span class="cl">	<span class="nx">mp</span><span class="p">.</span><span class="nx">waitunlockf</span> <span class="p">=</span> <span class="nx">unlockf</span>
+</span></span><span class="line"><span class="cl">	<span class="nx">gp</span><span class="p">.</span><span class="nx">waitreason</span> <span class="p">=</span> <span class="nx">reason</span>
+</span></span><span class="line"><span class="cl">	<span class="nx">mp</span><span class="p">.</span><span class="nx">waittraceev</span> <span class="p">=</span> <span class="nx">traceEv</span>
+</span></span><span class="line"><span class="cl">	<span class="nx">mp</span><span class="p">.</span><span class="nx">waittraceskip</span> <span class="p">=</span> <span class="nx">traceskip</span>
+</span></span><span class="line"><span class="cl">	<span class="nf">releasem</span><span class="p">(</span><span class="nx">mp</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">	
+</span></span><span class="line"><span class="cl">	<span class="nf">mcall</span><span class="p">(</span><span class="nx">park_m</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span></code></pre></div><p>该函数主要作用有三大点：</p>
+<ul>
+<li>调用 <code>acquirem</code> 函数：
+<ul>
+<li>获取当前 goroutine 所绑定的 m，设置各类所需数据。</li>
+<li>调用 <code>releasem</code> 函数<strong>将当前 goroutine 和其 m 的绑定关系解除</strong>。</li>
+</ul>
+</li>
+<li>调用 <code>park_m</code> 函数：
+<ul>
+<li>将当前 goroutine 的状态从 <code>_Grunning</code> 切换为 <code>_Gwaiting</code>，也就是等待状态。</li>
+<li>删除 m 和当前 goroutine m-&gt;curg（简称gp）之间的关联。</li>
+</ul>
+</li>
+<li>调用 <code>mcall</code> 函数，仅会在需要进行 goroutiine 切换时会被调用：
+<ul>
+<li>切换当前线程的堆栈，从 g 的堆栈切换到 g0 的堆栈并调用 fn(g) 函数。</li>
+<li>将 g 的当前 PC/SP 保存在 g-&gt;sched 中，以便后续调用 goready 函数时可以恢复运行现场。</li>
+</ul>
+</li>
+</ul>
+<p>熟读了其源码后，我们可得知该函数的关键作用就是<strong>将当前的 goroutine 放入等待状态</strong>，这意味着 goroutine 被暂时被搁置了，也就是被运行时调度器暂停了。</p>
+<h2 id="缘由">缘由<a href="#缘由" class="anchor" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 7h3a5 5 0 0 1 5 5 5 5 0 0 1-5 5h-3m-6 0H6a5 5 0 0 1-5-5 5 5 0 0 1 5-5h3"></path><line x1="8" y1="12" x2="16" y2="12"></line></svg></a></h2>
+<p>回到最初的问题，之所以 goroutine 泄露，你就会看到大量的 <code>runtime.gopark</code> 函数，这是因为 goroutine 泄露一般不会单单只是一个 goroutine，肯定是会有多个的。</p>
+<p>同时这些 goroutine 在调用了 <code>runtime.gopark</code> 函数后都被暂停了，也就是进入休眠状态，自然而然也就停留在此。</p>
+<p>直至满足条件后再被 <code>runtime.goready</code> 函数唤醒，该函数会将已准备就绪的 goroutine 切换状态，再加入运行队列，等待调度器的新一轮调度。</p>
+<h2 id="思考">思考<a href="#思考" class="anchor" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 7h3a5 5 0 0 1 5 5 5 5 0 0 1-5 5h-3m-6 0H6a5 5 0 0 1-5-5 5 5 0 0 1 5-5h3"></path><line x1="8" y1="12" x2="16" y2="12"></line></svg></a></h2>
+<p>前几天就有读者在我的 Go 读者群中咨询了下述问题，也和  <code>runtime.gopark</code> 函数有关。问题如下：</p>
+<p><img src="https://files.mdnice.com/user/3610/eb5d0483-8193-4adf-881e-490825d137fe.png" alt=""></p>
+<p>经过上述的分析，显然 <code>runtime.gopark</code> 不是 goroutine 的一种状态，导致 goroutine 状态变更只是他的执行过程中所涉及到，产生的一个结果。</p>
+<p>而 goroutine 的状态一共有 9 种，有兴趣的小伙伴可以了解。如下：</p>
+<table>
+<thead>
+<tr>
+<th>状态</th>
+<th>含义</th>
+<th></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>_Gidle</td>
+<td>刚刚被分配，还没有进行初始化。</td>
+<td></td>
+</tr>
+<tr>
+<td>_Grunnable</td>
+<td>已经在运行队列中，还没有执行用户代码。</td>
+<td></td>
+</tr>
+<tr>
+<td>_Grunning</td>
+<td>不在运行队列里中，已经可以执行用户代码，此时已经分配了 M 和 P。</td>
+<td></td>
+</tr>
+<tr>
+<td>_Gsyscall</td>
+<td>正在执行系统调用，此时分配了 M。</td>
+<td></td>
+</tr>
+<tr>
+<td>_Gwaiting</td>
+<td>在运行时被阻止，没有执行用户代码，也不在运行队列中，此时它正在某处阻塞等待中。</td>
+<td></td>
+</tr>
+<tr>
+<td>_Gmoribund_unused</td>
+<td>尚未使用，但是在 gdb 中进行了硬编码。</td>
+<td></td>
+</tr>
+<tr>
+<td>_Gdead</td>
+<td>尚未使用，这个状态可能是刚退出或是刚被初始化，此时它并没有执行用户代码，有可能有也有可能没有分配堆栈。</td>
+<td></td>
+</tr>
+<tr>
+<td>_Genqueue_unused</td>
+<td>尚未使用。</td>
+<td></td>
+</tr>
+<tr>
+<td>_Gcopystack</td>
+<td>正在复制堆栈，并没有执行用户代码，也不在运行队列中。</td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<h2 id="总结">总结<a href="#总结" class="anchor" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 7h3a5 5 0 0 1 5 5 5 5 0 0 1-5 5h-3m-6 0H6a5 5 0 0 1-5-5 5 5 0 0 1 5-5h3"></path><line x1="8" y1="12" x2="16" y2="12"></line></svg></a></h2>
+<p>在今天这篇文章中，我们介绍了大家最常碰到的 goroutine 泄露，而在泄露后最关心的 <code>runtime.gopark</code> 函数的意义，我们从源码再到作用进行了一轮剖析。</p>
+<p>下次如果再有人问你 <code>runtime.gopark</code> 是干嘛用的，就可以愉快的把这篇文章甩给他，分享你的知识啦 ：）</p>
+
+			</div>
+			<hr class="post-end">
+			<footer class="post-info">
+				<p>
+					<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-tag meta-icon"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"></path><line x1="7" y1="7" x2="7" y2="7"></line></svg><span class="tag"><a href="https://wangtu2022.github.io/tags/go">go</a></span>
+				</p>
+				<p><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-file-text"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>191 Words</p>
+				<p><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-calendar"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>2021-12-31 12:55 &#43;0800</p>
+			</footer>
+		</article>
+		<aside id="toc">
+			<div class="toc-title">Table of Contents</div>
+			<nav id="TableOfContents">
+  <ul>
+    <li><a href="#runtimegopark-是何物">runtime.gopark 是何物</a></li>
+    <li><a href="#缘由">缘由</a></li>
+    <li><a href="#思考">思考</a></li>
+    <li><a href="#总结">总结</a></li>
+  </ul>
+</nav>
+		</aside>
+		<div class="post-nav thin">
+			<a class="next-post" href="https://wangtu2022.github.io/posts/go/117-generics/">
+				<span class="post-nav-label"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-arrow-left"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>&nbsp;Newer</span><br><span>Go 1.17 支持泛型了？具体怎么用</span>
+			</a>
+			<a class="prev-post" href="https://wangtu2022.github.io/posts/go/plugin/">
+				<span class="post-nav-label">Older&nbsp;<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-arrow-right"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg></span><br><span>Go 插件系统，一个凉了快半截的特性？</span>
+			</a>
+		</div>
+		<div id="comments" class="thin">
+</div>
+	</main>
+
+	<footer id="site-footer" class="section-inner thin animated fadeIn faster">
+		<p>&copy; 2022 <a href="https://wangtu2022.github.io/">煎鱼</a> &#183; <a href="http://www.beian.miit.gov.cn/">粤ICP备19076352号</a></p>
+		<p>
+			Made with <a href="https://gohugo.io/" target="_blank" rel="noopener">Hugo</a> &#183; Theme <a href="https://github.com/Track3/hermit" target="_blank" rel="noopener">Hermit</a> &#183; <a href="https://wangtu2022.github.io/posts/index.xml" target="_blank" title="rss"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-rss"><path d="M4 11a9 9 0 0 1 9 9"></path><path d="M4 4a16 16 0 0 1 16 16"></path><circle cx="5" cy="19" r="1"></circle></svg></a>
+		</p>
+	</footer>
+
+
+
+	<script src="https://wangtu2022.github.io/js/bundle.min.580988ed2982bcbb74a1773c7abea97b43e4c43b9324e10cda0813ec6ec4bb67.js" integrity="sha256-WAmI7SmCvLt0oXc8er6pe0PkxDuTJOEM2ggT7G7Eu2c=" crossorigin="anonymous"></script>
+	
+<script type="application/javascript">
+var doNotTrack = false;
+if (!doNotTrack) {
+	window.ga=window.ga||function(){(ga.q=ga.q||[]).push(arguments)};ga.l=+new Date;
+	ga('create', 'UA-166045776-1', 'auto');
+	
+	ga('send', 'pageview');
+}
+</script>
+<script async src='https://www.google-analytics.com/analytics.js'></script>
+
+
+</body>
+
+</html>

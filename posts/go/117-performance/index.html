@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="zh-hans">
+
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<meta http-equiv="X-UA-Compatible" content="ie=edge">
+	<meta name="theme-color" content="#494f5c">
+	<meta name="msapplication-TileColor" content="#494f5c">
+<meta itemprop="name" content="Go1.17 新特性，凭什么提速 5~10%？">
+<meta itemprop="description" content="大家好，我是煎鱼。
+在 Go1.17 发布后，我们惊喜的发现 Go 语言他又又又优化了，编译器改进后产生了约 5% 的性能提升，也没有什么破坏性修改，保证了向前兼容。
+他做了些什么呢，好像没怎么看到有人提起。为此今天煎鱼带大家来解读两新提案：
+《Proposal: Register-based Go calling convention》 《Proposal: Create an undefined internal calling convention》 本文会基于提案讲解和拆解，毕竟分享新知识肯定要从官方资料作为事实基准出发。
+背景 在以往的 Go 版本中，Go 的调用约定简单且几乎跨平台通用，其原因在于选用了基于 Plan9 ABI 的堆栈调用约定，也就是函数的参数和返回值都是通过堆栈上来进行传递。"><meta itemprop="datePublished" content="2021-12-31T12:55:04+08:00" />
+<meta itemprop="dateModified" content="2021-12-31T12:55:04+08:00" />
+<meta itemprop="wordCount" content="126">
+<meta itemprop="keywords" content="go," /><meta property="og:title" content="Go1.17 新特性，凭什么提速 5~10%？" />
+<meta property="og:description" content="大家好，我是煎鱼。
+在 Go1.17 发布后，我们惊喜的发现 Go 语言他又又又优化了，编译器改进后产生了约 5% 的性能提升，也没有什么破坏性修改，保证了向前兼容。
+他做了些什么呢，好像没怎么看到有人提起。为此今天煎鱼带大家来解读两新提案：
+《Proposal: Register-based Go calling convention》 《Proposal: Create an undefined internal calling convention》 本文会基于提案讲解和拆解，毕竟分享新知识肯定要从官方资料作为事实基准出发。
+背景 在以往的 Go 版本中，Go 的调用约定简单且几乎跨平台通用，其原因在于选用了基于 Plan9 ABI 的堆栈调用约定，也就是函数的参数和返回值都是通过堆栈上来进行传递。" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://wangtu2022.github.io/posts/go/117-performance/" /><meta property="article:section" content="posts" />
+<meta property="article:published_time" content="2021-12-31T12:55:04+08:00" />
+<meta property="article:modified_time" content="2021-12-31T12:55:04+08:00" />
+
+<meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="Go1.17 新特性，凭什么提速 5~10%？"/>
+<meta name="twitter:description" content="大家好，我是煎鱼。
+在 Go1.17 发布后，我们惊喜的发现 Go 语言他又又又优化了，编译器改进后产生了约 5% 的性能提升，也没有什么破坏性修改，保证了向前兼容。
+他做了些什么呢，好像没怎么看到有人提起。为此今天煎鱼带大家来解读两新提案：
+《Proposal: Register-based Go calling convention》 《Proposal: Create an undefined internal calling convention》 本文会基于提案讲解和拆解，毕竟分享新知识肯定要从官方资料作为事实基准出发。
+背景 在以往的 Go 版本中，Go 的调用约定简单且几乎跨平台通用，其原因在于选用了基于 Plan9 ABI 的堆栈调用约定，也就是函数的参数和返回值都是通过堆栈上来进行传递。"/>
+
+	<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+	<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+	<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+	<link rel="manifest" href="/site.webmanifest">
+	<link rel="mask-icon" href="/safari-pinned-tab.svg" color="">
+	<link rel="shortcut icon" href="/favicon.ico">
+
+	<title>Go1.17 新特性，凭什么提速 5~10%？</title>
+	<link rel="stylesheet" href="https://wangtu2022.github.io/css/style.min.d3141168199607bf3a517216ce3c263814eecdbc8fca72a9a88700799a838219.css" integrity="sha256-0xQRaBmWB786UXIWzjwmOBTuzbyPynKpqIcAeZqDghk=" crossorigin="anonymous">
+	
+	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.1/css/all.min.css">
+	<link rel="stylesheet" href="https://wangtu2022.github.io/css/styles.css">
+</head>
+
+<body id="page">
+	
+	<header id="site-header" class="animated slideInUp">
+		<div class="hdr-wrapper section-inner">
+			<div class="hdr-left">
+				<div class="site-branding">
+					<a href="https://wangtu2022.github.io/">煎鱼</a>
+				</div>
+				<nav class="site-nav hide-in-mobile">
+					
+				<a href="https://wangtu2022.github.io/posts/">文章</a>
+				<a href="https://wangtu2022.github.io/tags/">标签</a>
+				<a href="https://wangtu2022.github.io/about/">关于</a>
+
+				</nav>
+			</div>
+			<div class="hdr-right hdr-icons">
+				<button id="toc-btn" class="hdr-btn desktop-only-ib" title="Table of Contents"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-list"><line x1="8" y1="6" x2="21" y2="6"></line><line x1="8" y1="12" x2="21" y2="12"></line><line x1="8" y1="18" x2="21" y2="18"></line><line x1="3" y1="6" x2="3" y2="6"></line><line x1="3" y1="12" x2="3" y2="12"></line><line x1="3" y1="18" x2="3" y2="18"></line></svg></button><span class="hdr-social hide-in-mobile"><a href="https://github.com/eddycjy" target="_blank" rel="noopener me" title="Github"><svg xmlns="http://www.w3.org/2000/svg" class="feather" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"></path></svg></a></span><button id="menu-btn" class="hdr-btn" title="Menu"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-menu"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg></button>
+			</div>
+		</div>
+	</header>
+	<div id="mobile-menu" class="animated fast">
+		<ul>
+			<li><a href="https://wangtu2022.github.io/posts/">文章</a></li>
+			<li><a href="https://wangtu2022.github.io/tags/">标签</a></li>
+			<li><a href="https://wangtu2022.github.io/about/">关于</a></li>
+		</ul>
+	</div>
+
+
+	<main class="site-main section-inner animated fadeIn faster">
+		<article class="thin">
+			<header class="post-header">
+				<div class="post-meta"><span>Dec 31, 2021</span></div>
+				<h1>Go1.17 新特性，凭什么提速 5~10%？</h1>
+			</header>
+			<div class="content">
+				<p>大家好，我是煎鱼。</p>
+<p>在 Go1.17 发布后，我们惊喜的发现 Go 语言他又又又优化了，编译器改进后产生了约 5% 的性能提升，也没有什么破坏性修改，保证了向前兼容。</p>
+<p><img src="https://files.mdnice.com/user/3610/c39ffb33-4afd-4537-a172-4919be7975a4.png" alt=""></p>
+<p>他做了些什么呢，好像没怎么看到有人提起。为此今天煎鱼带大家来解读两新提案：</p>
+<ul>
+<li>《<a href="https://go.googlesource.com/proposal/+/master/design/40724-register-calling.md" title="Proposal: Register-based Go calling convention">Proposal: Register-based Go calling convention</a>》</li>
+<li>《<a href="https://go.googlesource.com/proposal/+/master/design/27539-internal-abi.md" title="Proposal: Create an undefined internal calling convention">Proposal: Create an undefined internal calling convention</a>》</li>
+</ul>
+<p>本文会基于提案讲解和拆解，毕竟分享新知识肯定要从官方资料作为事实基准出发。</p>
+<h2 id="背景">背景<a href="#背景" class="anchor" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 7h3a5 5 0 0 1 5 5 5 5 0 0 1-5 5h-3m-6 0H6a5 5 0 0 1-5-5 5 5 0 0 1 5-5h3"></path><line x1="8" y1="12" x2="16" y2="12"></line></svg></a></h2>
+<p>在以往的 Go 版本中，Go 的调用约定简单且几乎跨平台通用，其原因在于选用了基于 Plan9 ABI 的堆栈调用约定，也就是<strong>函数的参数和返回值都是通过堆栈上来进行传递</strong>。</p>
+<p>这里我们一共提到了 Plan9 和 ABI，这是两个很关键的理念：</p>
+<ul>
+<li>Plan9：Go 语言所使用的汇编器，Rob Pike 是贝尔实验室的猛人。</li>
+<li>ABI：Application Binary Interface（应用程序二进制接口），ABI 包含了应用程序在操作系统下运行时必须遵守的编程约定（例如：二进制接口）。</li>
+</ul>
+<p>该方案的优缺点如下：</p>
+<ul>
+<li>优点：实现简单，简化了实现成本。</li>
+<li>缺点：性能方面付出了不少的代价。</li>
+</ul>
+<p>按我理解，在 Go 语言初创时期，采取先简单实现，跑起来再说。也合理，性能倒不是一个 TOP1 需求。</p>
+<h2 id="go117-优化">Go1.17 优化<a href="#go117-优化" class="anchor" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 7h3a5 5 0 0 1 5 5 5 5 0 0 1-5 5h-3m-6 0H6a5 5 0 0 1-5-5 5 5 0 0 1 5-5h3"></path><line x1="8" y1="12" x2="16" y2="12"></line></svg></a></h2>
+<h3 id="什么是调用惯例">什么是调用惯例<a href="#什么是调用惯例" class="anchor" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 7h3a5 5 0 0 1 5 5 5 5 0 0 1-5 5h-3m-6 0H6a5 5 0 0 1-5-5 5 5 0 0 1 5-5h3"></path><line x1="8" y1="12" x2="16" y2="12"></line></svg></a></h3>
+<p>在新版本的优化中，提到了调用惯例（calling convention）的概念，指的是<strong>调用方和被调用方对函数调用的共识约定</strong>。</p>
+<p>这些共识包含：函数的参数、返回值、参数传递顺序、传递方式等。</p>
+<p>双方都必须遵循这个约定时，程序的函数才能正常的运行起来。如果不遵循，那么该函数是没法运行起来的。</p>
+<h3 id="优化是什么">优化是什么<a href="#优化是什么" class="anchor" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 7h3a5 5 0 0 1 5 5 5 5 0 0 1-5 5h-3m-6 0H6a5 5 0 0 1-5-5 5 5 0 0 1 5-5h3"></path><line x1="8" y1="12" x2="16" y2="12"></line></svg></a></h3>
+<p>在 Go1.17 起，正式将把 Go 内部 ABI 规范（在 Go 函数之间使用）从基于堆栈的函数参数和结果传递的方式<strong>改为基于寄存器的函数参数和结果传递</strong>。</p>
+<p>本次修改涉及到的项非常多，该优化是持续的，原本预计是 Go1.16 实现，不过拖到了 Go1.17。</p>
+<p><img src="https://files.mdnice.com/user/3610/41e7a047-cac2-4b8a-9006-762fd73ee2a4.png" alt=""></p>
+<p>目前实现了 amd64 和 arm64 架构的支持。还有不少的更多的支持会持续在 Go1.18 中完成，具体进度可见 <a href="https://github.com/golang/go/issues/40724" title="issues #40724">issues #40724</a>。</p>
+<h3 id="性能如何">性能如何<a href="#性能如何" class="anchor" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 7h3a5 5 0 0 1 5 5 5 5 0 0 1-5 5h-3m-6 0H6a5 5 0 0 1-5-5 5 5 0 0 1 5-5h3"></path><line x1="8" y1="12" x2="16" y2="12"></line></svg></a></h3>
+<p>在 <a href="https://golang.org/doc/go1.17" title="Go1.17 Release Notes">Go1.17 Release Notes</a> 中明确指出，用一组有代表性的 Go 包和程序的基准测试。</p>
+<p>官方数据显示：</p>
+<ul>
+<li>Go 程序的运行性能提高了约 5%。</li>
+<li>Go 所编译出的二进制大小的减少约 2%。</li>
+</ul>
+<p>在民间数据来看，在 <a href="https://twitter.com/__Achille__/status/1431014148800802819" title="twitter">twitter</a> 看到 @Achille 表示从 Go1.15.7 升级到 Go1.17 后显示。在一个大规模的数据处理系统上进行的 Go1.17 升级产生了惊人的效果，我们来看看他的真实数据。</p>
+<p>CPU、Malloc 调用时间减少了约15%：</p>
+<p><img src="https://files.mdnice.com/user/3610/0c98d5c9-4691-4c39-92af-fe25fd41de25.png" alt="图来自 @Achille"></p>
+<p><img src="https://files.mdnice.com/user/3610/2ea79a65-297f-49aa-a97f-15d02dbf5c9b.png" alt="图来自 @Achille"></p>
+<p>RSS 大小更接近于堆的大小：</p>
+<p><img src="https://files.mdnice.com/user/3610/14b1886f-7bd7-4ea2-9967-5272f5b09c79.png" alt="图来自 @Achille"></p>
+<p>从原本的 1.6GB 降至 1GB。</p>
+<p>结合官方和民间数据来看，优化效果是明确且有效的。有兴趣的小伙伴也可以自己测一测。</p>
+<h2 id="总结">总结<a href="#总结" class="anchor" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 7h3a5 5 0 0 1 5 5 5 5 0 0 1-5 5h-3m-6 0H6a5 5 0 0 1-5-5 5 5 0 0 1 5-5h3"></path><line x1="8" y1="12" x2="16" y2="12"></line></svg></a></h2>
+<p>在 Go1.17 这一个新版本中，只需要简单的升一升 Go 版本，我们就能得到一定的性能优化，这是非常不错的。</p>
+<p>从以往的基于堆栈的函数参数和结果传递的方式改为 Go1.17~Go1.18 基于寄存器的函数参数和结果传递，Go 语言正在一步步走的更好！</p>
+<p>你觉得呢？</p>
+
+			</div>
+			<hr class="post-end">
+			<footer class="post-info">
+				<p>
+					<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-tag meta-icon"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"></path><line x1="7" y1="7" x2="7" y2="7"></line></svg><span class="tag"><a href="https://wangtu2022.github.io/tags/go">go</a></span>
+				</p>
+				<p><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-file-text"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>126 Words</p>
+				<p><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-calendar"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>2021-12-31 12:55 &#43;0800</p>
+			</footer>
+		</article>
+		<aside id="toc">
+			<div class="toc-title">Table of Contents</div>
+			<nav id="TableOfContents">
+  <ul>
+    <li><a href="#背景">背景</a></li>
+    <li><a href="#go117-优化">Go1.17 优化</a>
+      <ul>
+        <li><a href="#什么是调用惯例">什么是调用惯例</a></li>
+        <li><a href="#优化是什么">优化是什么</a></li>
+        <li><a href="#性能如何">性能如何</a></li>
+      </ul>
+    </li>
+    <li><a href="#总结">总结</a></li>
+  </ul>
+</nav>
+		</aside>
+		<div class="post-nav thin">
+			<a class="next-post" href="https://wangtu2022.github.io/posts/go/117-errorstack/">
+				<span class="post-nav-label"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-arrow-left"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>&nbsp;Newer</span><br><span>Go1.17 新特性，优化抛出的错误堆栈</span>
+			</a>
+			<a class="prev-post" href="https://wangtu2022.github.io/posts/go/117-module-pruning-lazy/">
+				<span class="post-nav-label">Older&nbsp;<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-arrow-right"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg></span><br><span>Go1.17 新特性：对 Go 依赖管理的一把大剪刀</span>
+			</a>
+		</div>
+		<div id="comments" class="thin">
+</div>
+	</main>
+
+	<footer id="site-footer" class="section-inner thin animated fadeIn faster">
+		<p>&copy; 2022 <a href="https://wangtu2022.github.io/">煎鱼</a> &#183; <a href="http://www.beian.miit.gov.cn/">粤ICP备19076352号</a></p>
+		<p>
+			Made with <a href="https://gohugo.io/" target="_blank" rel="noopener">Hugo</a> &#183; Theme <a href="https://github.com/Track3/hermit" target="_blank" rel="noopener">Hermit</a> &#183; <a href="https://wangtu2022.github.io/posts/index.xml" target="_blank" title="rss"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-rss"><path d="M4 11a9 9 0 0 1 9 9"></path><path d="M4 4a16 16 0 0 1 16 16"></path><circle cx="5" cy="19" r="1"></circle></svg></a>
+		</p>
+	</footer>
+
+
+
+	<script src="https://wangtu2022.github.io/js/bundle.min.580988ed2982bcbb74a1773c7abea97b43e4c43b9324e10cda0813ec6ec4bb67.js" integrity="sha256-WAmI7SmCvLt0oXc8er6pe0PkxDuTJOEM2ggT7G7Eu2c=" crossorigin="anonymous"></script>
+	
+<script type="application/javascript">
+var doNotTrack = false;
+if (!doNotTrack) {
+	window.ga=window.ga||function(){(ga.q=ga.q||[]).push(arguments)};ga.l=+new Date;
+	ga('create', 'UA-166045776-1', 'auto');
+	
+	ga('send', 'pageview');
+}
+</script>
+<script async src='https://www.google-analytics.com/analytics.js'></script>
+
+
+</body>
+
+</html>

@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html lang="zh-hans">
+
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<meta http-equiv="X-UA-Compatible" content="ie=edge">
+	<meta name="theme-color" content="#494f5c">
+	<meta name="msapplication-TileColor" content="#494f5c">
+<meta itemprop="name" content="一个 Demo 学会使用 Go Delve 调试">
+<meta itemprop="description" content="大家好，我是煎鱼。
+在 Go 语言中，除了 go tool 工具链中的 pprof、trace 等剖析工具的大利器外。常常还会有小伙伴问，有没有更好用，更精细的，
+大家总嫌弃 pprof、trace 等工具，不够细，没法一口气看到根因，或者具体变量&hellip;希望能够最好能追到代码级别调试的，看到具体变量的值是怎么样的，随意想怎么看怎么看的那种。
+为此今天给大家介绍 Go 语言强大的 Delve （dlv）调试工具，来更深入问题剖析。
+安装 我们需要先安装 Go delve，若是 Go1.16 及以后的版本，可以直接执行下述命令安装：
+$ go install github.com/go-delve/delve/cmd/dlv@latest 也可以通过 git clone 的方式安装："><meta itemprop="datePublished" content="2021-12-31T12:54:57+08:00" />
+<meta itemprop="dateModified" content="2021-12-31T12:54:57+08:00" />
+<meta itemprop="wordCount" content="716">
+<meta itemprop="keywords" content="go," /><meta property="og:title" content="一个 Demo 学会使用 Go Delve 调试" />
+<meta property="og:description" content="大家好，我是煎鱼。
+在 Go 语言中，除了 go tool 工具链中的 pprof、trace 等剖析工具的大利器外。常常还会有小伙伴问，有没有更好用，更精细的，
+大家总嫌弃 pprof、trace 等工具，不够细，没法一口气看到根因，或者具体变量&hellip;希望能够最好能追到代码级别调试的，看到具体变量的值是怎么样的，随意想怎么看怎么看的那种。
+为此今天给大家介绍 Go 语言强大的 Delve （dlv）调试工具，来更深入问题剖析。
+安装 我们需要先安装 Go delve，若是 Go1.16 及以后的版本，可以直接执行下述命令安装：
+$ go install github.com/go-delve/delve/cmd/dlv@latest 也可以通过 git clone 的方式安装：" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://wangtu2022.github.io/posts/go/delve/" /><meta property="article:section" content="posts" />
+<meta property="article:published_time" content="2021-12-31T12:54:57+08:00" />
+<meta property="article:modified_time" content="2021-12-31T12:54:57+08:00" />
+
+<meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="一个 Demo 学会使用 Go Delve 调试"/>
+<meta name="twitter:description" content="大家好，我是煎鱼。
+在 Go 语言中，除了 go tool 工具链中的 pprof、trace 等剖析工具的大利器外。常常还会有小伙伴问，有没有更好用，更精细的，
+大家总嫌弃 pprof、trace 等工具，不够细，没法一口气看到根因，或者具体变量&hellip;希望能够最好能追到代码级别调试的，看到具体变量的值是怎么样的，随意想怎么看怎么看的那种。
+为此今天给大家介绍 Go 语言强大的 Delve （dlv）调试工具，来更深入问题剖析。
+安装 我们需要先安装 Go delve，若是 Go1.16 及以后的版本，可以直接执行下述命令安装：
+$ go install github.com/go-delve/delve/cmd/dlv@latest 也可以通过 git clone 的方式安装："/>
+
+	<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+	<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+	<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+	<link rel="manifest" href="/site.webmanifest">
+	<link rel="mask-icon" href="/safari-pinned-tab.svg" color="">
+	<link rel="shortcut icon" href="/favicon.ico">
+
+	<title>一个 Demo 学会使用 Go Delve 调试</title>
+	<link rel="stylesheet" href="https://wangtu2022.github.io/css/style.min.d3141168199607bf3a517216ce3c263814eecdbc8fca72a9a88700799a838219.css" integrity="sha256-0xQRaBmWB786UXIWzjwmOBTuzbyPynKpqIcAeZqDghk=" crossorigin="anonymous">
+	
+	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.1/css/all.min.css">
+	<link rel="stylesheet" href="https://wangtu2022.github.io/css/styles.css">
+</head>
+
+<body id="page">
+	
+	<header id="site-header" class="animated slideInUp">
+		<div class="hdr-wrapper section-inner">
+			<div class="hdr-left">
+				<div class="site-branding">
+					<a href="https://wangtu2022.github.io/">煎鱼</a>
+				</div>
+				<nav class="site-nav hide-in-mobile">
+					
+				<a href="https://wangtu2022.github.io/posts/">文章</a>
+				<a href="https://wangtu2022.github.io/tags/">标签</a>
+				<a href="https://wangtu2022.github.io/about/">关于</a>
+
+				</nav>
+			</div>
+			<div class="hdr-right hdr-icons">
+				<button id="toc-btn" class="hdr-btn desktop-only-ib" title="Table of Contents"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-list"><line x1="8" y1="6" x2="21" y2="6"></line><line x1="8" y1="12" x2="21" y2="12"></line><line x1="8" y1="18" x2="21" y2="18"></line><line x1="3" y1="6" x2="3" y2="6"></line><line x1="3" y1="12" x2="3" y2="12"></line><line x1="3" y1="18" x2="3" y2="18"></line></svg></button><span class="hdr-social hide-in-mobile"><a href="https://github.com/eddycjy" target="_blank" rel="noopener me" title="Github"><svg xmlns="http://www.w3.org/2000/svg" class="feather" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"></path></svg></a></span><button id="menu-btn" class="hdr-btn" title="Menu"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-menu"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg></button>
+			</div>
+		</div>
+	</header>
+	<div id="mobile-menu" class="animated fast">
+		<ul>
+			<li><a href="https://wangtu2022.github.io/posts/">文章</a></li>
+			<li><a href="https://wangtu2022.github.io/tags/">标签</a></li>
+			<li><a href="https://wangtu2022.github.io/about/">关于</a></li>
+		</ul>
+	</div>
+
+
+	<main class="site-main section-inner animated fadeIn faster">
+		<article class="thin">
+			<header class="post-header">
+				<div class="post-meta"><span>Dec 31, 2021</span></div>
+				<h1>一个 Demo 学会使用 Go Delve 调试</h1>
+			</header>
+			<div class="content">
+				<p>大家好，我是煎鱼。</p>
+<p>在 Go 语言中，除了 go tool 工具链中的 pprof、trace 等剖析工具的大利器外。常常还会有小伙伴问，有没有更好用，更精细的，</p>
+<p>大家总嫌弃 pprof、trace 等工具，不够细，没法一口气看到根因，或者具体变量&hellip;希望能够最好能追到代码级别调试的，看到具体变量的值是怎么样的，随意想怎么看怎么看的那种。</p>
+<p>为此今天给大家介绍 Go 语言强大的 Delve （dlv）调试工具，来更深入问题剖析。</p>
+<h2 id="安装">安装<a href="#安装" class="anchor" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 7h3a5 5 0 0 1 5 5 5 5 0 0 1-5 5h-3m-6 0H6a5 5 0 0 1-5-5 5 5 0 0 1 5-5h3"></path><line x1="8" y1="12" x2="16" y2="12"></line></svg></a></h2>
+<p>我们需要先安装 Go delve，若是 Go1.16 及以后的版本，可以直接执行下述命令安装：</p>
+<pre tabindex="0"><code>$ go install github.com/go-delve/delve/cmd/dlv@latest
+</code></pre><p>也可以通过 git clone 的方式安装：</p>
+<pre tabindex="0"><code>$ git clone https://github.com/go-delve/delve
+$ cd delve
+$ go install github.com/go-delve/delve/cmd/dlv
+</code></pre><p>在安装完毕后，我们执行 <code>dlv version</code> 命令，查看安装情况：</p>
+<pre tabindex="0"><code>$ dlv version
+Delve Debugger
+Version: 1.7.0
+Build: $Id: e353a65161e6ed74952b96bbb62ebfc56090832b $
+</code></pre><p>可以明确看到我们所安装的版本是 v1.7.0。</p>
+<h2 id="演示程序">演示程序<a href="#演示程序" class="anchor" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 7h3a5 5 0 0 1 5 5 5 5 0 0 1-5 5h-3m-6 0H6a5 5 0 0 1-5-5 5 5 0 0 1 5-5h3"></path><line x1="8" y1="12" x2="16" y2="12"></line></svg></a></h2>
+<p>我们计划用一个反转字符串的演示程序来进行 Go 程序的调试。第一部分先是完成 <code>stringer</code> 包的 <code>Reverse</code> 方法。</p>
+<p>代码如下：</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-golang" data-lang="golang"><span class="line"><span class="cl"><span class="kn">package</span> <span class="nx">stringer</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="kd">func</span> <span class="nf">Reverse</span><span class="p">(</span><span class="nx">s</span> <span class="kt">string</span><span class="p">)</span> <span class="kt">string</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">	<span class="nx">r</span> <span class="o">:=</span> <span class="p">[]</span><span class="nb">rune</span><span class="p">(</span><span class="nx">s</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">	<span class="k">for</span> <span class="nx">i</span><span class="p">,</span> <span class="nx">j</span> <span class="o">:=</span> <span class="mi">0</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="nx">r</span><span class="p">)</span><span class="o">-</span><span class="mi">1</span><span class="p">;</span> <span class="nx">i</span> <span class="p">&lt;</span> <span class="nb">len</span><span class="p">(</span><span class="nx">r</span><span class="p">)</span><span class="o">/</span><span class="mi">2</span><span class="p">;</span> <span class="nx">i</span><span class="p">,</span> <span class="nx">j</span> <span class="p">=</span> <span class="nx">i</span><span class="o">+</span><span class="mi">1</span><span class="p">,</span> <span class="nx">j</span><span class="o">-</span><span class="mi">1</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">		<span class="nx">r</span><span class="p">[</span><span class="nx">i</span><span class="p">],</span> <span class="nx">r</span><span class="p">[</span><span class="nx">j</span><span class="p">]</span> <span class="p">=</span> <span class="nx">r</span><span class="p">[</span><span class="nx">j</span><span class="p">],</span> <span class="nx">r</span><span class="p">[</span><span class="nx">i</span><span class="p">]</span>
+</span></span><span class="line"><span class="cl">	<span class="p">}</span>
+</span></span><span class="line"><span class="cl">	<span class="k">return</span> <span class="nb">string</span><span class="p">(</span><span class="nx">r</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span></code></pre></div><p>再在具体的 <code>main</code> 启动函数中进行调用。代码如下：</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-golang" data-lang="golang"><span class="line"><span class="cl"><span class="kn">import</span> <span class="p">(</span>
+</span></span><span class="line"><span class="cl">	<span class="s">&#34;fmt&#34;</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">	<span class="s">&#34;github.com/eddycjy/awesome-project/stringer&#34;</span>
+</span></span><span class="line"><span class="cl"><span class="p">)</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="kd">func</span> <span class="nf">main</span><span class="p">()</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">	<span class="nx">fmt</span><span class="p">.</span><span class="nf">Println</span><span class="p">(</span><span class="nx">stringer</span><span class="p">.</span><span class="nf">Reverse</span><span class="p">(</span><span class="s">&#34;脑子进煎鱼了！&#34;</span><span class="p">))</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span></code></pre></div><p>输出结果：</p>
+<pre tabindex="0"><code>！了鱼煎进子脑
+</code></pre><h2 id="进行调试">进行调试<a href="#进行调试" class="anchor" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 7h3a5 5 0 0 1 5 5 5 5 0 0 1-5 5h-3m-6 0H6a5 5 0 0 1-5-5 5 5 0 0 1 5-5h3"></path><line x1="8" y1="12" x2="16" y2="12"></line></svg></a></h2>
+<p>Delve 是 Go 程序的源代码级调试器。Delve 使您能够通过控制流程的执行与您的程序进行交互，查看变量，提供线程、goroutine、CPU 状态等信息。</p>
+<p>其一共支持如下 11 个子命令：</p>
+<pre tabindex="0"><code>Available Commands:
+  attach      Attach to running process and begin debugging.
+  connect     Connect to a headless debug server.
+  core        Examine a core dump.
+  dap         [EXPERIMENTAL] Starts a TCP server communicating via Debug Adaptor Protocol (DAP).
+  debug       Compile and begin debugging main package in current directory, or the package specified.
+  exec        Execute a precompiled binary, and begin a debug session.
+  help        Help about any command
+  run         Deprecated command. Use &#39;debug&#39; instead.
+  test        Compile test binary and begin debugging program.
+  trace       Compile and begin tracing program.
+  version     Prints version.
+</code></pre><p>我们今天主要用到的是 debug 命令，他能够编译并开始调试当前目录下的主包，或指定的包，是最常用的功能之一。</p>
+<p>接下来我们利用这个演示程序来进行 dlv 的深入调试和应用。</p>
+<p>执行如下命令：</p>
+<pre tabindex="0"><code>➜  awesomeProject dlv debug .
+Type &#39;help&#39; for list of commands.
+(dlv) 
+</code></pre><p>我们先在演示程序根目录下执行了 debug，进入了 dlv 的交互模式。</p>
+<p>再使用关键字 <code>b</code>（break 的缩写）对 <code>main.main</code> 方法设置断点：</p>
+<pre tabindex="0"><code>(dlv) b main.main
+Breakpoint 1 (enabled) set at 0x10cbab3 for main.main() ./main.go:9
+(dlv) 
+</code></pre><p>设置完毕后，我们可以看到方法对应的文件名、行数。接着我们可以执行关键字 <code>c</code>（continue 的缩写）跳转到下一个断点处：</p>
+<pre tabindex="0"><code>(dlv) c
+&gt; main.main() ./main.go:9 (hits goroutine(1):1 total:1) (PC: 0x10cbab3)
+     4:		&#34;fmt&#34;
+     5:	
+     6:		&#34;github.com/eddycjy/awesome-project/stringer&#34;
+     7:	)
+     8:	
+=&gt;   9:	func main() {
+    10:		fmt.Println(stringer.Reverse(&#34;脑子进煎鱼了！&#34;))
+    11:	}
+(dlv) 
+</code></pre><p>在断点处，我看可以看到具体的代码块、goroutine、CPU 寄存器地址等运行时信息。</p>
+<p>紧接着执行关键字 <code>n</code>（next 的缩写）单步执行程序的下一步：</p>
+<pre tabindex="0"><code>(dlv) n
+&gt; main.main() ./main.go:10 (PC: 0x10cbac1)
+     5:	
+     6:		&#34;github.com/eddycjy/awesome-project/stringer&#34;
+     7:	)
+     8:	
+     9:	func main() {
+=&gt;  10:		fmt.Println(stringer.Reverse(&#34;脑子进煎鱼了！&#34;))
+    11:	}
+</code></pre><p>我们可以看到程序走到了 main.go 文件中的第 10 行中，并且调用了 <code>stringer.Reverse</code> 方法去处理。</p>
+<p>此时我们可以执行关键字 <code>s</code>（step 的关键字）进入到这个函数中去继续调试：</p>
+<pre tabindex="0"><code>(dlv) s
+&gt; github.com/eddycjy/awesome-project/stringer.Reverse() ./stringer/string.go:3 (PC: 0x10cb87b)
+     1:	package stringer
+     2:	
+=&gt;   3:	func Reverse(s string) string {
+     4:		r := []rune(s)
+     5:		for i, j := 0, len(r)-1; i &lt; len(r)/2; i, j = i+1, j-1 {
+     6:			r[i], r[j] = r[j], r[i]
+     7:		}
+     8:		return string(r)
+</code></pre><p>输入后，调试的光标会到 <code>Reverse</code> 方法上，此时我们可以调用关键字 <code>p</code>（print 的缩写）传出所传入的变量的值：</p>
+<pre tabindex="0"><code>(dlv) p s
+&#34;脑子进煎鱼了！&#34;
+</code></pre><p>此处函数的形参变量是 s，输出了 “脑子进煎鱼了！”，与我们所传入的是一致的。</p>
+<p>但故事一般没有这么的简单，会用到 Delve 来调试，说明是比较细致、隐患的 BUG。为此我们大多需要更进一步的深入。</p>
+<p>我们继续围观 <code>Reverse</code> 方法：</p>
+<pre tabindex="0"><code>     5:		for i, j := 0, len(r)-1; i &lt; len(r)/2; i, j = i+1, j-1 {
+     6:			r[i], r[j] = r[j], r[i]
+     7:		}
+</code></pre><p>从表现来看，我们常常会怀疑是第 6 行可能是问题的所在。这时可以针对性的对第 6 行进行断点查看：</p>
+<pre tabindex="0"><code>(dlv) b 6
+Breakpoint 2 (enabled) set at 0x10cb92c for github.com/eddycjy/awesome-project/stringer.Reverse() ./stringer/string.go:6
+</code></pre><p>设置完断点后，我们只需要执行关键字 <code>c</code>，继续下一步：</p>
+<pre tabindex="0"><code>(dlv) c
+&gt; github.com/eddycjy/awesome-project/stringer.Reverse() ./stringer/string.go:6 (hits goroutine(1):1 total:1) (PC: 0x10cb92c)
+     1:	package stringer
+     2:	
+     3:	func Reverse(s string) string {
+     4:		r := []rune(s)
+     5:		for i, j := 0, len(r)-1; i &lt; len(r)/2; i, j = i+1, j-1 {
+=&gt;   6:			r[i], r[j] = r[j], r[i]
+     7:		}
+     8:		return string(r)
+     9:	}
+</code></pre><p>走到对应的代码片段后，执行关键字 <code>locals</code>：</p>
+<pre tabindex="0"><code>(dlv) locals
+r = []int32 len: 7, cap: 32, [...]
+j = 6
+i = 0
+</code></pre><p>我们就可以看到对应的变量 r, i, j 的值是多少，可以根据此来分析程序流转是否与我们预想的一致。</p>
+<p>另外也可以调用关键字 <code>set</code> 去针对特定变量设置期望的值：</p>
+<pre tabindex="0"><code>(dlv) set i = 1
+(dlv) locals
+r = []int32 len: 7, cap: 32, [...]
+j = 6
+i = 1
+</code></pre><p>设置后，若还需要继续排查，可以继续调用关键字 <code>c</code> 去定位，这种常用于特定变量的特定值的异常，这样一设置一调试基本就能排查出来了。</p>
+<p>在排查完毕后，我们可以执行关键字 <code>r</code>（reset 的缩写）：</p>
+<pre tabindex="0"><code>(dlv)  r
+Process restarted with PID 56614
+</code></pre><p>执行完毕后，整个调试就会重置，像是前面在打断点时所设置的变量值就会恢复。</p>
+<p>若要查看设置的断点情况，也可以执行关键字 <code>bp</code> 查看：</p>
+<pre tabindex="0"><code>(dlv) bp
+Breakpoint runtime-fatal-throw (enabled) at 0x1038fc0 for runtime.fatalthrow() /usr/local/Cellar/go/1.16.2/libexec/src/runtime/panic.go:1163 (0)
+Breakpoint unrecovered-panic (enabled) at 0x1039040 for runtime.fatalpanic() /usr/local/Cellar/go/1.16.2/libexec/src/runtime/panic.go:1190 (0)
+	print runtime.curg._panic.arg
+Breakpoint 1 (enabled) at 0x10cbab3 for main.main() ./main.go:9 (0)
+Breakpoint 2 (enabled) at 0x10cb92c for github.com/eddycjy/awesome-project/stringer.Reverse() ./stringer/string.go:6 (0)
+</code></pre><p>查看断点情况后，若有部分已经排除了，可以调用关键字 <code>clearall</code> 对一些断点清除：</p>
+<pre tabindex="0"><code>(dlv) clearall main.main
+Breakpoint 1 (enabled) cleared at 0x10cbab3 for main.main() ./main.go:9
+</code></pre><p>若不指点断点，则会默认清除全部断点。</p>
+<p>在日常的 Go 工程中，若都从 main 方法进入就太繁琐了。我们可以直接借助函数名进行调式定位：</p>
+<pre tabindex="0"><code>(dlv) funcs Reverse
+github.com/eddycjy/awesome-project/stringer.Reverse
+(dlv) b stringer.Reverse
+Breakpoint 3 (enabled) set at 0x10cb87b for github.com/eddycjy/awesome-project/stringer.Reverse() ./stringer/string.go:3
+(dlv) c
+&gt; github.com/eddycjy/awesome-project/stringer.Reverse() ./stringer/string.go:3 (hits goroutine(1):1 total:1) (PC: 0x10cb87b)
+     1:	package stringer
+     2:	
+=&gt;   3:	func Reverse(s string) string {
+     4:		r := []rune(s)
+     5:		for i, j := 0, len(r)-1; i &lt; len(r)/2; i, j = i+1, j-1 {
+     6:			r[i], r[j] = r[j], r[i]
+     7:		}
+     8:		return string(r)
+</code></pre><p>紧接着其他步骤都与先前的一样，进行具体的调试就好了。我们也可以借助 Go 语言的公共函数进行计算：</p>
+<pre tabindex="0"><code>(dlv) p len(r)-1
+6
+</code></pre><p>也可以借助关键字 <code>vars</code> 查看某个包下的所有全局变量的值，例如：<code>vars main</code>。这种方式对于查看全局变量的情况非常有帮助。</p>
+<p>排查完毕后，执行关键字 <code>exit</code> 就可以愉快的退出了：</p>
+<pre tabindex="0"><code>(dlv) exit
+</code></pre><p>解决完问题，可以下班了 ：）</p>
+<h2 id="总结">总结<a href="#总结" class="anchor" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 7h3a5 5 0 0 1 5 5 5 5 0 0 1-5 5h-3m-6 0H6a5 5 0 0 1-5-5 5 5 0 0 1 5-5h3"></path><line x1="8" y1="12" x2="16" y2="12"></line></svg></a></h2>
+<p>在 Go 语言中，Delve 调试工具是与 Go 语言亲和度最高的，因为 Delve 是 Go 语言实现的。其在我们日常工作中，非常常用。</p>
+<p>像是假设程序的 for 循环运行到第 N 次才出现 BUG 时，我们就可以通过断点对应的方法和代码块，再设置变量的值，进行具体的查看，就可以解决。</p>
+
+			</div>
+			<hr class="post-end">
+			<footer class="post-info">
+				<p>
+					<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-tag meta-icon"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"></path><line x1="7" y1="7" x2="7" y2="7"></line></svg><span class="tag"><a href="https://wangtu2022.github.io/tags/go">go</a></span>
+				</p>
+				<p><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-file-text"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>716 Words</p>
+				<p><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-calendar"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>2021-12-31 12:54 &#43;0800</p>
+			</footer>
+		</article>
+		<aside id="toc">
+			<div class="toc-title">Table of Contents</div>
+			<nav id="TableOfContents">
+  <ul>
+    <li><a href="#安装">安装</a></li>
+    <li><a href="#演示程序">演示程序</a></li>
+    <li><a href="#进行调试">进行调试</a></li>
+    <li><a href="#总结">总结</a></li>
+  </ul>
+</nav>
+		</aside>
+		<div class="post-nav thin">
+			<a class="next-post" href="https://wangtu2022.github.io/posts/go/news-slices-maps/">
+				<span class="post-nav-label"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-arrow-left"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>&nbsp;Newer</span><br><span>Go 提案：增加泛型版 slices 和 maps 新包</span>
+			</a>
+			<a class="prev-post" href="https://wangtu2022.github.io/posts/go/gdb/">
+				<span class="post-nav-label">Older&nbsp;<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-arrow-right"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg></span><br><span>学会使用 GDB 调试 Go 代码</span>
+			</a>
+		</div>
+		<div id="comments" class="thin">
+</div>
+	</main>
+
+	<footer id="site-footer" class="section-inner thin animated fadeIn faster">
+		<p>&copy; 2022 <a href="https://wangtu2022.github.io/">煎鱼</a> &#183; <a href="http://www.beian.miit.gov.cn/">粤ICP备19076352号</a></p>
+		<p>
+			Made with <a href="https://gohugo.io/" target="_blank" rel="noopener">Hugo</a> &#183; Theme <a href="https://github.com/Track3/hermit" target="_blank" rel="noopener">Hermit</a> &#183; <a href="https://wangtu2022.github.io/posts/index.xml" target="_blank" title="rss"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-rss"><path d="M4 11a9 9 0 0 1 9 9"></path><path d="M4 4a16 16 0 0 1 16 16"></path><circle cx="5" cy="19" r="1"></circle></svg></a>
+		</p>
+	</footer>
+
+
+
+	<script src="https://wangtu2022.github.io/js/bundle.min.580988ed2982bcbb74a1773c7abea97b43e4c43b9324e10cda0813ec6ec4bb67.js" integrity="sha256-WAmI7SmCvLt0oXc8er6pe0PkxDuTJOEM2ggT7G7Eu2c=" crossorigin="anonymous"></script>
+	
+<script type="application/javascript">
+var doNotTrack = false;
+if (!doNotTrack) {
+	window.ga=window.ga||function(){(ga.q=ga.q||[]).push(arguments)};ga.l=+new Date;
+	ga('create', 'UA-166045776-1', 'auto');
+	
+	ga('send', 'pageview');
+}
+</script>
+<script async src='https://www.google-analytics.com/analytics.js'></script>
+
+
+</body>
+
+</html>

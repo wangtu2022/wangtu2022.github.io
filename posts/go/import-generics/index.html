@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="zh-hans">
+
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<meta http-equiv="X-UA-Compatible" content="ie=edge">
+	<meta name="theme-color" content="#494f5c">
+	<meta name="msapplication-TileColor" content="#494f5c">
+<meta itemprop="name" content="长达 12 年，Go 才引入泛型，是政治，还是技术问题？">
+<meta itemprop="description" content="大家好，我是煎鱼。
+前两天 Go1.18 beta1 已经发布，距离正式发布 Go1.18 的生产可用还有 2 个月，也就是泛型即将正式面世。
+最近正在收集泛型的一些资料，看到在 2015 年有人在 Hacker News 上的《Go 1.5 max procs default》吐槽 Go 不支持泛型是 “政治” 原因&hellip;
+看了还是有些意义的，与现在的矛盾点基本一致，为此分享给大家。
+网友吐槽 网友 @aikah 认为 Go 团队不太可能在语言中加入泛型，这显然是一个政治问题而不是技术问题。错误处理也是如此。"><meta itemprop="datePublished" content="2021-12-31T12:55:25+08:00" />
+<meta itemprop="dateModified" content="2021-12-31T12:55:25+08:00" />
+<meta itemprop="wordCount" content="108">
+<meta itemprop="keywords" content="go," /><meta property="og:title" content="长达 12 年，Go 才引入泛型，是政治，还是技术问题？" />
+<meta property="og:description" content="大家好，我是煎鱼。
+前两天 Go1.18 beta1 已经发布，距离正式发布 Go1.18 的生产可用还有 2 个月，也就是泛型即将正式面世。
+最近正在收集泛型的一些资料，看到在 2015 年有人在 Hacker News 上的《Go 1.5 max procs default》吐槽 Go 不支持泛型是 “政治” 原因&hellip;
+看了还是有些意义的，与现在的矛盾点基本一致，为此分享给大家。
+网友吐槽 网友 @aikah 认为 Go 团队不太可能在语言中加入泛型，这显然是一个政治问题而不是技术问题。错误处理也是如此。" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://wangtu2022.github.io/posts/go/import-generics/" /><meta property="article:section" content="posts" />
+<meta property="article:published_time" content="2021-12-31T12:55:25+08:00" />
+<meta property="article:modified_time" content="2021-12-31T12:55:25+08:00" />
+
+<meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="长达 12 年，Go 才引入泛型，是政治，还是技术问题？"/>
+<meta name="twitter:description" content="大家好，我是煎鱼。
+前两天 Go1.18 beta1 已经发布，距离正式发布 Go1.18 的生产可用还有 2 个月，也就是泛型即将正式面世。
+最近正在收集泛型的一些资料，看到在 2015 年有人在 Hacker News 上的《Go 1.5 max procs default》吐槽 Go 不支持泛型是 “政治” 原因&hellip;
+看了还是有些意义的，与现在的矛盾点基本一致，为此分享给大家。
+网友吐槽 网友 @aikah 认为 Go 团队不太可能在语言中加入泛型，这显然是一个政治问题而不是技术问题。错误处理也是如此。"/>
+
+	<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+	<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+	<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+	<link rel="manifest" href="/site.webmanifest">
+	<link rel="mask-icon" href="/safari-pinned-tab.svg" color="">
+	<link rel="shortcut icon" href="/favicon.ico">
+
+	<title>长达 12 年，Go 才引入泛型，是政治，还是技术问题？</title>
+	<link rel="stylesheet" href="https://wangtu2022.github.io/css/style.min.d3141168199607bf3a517216ce3c263814eecdbc8fca72a9a88700799a838219.css" integrity="sha256-0xQRaBmWB786UXIWzjwmOBTuzbyPynKpqIcAeZqDghk=" crossorigin="anonymous">
+	
+	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.1/css/all.min.css">
+	<link rel="stylesheet" href="https://wangtu2022.github.io/css/styles.css">
+</head>
+
+<body id="page">
+	
+	<header id="site-header" class="animated slideInUp">
+		<div class="hdr-wrapper section-inner">
+			<div class="hdr-left">
+				<div class="site-branding">
+					<a href="https://wangtu2022.github.io/">煎鱼</a>
+				</div>
+				<nav class="site-nav hide-in-mobile">
+					
+				<a href="https://wangtu2022.github.io/posts/">文章</a>
+				<a href="https://wangtu2022.github.io/tags/">标签</a>
+				<a href="https://wangtu2022.github.io/about/">关于</a>
+
+				</nav>
+			</div>
+			<div class="hdr-right hdr-icons">
+				<button id="toc-btn" class="hdr-btn desktop-only-ib" title="Table of Contents"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-list"><line x1="8" y1="6" x2="21" y2="6"></line><line x1="8" y1="12" x2="21" y2="12"></line><line x1="8" y1="18" x2="21" y2="18"></line><line x1="3" y1="6" x2="3" y2="6"></line><line x1="3" y1="12" x2="3" y2="12"></line><line x1="3" y1="18" x2="3" y2="18"></line></svg></button><span class="hdr-social hide-in-mobile"><a href="https://github.com/eddycjy" target="_blank" rel="noopener me" title="Github"><svg xmlns="http://www.w3.org/2000/svg" class="feather" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"></path></svg></a></span><button id="menu-btn" class="hdr-btn" title="Menu"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-menu"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg></button>
+			</div>
+		</div>
+	</header>
+	<div id="mobile-menu" class="animated fast">
+		<ul>
+			<li><a href="https://wangtu2022.github.io/posts/">文章</a></li>
+			<li><a href="https://wangtu2022.github.io/tags/">标签</a></li>
+			<li><a href="https://wangtu2022.github.io/about/">关于</a></li>
+		</ul>
+	</div>
+
+
+	<main class="site-main section-inner animated fadeIn faster">
+		<article class="thin">
+			<header class="post-header">
+				<div class="post-meta"><span>Dec 31, 2021</span></div>
+				<h1>长达 12 年，Go 才引入泛型，是政治，还是技术问题？</h1>
+			</header>
+			<div class="content">
+				<p>大家好，我是煎鱼。</p>
+<p>前两天 Go1.18 beta1 已经发布，距离正式发布 Go1.18 的生产可用还有 2 个月，也就是泛型即将正式面世。</p>
+<p>最近正在收集泛型的一些资料，看到在 2015 年有人在 Hacker News 上的《<a href="https://news.ycombinator.com/item?id=9622417" title="Go 1.5 max procs default">Go 1.5 max procs default</a>》吐槽 Go 不支持泛型是 “政治” 原因&hellip;</p>
+<p>看了还是有些意义的，<strong>与现在的矛盾点基本一致</strong>，为此分享给大家。</p>
+<h2 id="网友吐槽">网友吐槽<a href="#网友吐槽" class="anchor" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 7h3a5 5 0 0 1 5 5 5 5 0 0 1-5 5h-3m-6 0H6a5 5 0 0 1-5-5 5 5 0 0 1 5-5h3"></path><line x1="8" y1="12" x2="16" y2="12"></line></svg></a></h2>
+<p>网友 @aikah 认为 Go 团队不太可能在语言中加入泛型，这显然是一个政治问题而不是技术问题。错误处理也是如此。</p>
+<p>和许多人一样，该网友<strong>认为 Go 在极简主义和功能之间没有取得正确的平衡</strong>。反对泛型的人赞成用编译时类型检查（总是安全的）换取运行时类型断言（可能失败）。</p>
+<p>他们拒绝承认这一事实。这就是他们反对泛型的论点，并将最终损害语言的任何潜在增长。他们基本上是在违背自己的利益。</p>
+<h2 id="官方回复">官方回复<a href="#官方回复" class="anchor" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 7h3a5 5 0 0 1 5 5 5 5 0 0 1-5 5h-3m-6 0H6a5 5 0 0 1-5-5 5 5 0 0 1 5-5h3"></path><line x1="8" y1="12" x2="16" y2="12"></line></svg></a></h2>
+<p>Russ Cox 做了正式的回复：很抱歉，但不是：<strong>泛型是一个技术问题</strong>，不是一个政治问题。</p>
+<p>Go 团队并<strong>不反对泛型本身</strong>，只是反对做那些没有被很好理解或不能很好地与 Go 配合的事情。</p>
+<p>这就是核心观点和矛盾点，也从 2009 年，延续到了现在。</p>
+<h3 id="会遇到的问题">会遇到的问题<a href="#会遇到的问题" class="anchor" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 7h3a5 5 0 0 1 5 5 5 5 0 0 1-5 5h-3m-6 0H6a5 5 0 0 1-5-5 5 5 0 0 1 5-5h3"></path><line x1="8" y1="12" x2="16" y2="12"></line></svg></a></h3>
+<p>Go 团队认为要将泛型的概念融入 Go，并与系统的其他部分很好地配合，必须解决一些深层次的技术问题，而我们并没有解决这些问题的办法。</p>
+<p>关于这些问题，在几年前就在博客上写过一篇《<a href="https://research.swtch.com/generic" title="The Generic Dilemma">The Generic Dilemma</a>》：</p>
+<p><img src="https://files.mdnice.com/user/3610/8ed3923a-d5fc-482f-bb6d-6fff7a19fcaa.png" alt=""></p>
+<p>即使克服了那一页上的问题，也有其他问题，接下来你会遇到的问题是：”如何让程序员以一种有用的、易于解释的方式省略类型注释“。</p>
+<p>也就是如何更人性、更易于的表达泛型的类型参数。</p>
+<h4 id="泛型例子">泛型例子<a href="#泛型例子" class="anchor" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 7h3a5 5 0 0 1 5 5 5 5 0 0 1-5 5h-3m-6 0H6a5 5 0 0 1-5-5 5 5 0 0 1 5-5h3"></path><line x1="8" y1="12" x2="16" y2="12"></line></svg></a></h4>
+<p>举个例子，C++ 允许你写 <code>make_pair(1, &quot;foo&quot;)</code>，而不是 <code>make_pair&lt;int, string&gt;(1, &quot;foo&quot;)</code>。</p>
+<p>为了达到这种效果，推断注释背后的逻辑需要几页几页的规范，这并不是一个特别容易理解的编程模型，当事情出错时，编译器也不能轻易解释。</p>
+<p>在这之后肯定还有更多的新问题在这里面。</p>
+<h4 id="和专家沟通">和专家沟通<a href="#和专家沟通" class="anchor" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 7h3a5 5 0 0 1 5 5 5 5 0 0 1-5 5h-3m-6 0H6a5 5 0 0 1-5-5 5 5 0 0 1 5-5h3"></path><line x1="8" y1="12" x2="16" y2="12"></line></svg></a></h4>
+<p>Go 团队和一些真正的 Java 泛型专家谈过，他们每个人都说了大致相同的话：要非常小心，它不像看起来那么容易，而且你会被你犯的所有错误困住。</p>
+<p>作为一个 Java 示范，可以浏览一下《<a href="http://www.angelikalanger.com/GenericsFAQ/JavaGenericsFAQ.html" title="Java Generics FAQs - Frequently Asked Questions">Java Generics FAQs - Frequently Asked Questions</a>》的大部分内容：</p>
+<p><img src="https://files.mdnice.com/user/3610/6e188c16-f31c-4d6b-9d1b-216aa702d548.png" alt=""></p>
+<p>看看过了多久你会开始思考 &ldquo;这真的是最好的方法吗？&quot;。</p>
+<p>在泛型过程中会遇到许多问题，像是《<a href="http://www.angelikalanger.com/GenericsFAQ/FAQSections/TypeParameters.html#FAQ106%22" title="How do I decrypt Enum&lt;E extends Enum&lt;E&gt;&gt;">How do I decrypt Enum&lt;E extends Enum<!-- raw HTML omitted -->&gt;</a>》：</p>
+<p><img src="https://files.mdnice.com/user/3610/2cbd8083-cee6-48f7-a0bd-d6faf8d27c40.png" alt=""></p>
+<p>为此，Go 团队在泛型的推动上非常谨慎。</p>
+<h2 id="承认缺点">承认缺点<a href="#承认缺点" class="anchor" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 7h3a5 5 0 0 1 5 5 5 5 0 0 1-5 5h-3m-6 0H6a5 5 0 0 1-5-5 5 5 0 0 1 5-5h3"></path><line x1="8" y1="12" x2="16" y2="12"></line></svg></a></h2>
+<p>Go 团队说得很清楚，承认这个事实：<strong>没有泛型是有一定的缺点的</strong>。</p>
+<p>你要么使用 <code>interface{}</code> 而放弃编译时检查，要么写代码生成器而使你的构建过程复杂化。</p>
+<p>现有语言中实现的泛型也有明确的缺点，而且今天不妥协有一个非常大的好处：它使明天<strong>采用更好的解决方案变得更加容易</strong>。</p>
+<h2 id="总结">总结<a href="#总结" class="anchor" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 7h3a5 5 0 0 1 5 5 5 5 0 0 1-5 5h-3m-6 0H6a5 5 0 0 1-5-5 5 5 0 0 1 5-5h3"></path><line x1="8" y1="12" x2="16" y2="12"></line></svg></a></h2>
+<p>今天给大家分享了过去在国外社区针对 Go 泛型的各种争议和探讨，其实泛型的核心观点很明确：”Go 团队不反对泛型本身“。</p>
+<p>一直没能把泛型做起来，也是因为顾虑很多，做泛型要和 Go 多个部分，要解决很多深层次的问题，还要解决类型参数可读性等问题。所以一直拖到了现在。</p>
+<p>回到即将 2022 年的现在，都预言对了。社区都在扯做泛型后的多个关联组件，以及泛型可读性和结构&hellip;</p>
+<p>显然，<strong>泛型就是双刃剑？你怎么看</strong>。</p>
+
+			</div>
+			<hr class="post-end">
+			<footer class="post-info">
+				<p>
+					<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-tag meta-icon"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"></path><line x1="7" y1="7" x2="7" y2="7"></line></svg><span class="tag"><a href="https://wangtu2022.github.io/tags/go">go</a></span>
+				</p>
+				<p><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-file-text"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>108 Words</p>
+				<p><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-calendar"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>2021-12-31 12:55 &#43;0800</p>
+			</footer>
+		</article>
+		<aside id="toc">
+			<div class="toc-title">Table of Contents</div>
+			<nav id="TableOfContents">
+  <ul>
+    <li><a href="#网友吐槽">网友吐槽</a></li>
+    <li><a href="#官方回复">官方回复</a>
+      <ul>
+        <li><a href="#会遇到的问题">会遇到的问题</a></li>
+      </ul>
+    </li>
+    <li><a href="#承认缺点">承认缺点</a></li>
+    <li><a href="#总结">总结</a></li>
+  </ul>
+</nav>
+		</aside>
+		<div class="post-nav thin">
+			<a class="next-post" href="https://wangtu2022.github.io/posts/go/throw/">
+				<span class="post-nav-label"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-arrow-left"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>&nbsp;Newer</span><br><span>Go 有哪些无法恢复的致命场景？</span>
+			</a>
+			<a class="prev-post" href="https://wangtu2022.github.io/posts/go/again-mutex/">
+				<span class="post-nav-label">Older&nbsp;<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-arrow-right"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg></span><br><span>Go 为什么不支持可重入锁？</span>
+			</a>
+		</div>
+		<div id="comments" class="thin">
+</div>
+	</main>
+
+	<footer id="site-footer" class="section-inner thin animated fadeIn faster">
+		<p>&copy; 2022 <a href="https://wangtu2022.github.io/">煎鱼</a> &#183; <a href="http://www.beian.miit.gov.cn/">粤ICP备19076352号</a></p>
+		<p>
+			Made with <a href="https://gohugo.io/" target="_blank" rel="noopener">Hugo</a> &#183; Theme <a href="https://github.com/Track3/hermit" target="_blank" rel="noopener">Hermit</a> &#183; <a href="https://wangtu2022.github.io/posts/index.xml" target="_blank" title="rss"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-rss"><path d="M4 11a9 9 0 0 1 9 9"></path><path d="M4 4a16 16 0 0 1 16 16"></path><circle cx="5" cy="19" r="1"></circle></svg></a>
+		</p>
+	</footer>
+
+
+
+	<script src="https://wangtu2022.github.io/js/bundle.min.580988ed2982bcbb74a1773c7abea97b43e4c43b9324e10cda0813ec6ec4bb67.js" integrity="sha256-WAmI7SmCvLt0oXc8er6pe0PkxDuTJOEM2ggT7G7Eu2c=" crossorigin="anonymous"></script>
+	
+<script type="application/javascript">
+var doNotTrack = false;
+if (!doNotTrack) {
+	window.ga=window.ga||function(){(ga.q=ga.q||[]).push(arguments)};ga.l=+new Date;
+	ga('create', 'UA-166045776-1', 'auto');
+	
+	ga('send', 'pageview');
+}
+</script>
+<script async src='https://www.google-analytics.com/analytics.js'></script>
+
+
+</body>
+
+</html>

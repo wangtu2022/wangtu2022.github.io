@@ -1,0 +1,418 @@
+<!DOCTYPE html>
+<html lang="zh-hans">
+
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<meta http-equiv="X-UA-Compatible" content="ie=edge">
+	<meta name="theme-color" content="#494f5c">
+	<meta name="msapplication-TileColor" content="#494f5c">
+<meta itemprop="name" content="先睹为快，Go2 Error 的挣扎之路">
+<meta itemprop="description" content="大家好，我是煎鱼。
+自从 Go 语言在国内火热以来，除去泛型，其次最具槽点的就是 Go 对错误的处理方式，一句经典的 if err != nil 暗号就能认出你是一个 Go 语言爱好者。
+自然，大家对 Go error 的关注度更是高涨，Go team 也是，因此在 Go 2 Draft Designs 中正式提到了 error handling（错误处理）的相关草案，希望能够在未来正式的解决这个问题。
+在今天这篇文章中，我们将一同跟踪 Go2 error，看看他是怎么 “挣扎” 的，能不能破局？"><meta itemprop="datePublished" content="2020-12-03T20:56:47+08:00" />
+<meta itemprop="dateModified" content="2020-12-03T20:56:47+08:00" />
+<meta itemprop="wordCount" content="827">
+<meta itemprop="keywords" content="go," /><meta property="og:title" content="先睹为快，Go2 Error 的挣扎之路" />
+<meta property="og:description" content="大家好，我是煎鱼。
+自从 Go 语言在国内火热以来，除去泛型，其次最具槽点的就是 Go 对错误的处理方式，一句经典的 if err != nil 暗号就能认出你是一个 Go 语言爱好者。
+自然，大家对 Go error 的关注度更是高涨，Go team 也是，因此在 Go 2 Draft Designs 中正式提到了 error handling（错误处理）的相关草案，希望能够在未来正式的解决这个问题。
+在今天这篇文章中，我们将一同跟踪 Go2 error，看看他是怎么 “挣扎” 的，能不能破局？" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://wangtu2022.github.io/posts/go/go2-errors/" /><meta property="article:section" content="posts" />
+<meta property="article:published_time" content="2020-12-03T20:56:47+08:00" />
+<meta property="article:modified_time" content="2020-12-03T20:56:47+08:00" />
+
+<meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="先睹为快，Go2 Error 的挣扎之路"/>
+<meta name="twitter:description" content="大家好，我是煎鱼。
+自从 Go 语言在国内火热以来，除去泛型，其次最具槽点的就是 Go 对错误的处理方式，一句经典的 if err != nil 暗号就能认出你是一个 Go 语言爱好者。
+自然，大家对 Go error 的关注度更是高涨，Go team 也是，因此在 Go 2 Draft Designs 中正式提到了 error handling（错误处理）的相关草案，希望能够在未来正式的解决这个问题。
+在今天这篇文章中，我们将一同跟踪 Go2 error，看看他是怎么 “挣扎” 的，能不能破局？"/>
+
+	<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+	<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+	<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+	<link rel="manifest" href="/site.webmanifest">
+	<link rel="mask-icon" href="/safari-pinned-tab.svg" color="">
+	<link rel="shortcut icon" href="/favicon.ico">
+
+	<title>先睹为快，Go2 Error 的挣扎之路</title>
+	<link rel="stylesheet" href="https://wangtu2022.github.io/css/style.min.d3141168199607bf3a517216ce3c263814eecdbc8fca72a9a88700799a838219.css" integrity="sha256-0xQRaBmWB786UXIWzjwmOBTuzbyPynKpqIcAeZqDghk=" crossorigin="anonymous">
+	
+	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.1/css/all.min.css">
+	<link rel="stylesheet" href="https://wangtu2022.github.io/css/styles.css">
+</head>
+
+<body id="page">
+	
+	<header id="site-header" class="animated slideInUp">
+		<div class="hdr-wrapper section-inner">
+			<div class="hdr-left">
+				<div class="site-branding">
+					<a href="https://wangtu2022.github.io/">煎鱼</a>
+				</div>
+				<nav class="site-nav hide-in-mobile">
+					
+				<a href="https://wangtu2022.github.io/posts/">文章</a>
+				<a href="https://wangtu2022.github.io/tags/">标签</a>
+				<a href="https://wangtu2022.github.io/about/">关于</a>
+
+				</nav>
+			</div>
+			<div class="hdr-right hdr-icons">
+				<button id="toc-btn" class="hdr-btn desktop-only-ib" title="Table of Contents"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-list"><line x1="8" y1="6" x2="21" y2="6"></line><line x1="8" y1="12" x2="21" y2="12"></line><line x1="8" y1="18" x2="21" y2="18"></line><line x1="3" y1="6" x2="3" y2="6"></line><line x1="3" y1="12" x2="3" y2="12"></line><line x1="3" y1="18" x2="3" y2="18"></line></svg></button><span class="hdr-social hide-in-mobile"><a href="https://github.com/eddycjy" target="_blank" rel="noopener me" title="Github"><svg xmlns="http://www.w3.org/2000/svg" class="feather" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"></path></svg></a></span><button id="menu-btn" class="hdr-btn" title="Menu"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-menu"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg></button>
+			</div>
+		</div>
+	</header>
+	<div id="mobile-menu" class="animated fast">
+		<ul>
+			<li><a href="https://wangtu2022.github.io/posts/">文章</a></li>
+			<li><a href="https://wangtu2022.github.io/tags/">标签</a></li>
+			<li><a href="https://wangtu2022.github.io/about/">关于</a></li>
+		</ul>
+	</div>
+
+
+	<main class="site-main section-inner animated fadeIn faster">
+		<article class="thin">
+			<header class="post-header">
+				<div class="post-meta"><span>Dec 3, 2020</span></div>
+				<h1>先睹为快，Go2 Error 的挣扎之路</h1>
+			</header>
+			<div class="content">
+				<p>大家好，我是煎鱼。</p>
+<p>自从 Go 语言在国内火热以来，除去泛型，其次最具槽点的就是 Go 对错误的处理方式，一句经典的 <code>if err != nil</code>  暗号就能认出你是一个 Go 语言爱好者。</p>
+<p><img src="https://image.eddycjy.com/381fcb5e85923479666f5be14de3782c.jpeg" alt="image"></p>
+<p>自然，大家对 Go error 的关注度更是高涨，Go team 也是，因此在 <a href="https://github.com/golang/proposal/blob/master/design/go2draft.md">Go 2 Draft Designs</a> 中正式提到了 error handling（错误处理）的相关草案，希望能够在未来正式的解决这个问题。</p>
+<p>在今天这篇文章中，我们将一同跟踪 Go2 error，看看他是怎么 “挣扎” 的，能不能破局？</p>
+<h2 id="为什么要吐槽-go1">为什么要吐槽 Go1<a href="#为什么要吐槽-go1" class="anchor" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 7h3a5 5 0 0 1 5 5 5 5 0 0 1-5 5h-3m-6 0H6a5 5 0 0 1-5-5 5 5 0 0 1 5-5h3"></path><line x1="8" y1="12" x2="16" y2="12"></line></svg></a></h2>
+<p>要吐槽 Go1 error，就得先知道为什么大家到底是在喷 Error 哪里处理的不好。在 Go 语言中，error 其实本质上只是个 Error 的 <code>interface</code>：</p>
+<pre tabindex="0"><code>type error interface {
+    Error() string
+}
+</code></pre><p>实际的应用场景如下：</p>
+<pre tabindex="0"><code>func main() {
+	x, err := foo()
+	if err != nil {
+		 // handle error
+	}
+}
+</code></pre><p>单纯的看这个例子似乎没什么问题，但工程大了后呢？显然 <code>if err != nil</code> 的逻辑是会堆积在工程代码中，Go 代码里的 <code>if err != nil</code> 甚至会达到工程代码量的 30% 以上：</p>
+<pre tabindex="0"><code>func main() {
+	x, err := foo()
+	if err != nil {
+		 // handle error
+	}
+	y, err := foo()
+	if err != nil {
+		 // handle error
+	}
+	z, err := foo()
+	if err != nil {
+		 // handle error
+	}
+	s, err := foo()
+	if err != nil {
+		 // handle error
+	}
+}
+</code></pre><p>暴力的对比一下，就发现四行函数调用，十二行错误，还要苦练且精通 IDE 的快速折叠功能，还是比较麻烦的。</p>
+<p>另外既然是错误处理，那肯定不单单是一个 <code>return err</code> 了。在工程实践中，项目代码都是层层嵌套的，如果直接写成：</p>
+<pre tabindex="0"><code>if err != nil {
+	return err
+}
+</code></pre><p>在实际工程中肯定是不行。你怎么知道具体是哪里抛出来的错误信息，实际出错时只能瞎猜。大家又想出了 PlanB，那就是加各种描述信息：</p>
+<pre tabindex="0"><code>if err != nil {
+	logger.Errorf(&#34;煎鱼报错 err：%v&#34;, err)
+	return err
+}
+</code></pre><p>虽然看上去人模人样的，在实际出错时，也会遇到新的问题，因为你要去查这个错误是从哪里抛出来的，单纯几句错误描述是难以定位的。这时候就会发展成<strong>到处打错误日志</strong>：</p>
+<pre tabindex="0"><code>func main() {
+	err := bar()
+	if err != nil {
+		logger.Errorf(&#34;bar err：%v&#34;, err)
+	}
+	...
+}
+
+func bar() error {
+	_, err := foo()
+	if err != nil {
+		logger.Errorf(&#34;foo err：%v&#34;, err)
+		return err
+	}
+
+	return nil
+}
+
+func foo() ([]byte, error) {
+	s, err := json.Marshal(&#34;hello world.&#34;)
+	if err != nil {
+		logger.Errorf(&#34;json.Marshal err：%v&#34;, err)
+		return nil, err
+	}
+
+	return s, nil
+}
+</code></pre><p>虽然到处打了日志，就会变成错误日志非常多，一旦出问题，人肉可能短时间内识别不出来。且最常见的就是到 IDE 上 <code>ctrl + f</code> 搜索是在哪出错，同时在我们常常会自定义一些错误类型，而在 Go 则需要各种判断和处理：</p>
+<pre tabindex="0"><code>if err := dec.Decode(&amp;val); err != nil {
+    if serr, ok := err.(*json.SyntaxError); ok {
+       ...
+    }
+    return err
+}
+</code></pre><p>首先你得判断不等于 <code>nil</code>，还得对自定义的错误类型进行断言，整体来讲比较繁琐。</p>
+<p>汇总来讲，Go1 错误处理的问题至少有：</p>
+<ul>
+<li>
+<p>在工程实践中，<code>if err != nil</code> 写的烦，代码中一大堆错误处理的判断，占了相当的比例，不够优雅。</p>
+</li>
+<li>
+<p>在排查问题时，Go 的 <code>err</code> 并没有其他堆栈信息，只能自己增加描述信息，层层叠加，打一大堆日志，排查很麻烦。</p>
+</li>
+<li>
+<p>在验证和测试错误时，要自定义错误（各种判断和断言）或者被迫用字符串校验。</p>
+</li>
+</ul>
+<h2 id="go113-的挽尊">Go1.13 的挽尊<a href="#go113-的挽尊" class="anchor" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 7h3a5 5 0 0 1 5 5 5 5 0 0 1-5 5h-3m-6 0H6a5 5 0 0 1-5-5 5 5 0 0 1 5-5h3"></path><line x1="8" y1="12" x2="16" y2="12"></line></svg></a></h2>
+<p>在 2019 年 09 月，Go1.13 正式发布。其中两个比较大的两个关注点分别是包依赖管理 Go modules 的转正，以及错误处理 errors 标准库的改进：</p>
+<p><img src="https://image.eddycjy.com/51485fae58cbf9bd92aa19686caf5a27.jpg" alt="image"></p>
+<p>在本次改进中，errors 标准库引入了 Wrapping Error 的概念，并增加了 Is/As/Unwarp 三个方法，用于对所返回的错误进行二次处理和识别。同时也是将 Go2 error 预规划中没有破坏 Go1 兼容性的相关功能提前实现了。</p>
+<p>简单来讲，Go1.13 后 Go 的 error 就可以嵌套了，并提供了三个配套的方法。例子：</p>
+<pre tabindex="0"><code>func main() {
+	e := errors.New(&#34;脑子进煎鱼了&#34;)
+	w := fmt.Errorf(&#34;快抓住：%w&#34;, e)
+	fmt.Println(w)
+	fmt.Println(errors.Unwrap(w))
+}
+</code></pre><p>输出结果：</p>
+<pre tabindex="0"><code>$ go run main.go
+快抓住：脑子进煎鱼了
+脑子进煎鱼了
+</code></pre><p>在上述代码中，变量 <code>w</code> 就是一个嵌套一层的 error。最外层是 “快抓住：”，此处调用 <code>%w</code> 意味着 Wrapping Error 的嵌套生成。因此最终输出了 “快抓住：脑子进煎鱼了”。</p>
+<p>需要注意的是，Go 并没有提供 <code>Warp</code> 方法，而是直接扩展了 <code>fmt.Errorf</code> 方法。而下方的输出由于直接调用了 <code>errors.Unwarp</code> 方法，因此将 “取” 出一层嵌套，最终直接输出 “脑子进煎鱼了”。</p>
+<p>对 Wrapping Error 有了基本理解后，我们简单介绍一下三个配套方法：</p>
+<pre tabindex="0"><code>func Is(err, target error) bool
+func As(err error, target interface{}) bool
+func Unwrap(err error) error
+</code></pre><h3 id="errorsis">errors.Is<a href="#errorsis" class="anchor" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 7h3a5 5 0 0 1 5 5 5 5 0 0 1-5 5h-3m-6 0H6a5 5 0 0 1-5-5 5 5 0 0 1 5-5h3"></path><line x1="8" y1="12" x2="16" y2="12"></line></svg></a></h3>
+<p>方法签名：</p>
+<pre tabindex="0"><code>func Is(err, target error) bool
+</code></pre><p>方法例子：</p>
+<pre tabindex="0"><code>func main() {
+	if _, err := os.Open(&#34;non-existing&#34;); err != nil {
+		if errors.Is(err, os.ErrNotExist) {
+			fmt.Println(&#34;file does not exist&#34;)
+		} else {
+			fmt.Println(err)
+		}
+	}
+
+}
+</code></pre><p><code>errors.Is</code> 方法的作用是判断所传入的 err 和 target 是否同一类型，如果是则返回 true。</p>
+<h3 id="errorsas">errors.As<a href="#errorsas" class="anchor" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 7h3a5 5 0 0 1 5 5 5 5 0 0 1-5 5h-3m-6 0H6a5 5 0 0 1-5-5 5 5 0 0 1 5-5h3"></path><line x1="8" y1="12" x2="16" y2="12"></line></svg></a></h3>
+<p>方法签名：</p>
+<pre tabindex="0"><code>func As(err error, target interface{}) bool
+</code></pre><p>方法例子：</p>
+<pre tabindex="0"><code>func main() {
+	if _, err := os.Open(&#34;non-existing&#34;); err != nil {
+		var pathError *os.PathError
+		if errors.As(err, &amp;pathError) {
+			fmt.Println(&#34;Failed at path:&#34;, pathError.Path)
+		} else {
+			fmt.Println(err)
+		}
+	}
+
+}
+</code></pre><p><code>errors.As</code> 方法的作用是从 err 错误链中识别和 target 相同的类型，如果可以赋值，则返回 true。</p>
+<h3 id="errorsunwarp">errors.Unwarp<a href="#errorsunwarp" class="anchor" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 7h3a5 5 0 0 1 5 5 5 5 0 0 1-5 5h-3m-6 0H6a5 5 0 0 1-5-5 5 5 0 0 1 5-5h3"></path><line x1="8" y1="12" x2="16" y2="12"></line></svg></a></h3>
+<p>方法签名：</p>
+<pre tabindex="0"><code>func Unwrap(err error) error
+</code></pre><p>方法例子：</p>
+<pre tabindex="0"><code>func main() {
+	e := errors.New(&#34;脑子进煎鱼了&#34;)
+	w := fmt.Errorf(&#34;快抓住：%w&#34;, e)
+	fmt.Println(w)
+	fmt.Println(errors.Unwrap(w))
+}
+</code></pre><p>该方法的作用是将嵌套的 error 解析出来，若存在多级嵌套则需要调用多次 Unwarp 方法。</p>
+<h2 id="民间自救-pkgerrors">民间自救 pkg/errors<a href="#民间自救-pkgerrors" class="anchor" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 7h3a5 5 0 0 1 5 5 5 5 0 0 1-5 5h-3m-6 0H6a5 5 0 0 1-5-5 5 5 0 0 1 5-5h3"></path><line x1="8" y1="12" x2="16" y2="12"></line></svg></a></h2>
+<p>Go1 的 error 处理固然存在许多问题，因此在 Go1.13 前，早已有 “民间” 发现没有上下文调试信息在实际工程应用中存在严重的体感问题。因此 <code>github.com/pkg/errors</code> 在 2016 年诞生了，目前该库也已经受到了极大的关注。</p>
+<p>官方例子如下：</p>
+<pre tabindex="0"><code>type stackTracer interface {
+    StackTrace() errors.StackTrace
+}
+
+err, ok := errors.Cause(fn()).(stackTracer)
+if !ok {
+    panic(&#34;oops, err does not implement stackTracer&#34;)
+}
+
+st := err.StackTrace()
+fmt.Printf(&#34;%+v&#34;, st[0:2]) // top two frames
+
+// Example output:
+// github.com/pkg/errors_test.fn
+//	/home/dfc/src/github.com/pkg/errors/example_test.go:47
+// github.com/pkg/errors_test.Example_stackTrace
+//	/home/dfc/src/github.com/pkg/errors/example_test.go:127
+</code></pre><p>简单来讲，就是对 Go1 error 的上下文处理进行了优化和处理，例如类型断言、调用堆栈等。若有兴趣的小伙伴可以自行到 <code>github.com/pkg/errors</code> 进行学习。</p>
+<p>另外你可能会发现 Go1.13 新增的 Wrapping Error 体系与 <code>pkg/errors</code> 有些相像。你并没有体会错，Go team 接纳了相关的意见，对 Go1 进行了调整，但调用堆栈这块因综合原因暂时没有纳入。</p>
+<h2 id="go2-error-要解决什么问题">Go2 error 要解决什么问题<a href="#go2-error-要解决什么问题" class="anchor" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 7h3a5 5 0 0 1 5 5 5 5 0 0 1-5 5h-3m-6 0H6a5 5 0 0 1-5-5 5 5 0 0 1 5-5h3"></path><line x1="8" y1="12" x2="16" y2="12"></line></svg></a></h2>
+<p>在前面我们聊了 Go1 error 的许多问题，以及 Go1.13 和 <code>pkg/errors</code> 的自救和融合。你可能会疑惑，那&hellip;Go2 error 还有出场的机会吗？即使 Go1 做了这些事情，Go1 error 还有问题吗？</p>
+<p>并没有解决，<code>if err != nil</code> 依旧一把梭，目前社区声音依然认为 Go 语言的错误处理要改进。</p>
+<h2 id="go2-error-proposal">Go2 error proposal<a href="#go2-error-proposal" class="anchor" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 7h3a5 5 0 0 1 5 5 5 5 0 0 1-5 5h-3m-6 0H6a5 5 0 0 1-5-5 5 5 0 0 1 5-5h3"></path><line x1="8" y1="12" x2="16" y2="12"></line></svg></a></h2>
+<p>在 2018 年 8 月，官方正式公布了 <a href="https://go.googlesource.com/proposal/+/master/design/go2draft.md">Go 2 Draft Designs</a>，其中包含泛型和错误处理机制改进的初步草案：</p>
+<p><img src="https://image.eddycjy.com/48b07b14442b1832c09eb6e2bc35fb6b.jpg" alt="image"></p>
+<p>注：Go1.13 正式将一些不破坏 Go1 兼容性的 Error 特性加入到了 main branch，也就是前面提到的 Wrapping Error。</p>
+<h3 id="错误处理error-handling">错误处理（Error Handling）<a href="#错误处理error-handling" class="anchor" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 7h3a5 5 0 0 1 5 5 5 5 0 0 1-5 5h-3m-6 0H6a5 5 0 0 1-5-5 5 5 0 0 1 5-5h3"></path><line x1="8" y1="12" x2="16" y2="12"></line></svg></a></h3>
+<p>第一个要解决的问题就是大量 <code>if err != nil</code> 的问题，针对此提出了 <a href="https://github.com/golang/proposal/blob/master/design/go2draft-error-handling-overview.md">Go2 error handling</a> 的草案设计。</p>
+<p>简单例子：</p>
+<pre tabindex="0"><code>if err != nil {
+	return err
+}
+</code></pre><p>优化后的方案如下：</p>
+<pre tabindex="0"><code>func CopyFile(src, dst string) error {
+	handle err {
+		return fmt.Errorf(&#34;copy %s %s: %v&#34;, src, dst, err)
+	}
+
+	r := check os.Open(src)
+	defer r.Close()
+
+	w := check os.Create(dst)
+	handle err {
+		w.Close()
+		os.Remove(dst) // (only if a check fails)
+	}
+
+	check io.Copy(w, r)
+	check w.Close()
+	return nil
+}
+</code></pre><p>主函数：</p>
+<pre tabindex="0"><code>func main() {
+	handle err {
+		log.Fatal(err)
+	}
+
+	hex := check ioutil.ReadAll(os.Stdin)
+	data := check parseHexdump(string(hex))
+	os.Stdout.Write(data)
+}
+</code></pre><p>该提案引入了两种新的语法形式，首先是 <code>check</code> 关键字，其可以选中一个表达式 <code>check f(x, y, z)</code> 或 <code>check err</code>，其将会标识这是一个显式的错误检查。</p>
+<p>其次引入了 <code>handle</code> 关键字，用于定义错误处理程序流转，逐级上抛，依此类推，直到处理程序执行 <code>return</code> 语句，才正式结束。</p>
+<h3 id="错误值打印error-printing">错误值打印（Error Printing）<a href="#错误值打印error-printing" class="anchor" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 7h3a5 5 0 0 1 5 5 5 5 0 0 1-5 5h-3m-6 0H6a5 5 0 0 1-5-5 5 5 0 0 1 5-5h3"></path><line x1="8" y1="12" x2="16" y2="12"></line></svg></a></h3>
+<p>第二个要解决的问题是错误值（Error Values）、错误检查（Error Inspection）的问题，其引申出错误值打印（Error Printing）的问题，也可以认为是错误格式化的不便利。</p>
+<p>官方针对此提出了提出了 <a href="https://github.com/golang/proposal/blob/master/design/go2draft-error-values-overview.md">Error Values</a> 和 <a href="https://github.com/golang/proposal/blob/master/design/go2draft-error-printing.md">Error Printing</a> 的草案设计。</p>
+<p>简单例子如下：</p>
+<pre tabindex="0"><code>if err != nil {
+	return fmt.Errorf(&#34;write users database: %v&#34;, err)
+}
+</code></pre><p>优化后的方案如下：</p>
+<pre tabindex="0"><code>package errors
+
+type Wrapper interface {
+	Unwrap() error
+}
+
+func Is(err, target error) bool
+func As(type E)(err error) (e E, ok bool)
+</code></pre><p>该提案增加了错误链的 Wrapping Error 概念，并同时增加 <code>errors.Is</code> 和 <code>errors.As</code> 的方法，与前面说到的 Go1.13 的改进一致，不再赘述。</p>
+<p>需要留意的是，Go1.13 并没有实现 <code>%+v</code> 输出调用堆栈的需求，因为此举会破坏 Go1 兼容性和产生一些性能问题，大概会在 Go2 加入。</p>
+<h2 id="try-catch-不香吗">try-catch 不香吗<a href="#try-catch-不香吗" class="anchor" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 7h3a5 5 0 0 1 5 5 5 5 0 0 1-5 5h-3m-6 0H6a5 5 0 0 1-5-5 5 5 0 0 1 5-5h3"></path><line x1="8" y1="12" x2="16" y2="12"></line></svg></a></h2>
+<p>社区中另外一股声音就是直指 Go 语言反人类不用 <code>try-catch</code> 的机制，在社区内也产生了大量的探讨，具体可以看看相关的提案 <a href="https://github.com/golang/go/issues/32437">Proposal: A built-in Go error check function, &ldquo;try&rdquo;</a>。</p>
+<p>目前该提案已被拒绝，具体可参见 <a href="https://github.com/golang/go/issues/32437#issuecomment-512035919">go/issues/32437#issuecomment-512035919</a> 和 <a href="https://golang.org/doc/faq#exceptions">Why does Go not have exceptions</a>。</p>
+<h2 id="总结">总结<a href="#总结" class="anchor" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 7h3a5 5 0 0 1 5 5 5 5 0 0 1-5 5h-3m-6 0H6a5 5 0 0 1-5-5 5 5 0 0 1 5-5h3"></path><line x1="8" y1="12" x2="16" y2="12"></line></svg></a></h2>
+<p>在这篇文章中，我们介绍了目前 Go1 Error 的现状，概括了大家对 Go 语言错误处理的常见问题和意见。同时还介绍了在这几年间，Go team 针对 Go2、Go1.13 Error 的持续优化和探索。</p>
+<p>如果是你，你会怎么去优化目前 Go 语言的错误处理机制呢，现在 Go2 error proposal 你又是否认可？</p>
+<h2 id="参考">参考<a href="#参考" class="anchor" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 7h3a5 5 0 0 1 5 5 5 5 0 0 1-5 5h-3m-6 0H6a5 5 0 0 1-5-5 5 5 0 0 1 5-5h3"></path><line x1="8" y1="12" x2="16" y2="12"></line></svg></a></h2>
+<ul>
+<li>
+<p><a href="https://qcrao.com/2019/09/18/golang-error-break-through">Golang error 的突围</a></p>
+</li>
+<li>
+<p><a href="https://www.zhihu.com/question/330263279">为什么 Go 语言的 Error Handling 是一个败笔</a></p>
+</li>
+<li>
+<p><a href="https://www.flysnow.org/2019/09/06/go1.13-error-wrapping.html">Go语言(golang)新发布的1.13中的Error Wrapping深度分析</a></p>
+</li>
+</ul>
+
+			</div>
+			<hr class="post-end">
+			<footer class="post-info">
+				<p>
+					<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-tag meta-icon"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"></path><line x1="7" y1="7" x2="7" y2="7"></line></svg><span class="tag"><a href="https://wangtu2022.github.io/tags/go">go</a></span>
+				</p>
+				<p><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-file-text"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>827 Words</p>
+				<p><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-calendar"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>2020-12-03 20:56 &#43;0800</p>
+			</footer>
+		</article>
+		<aside id="toc">
+			<div class="toc-title">Table of Contents</div>
+			<nav id="TableOfContents">
+  <ul>
+    <li><a href="#为什么要吐槽-go1">为什么要吐槽 Go1</a></li>
+    <li><a href="#go113-的挽尊">Go1.13 的挽尊</a>
+      <ul>
+        <li><a href="#errorsis">errors.Is</a></li>
+        <li><a href="#errorsas">errors.As</a></li>
+        <li><a href="#errorsunwarp">errors.Unwarp</a></li>
+      </ul>
+    </li>
+    <li><a href="#民间自救-pkgerrors">民间自救 pkg/errors</a></li>
+    <li><a href="#go2-error-要解决什么问题">Go2 error 要解决什么问题</a></li>
+    <li><a href="#go2-error-proposal">Go2 error proposal</a>
+      <ul>
+        <li><a href="#错误处理error-handling">错误处理（Error Handling）</a></li>
+        <li><a href="#错误值打印error-printing">错误值打印（Error Printing）</a></li>
+      </ul>
+    </li>
+    <li><a href="#try-catch-不香吗">try-catch 不香吗</a></li>
+    <li><a href="#总结">总结</a></li>
+    <li><a href="#参考">参考</a></li>
+  </ul>
+</nav>
+		</aside>
+		<div class="post-nav thin">
+			<a class="next-post" href="https://wangtu2022.github.io/posts/go/go-concurrent-lock/">
+				<span class="post-nav-label"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-arrow-left"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>&nbsp;Newer</span><br><span>Go 并发：一些有趣的现象和要避开的 “坑”</span>
+			</a>
+			<a class="prev-post" href="https://wangtu2022.github.io/posts/go/gophercon2020-errors/">
+				<span class="post-nav-label">Older&nbsp;<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-arrow-right"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg></span><br><span>重磅：Go errors 将不会有任何进一步的改进计划</span>
+			</a>
+		</div>
+		<div id="comments" class="thin">
+</div>
+	</main>
+
+	<footer id="site-footer" class="section-inner thin animated fadeIn faster">
+		<p>&copy; 2022 <a href="https://wangtu2022.github.io/">煎鱼</a> &#183; <a href="http://www.beian.miit.gov.cn/">粤ICP备19076352号</a></p>
+		<p>
+			Made with <a href="https://gohugo.io/" target="_blank" rel="noopener">Hugo</a> &#183; Theme <a href="https://github.com/Track3/hermit" target="_blank" rel="noopener">Hermit</a> &#183; <a href="https://wangtu2022.github.io/posts/index.xml" target="_blank" title="rss"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-rss"><path d="M4 11a9 9 0 0 1 9 9"></path><path d="M4 4a16 16 0 0 1 16 16"></path><circle cx="5" cy="19" r="1"></circle></svg></a>
+		</p>
+	</footer>
+
+
+
+	<script src="https://wangtu2022.github.io/js/bundle.min.580988ed2982bcbb74a1773c7abea97b43e4c43b9324e10cda0813ec6ec4bb67.js" integrity="sha256-WAmI7SmCvLt0oXc8er6pe0PkxDuTJOEM2ggT7G7Eu2c=" crossorigin="anonymous"></script>
+	
+<script type="application/javascript">
+var doNotTrack = false;
+if (!doNotTrack) {
+	window.ga=window.ga||function(){(ga.q=ga.q||[]).push(arguments)};ga.l=+new Date;
+	ga('create', 'UA-166045776-1', 'auto');
+	
+	ga('send', 'pageview');
+}
+</script>
+<script async src='https://www.google-analytics.com/analytics.js'></script>
+
+
+</body>
+
+</html>

@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="zh-hans">
+
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<meta http-equiv="X-UA-Compatible" content="ie=edge">
+	<meta name="theme-color" content="#494f5c">
+	<meta name="msapplication-TileColor" content="#494f5c">
+<meta itemprop="name" content="群里又吵起来了，Go 是传值还是传引用？">
+<meta itemprop="description" content="大家好，我是煎鱼。
+前几天在咱们的 Go 交流群里，有一个小伙伴问了 “xxx 是不是引用类型？” 这个问题，引发了将近 5 小时的讨论：
+兜兜转转回到了日经的问题，几乎每个月都要有人因此吵一架。就是 Go 语言到底是传值（值传递），还是传引用（引用传递）？
+Go 官方的定义 本部分引用 Go 官方 FAQ 的 “When are function parameters passed by value?”，内容如下。
+如同 C 系列的所有语言一样，Go 语言中的所有东西都是以值传递的。也就是说，一个函数总是得到一个被传递的东西的副本，就像有一个赋值语句将值赋给参数一样。"><meta itemprop="datePublished" content="2021-12-31T12:54:52+08:00" />
+<meta itemprop="dateModified" content="2021-12-31T12:54:52+08:00" />
+<meta itemprop="wordCount" content="438">
+<meta itemprop="keywords" content="go," /><meta property="og:title" content="群里又吵起来了，Go 是传值还是传引用？" />
+<meta property="og:description" content="大家好，我是煎鱼。
+前几天在咱们的 Go 交流群里，有一个小伙伴问了 “xxx 是不是引用类型？” 这个问题，引发了将近 5 小时的讨论：
+兜兜转转回到了日经的问题，几乎每个月都要有人因此吵一架。就是 Go 语言到底是传值（值传递），还是传引用（引用传递）？
+Go 官方的定义 本部分引用 Go 官方 FAQ 的 “When are function parameters passed by value?”，内容如下。
+如同 C 系列的所有语言一样，Go 语言中的所有东西都是以值传递的。也就是说，一个函数总是得到一个被传递的东西的副本，就像有一个赋值语句将值赋给参数一样。" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://wangtu2022.github.io/posts/go/value-quote/" /><meta property="article:section" content="posts" />
+<meta property="article:published_time" content="2021-12-31T12:54:52+08:00" />
+<meta property="article:modified_time" content="2021-12-31T12:54:52+08:00" />
+
+<meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="群里又吵起来了，Go 是传值还是传引用？"/>
+<meta name="twitter:description" content="大家好，我是煎鱼。
+前几天在咱们的 Go 交流群里，有一个小伙伴问了 “xxx 是不是引用类型？” 这个问题，引发了将近 5 小时的讨论：
+兜兜转转回到了日经的问题，几乎每个月都要有人因此吵一架。就是 Go 语言到底是传值（值传递），还是传引用（引用传递）？
+Go 官方的定义 本部分引用 Go 官方 FAQ 的 “When are function parameters passed by value?”，内容如下。
+如同 C 系列的所有语言一样，Go 语言中的所有东西都是以值传递的。也就是说，一个函数总是得到一个被传递的东西的副本，就像有一个赋值语句将值赋给参数一样。"/>
+
+	<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+	<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+	<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+	<link rel="manifest" href="/site.webmanifest">
+	<link rel="mask-icon" href="/safari-pinned-tab.svg" color="">
+	<link rel="shortcut icon" href="/favicon.ico">
+
+	<title>群里又吵起来了，Go 是传值还是传引用？</title>
+	<link rel="stylesheet" href="https://wangtu2022.github.io/css/style.min.d3141168199607bf3a517216ce3c263814eecdbc8fca72a9a88700799a838219.css" integrity="sha256-0xQRaBmWB786UXIWzjwmOBTuzbyPynKpqIcAeZqDghk=" crossorigin="anonymous">
+	
+	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.1/css/all.min.css">
+	<link rel="stylesheet" href="https://wangtu2022.github.io/css/styles.css">
+</head>
+
+<body id="page">
+	
+	<header id="site-header" class="animated slideInUp">
+		<div class="hdr-wrapper section-inner">
+			<div class="hdr-left">
+				<div class="site-branding">
+					<a href="https://wangtu2022.github.io/">煎鱼</a>
+				</div>
+				<nav class="site-nav hide-in-mobile">
+					
+				<a href="https://wangtu2022.github.io/posts/">文章</a>
+				<a href="https://wangtu2022.github.io/tags/">标签</a>
+				<a href="https://wangtu2022.github.io/about/">关于</a>
+
+				</nav>
+			</div>
+			<div class="hdr-right hdr-icons">
+				<button id="toc-btn" class="hdr-btn desktop-only-ib" title="Table of Contents"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-list"><line x1="8" y1="6" x2="21" y2="6"></line><line x1="8" y1="12" x2="21" y2="12"></line><line x1="8" y1="18" x2="21" y2="18"></line><line x1="3" y1="6" x2="3" y2="6"></line><line x1="3" y1="12" x2="3" y2="12"></line><line x1="3" y1="18" x2="3" y2="18"></line></svg></button><span class="hdr-social hide-in-mobile"><a href="https://github.com/eddycjy" target="_blank" rel="noopener me" title="Github"><svg xmlns="http://www.w3.org/2000/svg" class="feather" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"></path></svg></a></span><button id="menu-btn" class="hdr-btn" title="Menu"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-menu"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg></button>
+			</div>
+		</div>
+	</header>
+	<div id="mobile-menu" class="animated fast">
+		<ul>
+			<li><a href="https://wangtu2022.github.io/posts/">文章</a></li>
+			<li><a href="https://wangtu2022.github.io/tags/">标签</a></li>
+			<li><a href="https://wangtu2022.github.io/about/">关于</a></li>
+		</ul>
+	</div>
+
+
+	<main class="site-main section-inner animated fadeIn faster">
+		<article class="thin">
+			<header class="post-header">
+				<div class="post-meta"><span>Dec 31, 2021</span></div>
+				<h1>群里又吵起来了，Go 是传值还是传引用？</h1>
+			</header>
+			<div class="content">
+				<p>大家好，我是煎鱼。</p>
+<p>前几天在咱们的 Go 交流群里，有一个小伙伴问了 “xxx 是不是引用类型？” 这个问题，引发了将近 5 小时的讨论：</p>
+<p><img src="https://p3-juejin.byteimg.com/tos-cn-i-k3u1fbpfcp/9be6b8a7ae844766afa6c2a79c3666d5~tplv-k3u1fbpfcp-zoom-1.image" alt="图片"></p>
+<p>兜兜转转回到了日经的问题，几乎每个月都要有人因此吵一架。就是 <strong>Go 语言到底是传值（值传递），还是传引用（引用传递）</strong>？</p>
+<h2 id="go-官方的定义">Go 官方的定义<a href="#go-官方的定义" class="anchor" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 7h3a5 5 0 0 1 5 5 5 5 0 0 1-5 5h-3m-6 0H6a5 5 0 0 1-5-5 5 5 0 0 1 5-5h3"></path><line x1="8" y1="12" x2="16" y2="12"></line></svg></a></h2>
+<p>本部分引用 Go 官方 FAQ 的 “When are function parameters passed by value?”，内容如下。</p>
+<p>如同 C 系列的所有语言一样，<strong>Go 语言中的所有东西都是以值传递的</strong>。也就是说，一个函数总是得到一个被传递的东西的副本，就像有一个赋值语句将值赋给参数一样。</p>
+<p><img src="https://p3-juejin.byteimg.com/tos-cn-i-k3u1fbpfcp/4dc92546d5494e5b9a2a2a5083aa0a5b~tplv-k3u1fbpfcp-zoom-1.image" alt="图片"></p>
+<p>例如：</p>
+<ul>
+<li>
+<p>向一个函数传递一个 int 值，就会得到 int 的副本。</p>
+<p>而传递一个指针值就会得到指针的副本，但不会得到它所指向的数据。</p>
+</li>
+<li>
+<p>map 和 slice 的行为类似于指针：它们是包含指向底层 map 或 slice 数据的指针的描述符。</p>
+</li>
+<li>
+<p>复制一个 map 或 slice 值并不会复制它所指向的数据。</p>
+</li>
+<li>
+<p>复制一个接口值会复制存储在接口值中的东西。</p>
+</li>
+<li>
+<p>如果接口值持有一个结构，复制接口值就会复制该结构。如果接口值持有一个指针，复制接口值会复制该指针，但同样不会复制它所指向的数据。</p>
+</li>
+</ul>
+<p>划重点，Go 语言中一切都是值传递，没有引用传递。不要直接把其他概念硬套上来，会犯先入为主的错误的。</p>
+<h2 id="传值和传引用">传值和传引用<a href="#传值和传引用" class="anchor" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 7h3a5 5 0 0 1 5 5 5 5 0 0 1-5 5h-3m-6 0H6a5 5 0 0 1-5-5 5 5 0 0 1 5-5h3"></path><line x1="8" y1="12" x2="16" y2="12"></line></svg></a></h2>
+<h3 id="传值">传值<a href="#传值" class="anchor" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 7h3a5 5 0 0 1 5 5 5 5 0 0 1-5 5h-3m-6 0H6a5 5 0 0 1-5-5 5 5 0 0 1 5-5h3"></path><line x1="8" y1="12" x2="16" y2="12"></line></svg></a></h3>
+<p>传值，也叫做值传递（pass by value）。其<strong>指的是在调用函数时将实际参数复制一份传递到函数中</strong>，这样在函数中如果对参数进行修改，将不会影响到实际参数。</p>
+<p>简单来讲，值传递，所传递的是该参数的副本，是复制了一份的，本质上不能认为是一个东西，指向的不是一个内存地址。</p>
+<p>案例一如下：</p>
+<pre tabindex="0"><code>func main() {
+ s := &#34;脑子进煎鱼了&#34;
+ fmt.Printf(&#34;main 内存地址：%p\n&#34;, &amp;s)
+ hello(&amp;s)
+}
+
+func hello(s *string) {
+ fmt.Printf(&#34;hello 内存地址：%p\n&#34;, &amp;s)
+}
+</code></pre><p>输出结果：</p>
+<pre tabindex="0"><code>main 内存地址：0xc000116220
+hello 内存地址：0xc000132020
+</code></pre><p>我们可以看到在 main 函数中的变量 s 所指向的内存地址是 <code>0xc000116220</code>。在经过 hello 函数的参数传递后，其在内部所输出的内存地址是 <code>0xc000132020</code>，两者发生了改变。</p>
+<p><img src="https://p3-juejin.byteimg.com/tos-cn-i-k3u1fbpfcp/d1610690706d432e9af21835d0d65ed3~tplv-k3u1fbpfcp-zoom-1.image" alt="图片"></p>
+<p>据此我们可以得出结论，在 Go 语言确实都是值传递。那是不是在函数内修改值，就不会影响到 main 函数呢？</p>
+<p>案例二如下：</p>
+<pre tabindex="0"><code>func main() {
+ s := &#34;脑子进煎鱼了&#34;
+ fmt.Printf(&#34;main 内存地址：%p\n&#34;, &amp;s)
+ hello(&amp;s)
+ fmt.Println(s)
+}
+
+func hello(s *string) {
+ fmt.Printf(&#34;hello 内存地址：%p\n&#34;, &amp;s)
+ *s = &#34;煎鱼进脑子了&#34;
+}
+</code></pre><p>我们在 hello 函数中修改了变量 s 的值，那么最后在 main 函数中我们所输出的变量 s 的值是什么呢。是 “脑子进煎鱼了”，还是 &ldquo;煎鱼进脑子了&rdquo;？</p>
+<p>输出结果：</p>
+<pre tabindex="0"><code>main 内存地址：0xc000010240
+hello 内存地址：0xc00000e030
+煎鱼进脑子了
+</code></pre><p>输出的结果是 “煎鱼进脑子了”。这时候大家可能又犯嘀咕了，煎鱼前面明明说的是 Go 语言只有值传递，也验证了两者的内存地址，都是不一样的，怎么他这下他的值就改变了，这是为什么？</p>
+<p>因为 “如果传过去的值是指向内存空间的地址，那么是可以对这块内存空间做修改的”。</p>
+<p>也就是这两个内存地址，其实是指针的指针，其根源都指向着同一个指针，也就是指向着变量 s。因此我们进一步修改变量 s，得到输出 “煎鱼进脑子了” 的结果。</p>
+<h3 id="传引用">传引用<a href="#传引用" class="anchor" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 7h3a5 5 0 0 1 5 5 5 5 0 0 1-5 5h-3m-6 0H6a5 5 0 0 1-5-5 5 5 0 0 1 5-5h3"></path><line x1="8" y1="12" x2="16" y2="12"></line></svg></a></h3>
+<p>传引用，也叫做引用传递（pass by reference），<strong>指在调用函数时将实际参数的地址直接传递到函数中</strong>，那么在函数中对参数所进行的修改，将影响到实际参数。</p>
+<p>在 Go 语言中，官方已经明确了没有传引用，也就是没有引用传递这一情况。</p>
+<p>因此借用文字简单描述，像是例子中，即使你将参数传入，最终所输出的内存地址都是一样的。</p>
+<h2 id="争议最大的-map-和-slice">争议最大的 map 和 slice<a href="#争议最大的-map-和-slice" class="anchor" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 7h3a5 5 0 0 1 5 5 5 5 0 0 1-5 5h-3m-6 0H6a5 5 0 0 1-5-5 5 5 0 0 1 5-5h3"></path><line x1="8" y1="12" x2="16" y2="12"></line></svg></a></h2>
+<p>这时候又有小伙伴疑惑了，你看 Go 语言中的 map 和 slice 类型，能直接修改，难道不是同个内存地址，不是引用了？</p>
+<p>其实在 FAQ 中有一句提醒很重要：“map 和 slice 的行为类似于指针，它们是包含指向底层 map 或 slice 数据的指针的描述符”。</p>
+<h3 id="map">map<a href="#map" class="anchor" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 7h3a5 5 0 0 1 5 5 5 5 0 0 1-5 5h-3m-6 0H6a5 5 0 0 1-5-5 5 5 0 0 1 5-5h3"></path><line x1="8" y1="12" x2="16" y2="12"></line></svg></a></h3>
+<p>针对 map 类型，进一步展开来看看例子：</p>
+<pre tabindex="0"><code>func main() {
+ m := make(map[string]string)
+ m[&#34;脑子进煎鱼了&#34;] = &#34;这次一定！&#34;
+ fmt.Printf(&#34;main 内存地址：%p\n&#34;, &amp;m)
+ hello(m)
+
+ fmt.Printf(&#34;%v&#34;, m)
+}
+
+func hello(p map[string]string) {
+ fmt.Printf(&#34;hello 内存地址：%p\n&#34;, &amp;p)
+ p[&#34;脑子进煎鱼了&#34;] = &#34;记得点赞！&#34;
+}
+</code></pre><p>输出结果：</p>
+<pre tabindex="0"><code>main 内存地址：0xc00000e028
+hello 内存地址：0xc00000e038
+</code></pre><p>确实是值传递，那修改后的 map 的结果应该是什么。既然是值传递，那肯定就是 &ldquo;这次一定！&quot;，对吗？</p>
+<p>输出结果：</p>
+<pre tabindex="0"><code>map[脑子进煎鱼了:记得点赞！]
+</code></pre><p>结果是修改成功，输出了 “记得点赞！”。这下就尴尬了，为什么是值传递，又还能做到类似引用的效果，能修改到源值呢？</p>
+<p>这里的小窍门是：</p>
+<pre tabindex="0"><code>func makemap(t *maptype, hint int, h *hmap) *hmap {}
+</code></pre><p>这是创建 map 类型的底层 runtime 方法，注意其返回的是 <code>*hmap</code> 类型，是一个指针。也就是 Go 语言通过对 map 类型的相关方法进行封装，达到了用户需要关注指针传递的作用。</p>
+<p>就是说当我们在调用 <code>hello</code> 方法时，其相当于是在传入一个指针参数 <code>hello(*hmap)</code>，与前面的值类型的案例二类似。</p>
+<p>这类情况我们称其为 “引用类型”，但 “引用类型” 不等同于就是传引用，又或是引用传递了，还是有比较明确的区别的。</p>
+<p>在 Go 语言中与 map 类型类似的还有 chan 类型：</p>
+<pre tabindex="0"><code>func makechan(t *chantype, size int) *hchan {}
+</code></pre><p>一样的效果。</p>
+<h3 id="slice">slice<a href="#slice" class="anchor" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 7h3a5 5 0 0 1 5 5 5 5 0 0 1-5 5h-3m-6 0H6a5 5 0 0 1-5-5 5 5 0 0 1 5-5h3"></path><line x1="8" y1="12" x2="16" y2="12"></line></svg></a></h3>
+<p>针对 slice 类型，进一步展开来看看例子：</p>
+<pre tabindex="0"><code>func main() {
+ s := []string{&#34;烤鱼&#34;, &#34;咸鱼&#34;, &#34;摸鱼&#34;}
+ fmt.Printf(&#34;main 内存地址：%p\n&#34;, s)
+ hello(s)
+ fmt.Println(s)
+}
+
+func hello(s []string) {
+ fmt.Printf(&#34;hello 内存地址：%p\n&#34;, s)
+ s[0] = &#34;煎鱼&#34;
+}
+</code></pre><p>输出结果：</p>
+<pre tabindex="0"><code>main 内存地址：0xc000098180
+hello 内存地址：0xc000098180
+[煎鱼 咸鱼 摸鱼]
+</code></pre><p>从结果来看，两者的内存地址一样，也成功的变更到了变量 s 的值。这难道不是引用传递吗，煎鱼翻车了？</p>
+<p>关注两个细节：</p>
+<ul>
+<li>
+<p>没有用 <code>&amp;</code> 来取地址。</p>
+</li>
+<li>
+<p>可以直接用 <code>%p</code> 来打印。</p>
+</li>
+</ul>
+<p>之所以可以同时做到上面这两件事，是因为标准库 <code>fmt</code> 针对在这一块做了优化：</p>
+<pre tabindex="0"><code>func (p *pp) fmtPointer(value reflect.Value, verb rune) {
+ var u uintptr
+ switch value.Kind() {
+ case reflect.Chan, reflect.Func, reflect.Map, reflect.Ptr, reflect.Slice, reflect.UnsafePointer:
+  u = value.Pointer()
+ default:
+  p.badVerb(verb)
+  return
+ }
+</code></pre><p>留意到代码 <code>value.Pointer</code>，标准库进行了特殊处理，直接对应的值的指针地址，当然就不需要取地址符了。</p>
+<p>标准库 <code>fmt</code> 能够输出 slice 类型对应的值的原因也在此：</p>
+<pre tabindex="0"><code>func (v Value) Pointer() uintptr {
+ ...
+ case Slice:
+  return (*SliceHeader)(v.ptr).Data
+ }
+}
+
+type SliceHeader struct {
+ Data uintptr
+ Len  int
+ Cap  int
+}
+</code></pre><p>其在内部转换的 <code>Data</code> 属性，正正是 Go 语言中 slice 类型的运行时表现 SliceHeader。我们在调用 <code>%p</code> 输出时，是在输出 slice 的底层存储数组元素的地址。</p>
+<p>下一个问题是：为什么 slice 类型可以直接修改源数据的值呢。</p>
+<p>其实和输出的原理是一样的，在 Go 语言运行时，传递的也是相应 slice 类型的底层数组的指针，但需要注意，其使用的是指针的副本。严格意义是引用类型，依旧是值传递。</p>
+<p>妙不妙？</p>
+<h2 id="总结">总结<a href="#总结" class="anchor" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 7h3a5 5 0 0 1 5 5 5 5 0 0 1-5 5h-3m-6 0H6a5 5 0 0 1-5-5 5 5 0 0 1 5-5h3"></path><line x1="8" y1="12" x2="16" y2="12"></line></svg></a></h2>
+<p>在今天这篇文章中，我们针对 Go 语言的日经问题：“Go 语言到底是传值（值传递），还是传引用（引用传递）” 进行了基本的讲解和分析。</p>
+<p>另外在业内中，最多人犯迷糊的就是 slice、map、chan 等类型，都会认为是 “引用传递”，从而认为 Go 语言的 xxx 就是引用传递，我们对此也进行了案例演示。</p>
+<p>这实则是不大对的认知，因为：“如果传过去的值是指向内存空间的地址，是可以对这块内存空间做修改的”。</p>
+<p>其确实复制了一个副本，但他也借由各手段（其实就是传指针），达到了能修改源数据的效果，是引用类型。</p>
+<p>石锤，Go 语言只有值传递，</p>
+<h2 id="鼓励">鼓励<a href="#鼓励" class="anchor" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 7h3a5 5 0 0 1 5 5 5 5 0 0 1-5 5h-3m-6 0H6a5 5 0 0 1-5-5 5 5 0 0 1 5-5h3"></path><line x1="8" y1="12" x2="16" y2="12"></line></svg></a></h2>
+<p>若有任何疑问欢迎评论区反馈和交流，<strong>最好的关系是互相成就</strong>，各位的<strong>点赞</strong>就是<a href="https://github.com/eddycjy">煎鱼</a>创作的最大动力，感谢支持。</p>
+<blockquote>
+<p>文章持续更新，可以微信搜【脑子进煎鱼了】阅读，本文 <strong>GitHub</strong> <a href="https://github.com/eddycjy/blog">github.com/eddycjy/blog</a> 已收录，Go 学习地图，欢迎 Star 催更。</p>
+</blockquote>
+<h2 id="参考">参考<a href="#参考" class="anchor" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 7h3a5 5 0 0 1 5 5 5 5 0 0 1-5 5h-3m-6 0H6a5 5 0 0 1-5-5 5 5 0 0 1 5-5h3"></path><line x1="8" y1="12" x2="16" y2="12"></line></svg></a></h2>
+<ul>
+<li>
+<p>Go 读者交流群</p>
+</li>
+<li>
+<p>When are function parameters passed by value?</p>
+</li>
+<li>
+<p>Java 到底是值传递还是引用传递？</p>
+</li>
+<li>
+<p>Go语言参数传递是传值还是传引用</p>
+</li>
+</ul>
+
+			</div>
+			<hr class="post-end">
+			<footer class="post-info">
+				<p>
+					<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-tag meta-icon"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"></path><line x1="7" y1="7" x2="7" y2="7"></line></svg><span class="tag"><a href="https://wangtu2022.github.io/tags/go">go</a></span>
+				</p>
+				<p><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-file-text"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>438 Words</p>
+				<p><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-calendar"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>2021-12-31 12:54 &#43;0800</p>
+			</footer>
+		</article>
+		<aside id="toc">
+			<div class="toc-title">Table of Contents</div>
+			<nav id="TableOfContents">
+  <ul>
+    <li><a href="#go-官方的定义">Go 官方的定义</a></li>
+    <li><a href="#传值和传引用">传值和传引用</a>
+      <ul>
+        <li><a href="#传值">传值</a></li>
+        <li><a href="#传引用">传引用</a></li>
+      </ul>
+    </li>
+    <li><a href="#争议最大的-map-和-slice">争议最大的 map 和 slice</a>
+      <ul>
+        <li><a href="#map">map</a></li>
+        <li><a href="#slice">slice</a></li>
+      </ul>
+    </li>
+    <li><a href="#总结">总结</a></li>
+    <li><a href="#鼓励">鼓励</a></li>
+    <li><a href="#参考">参考</a></li>
+  </ul>
+</nav>
+		</aside>
+		<div class="post-nav thin">
+			<a class="next-post" href="https://wangtu2022.github.io/posts/go/slice-string-header/">
+				<span class="post-nav-label"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-arrow-left"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>&nbsp;Newer</span><br><span>Go SliceHeader 和 StringHeader，你知道吗？</span>
+			</a>
+			<a class="prev-post" href="https://wangtu2022.github.io/posts/go/empty-struct/">
+				<span class="post-nav-label">Older&nbsp;<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-arrow-right"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg></span><br><span>详解 Go 空结构体的 3 种使用场景</span>
+			</a>
+		</div>
+		<div id="comments" class="thin">
+</div>
+	</main>
+
+	<footer id="site-footer" class="section-inner thin animated fadeIn faster">
+		<p>&copy; 2022 <a href="https://wangtu2022.github.io/">煎鱼</a> &#183; <a href="http://www.beian.miit.gov.cn/">粤ICP备19076352号</a></p>
+		<p>
+			Made with <a href="https://gohugo.io/" target="_blank" rel="noopener">Hugo</a> &#183; Theme <a href="https://github.com/Track3/hermit" target="_blank" rel="noopener">Hermit</a> &#183; <a href="https://wangtu2022.github.io/posts/index.xml" target="_blank" title="rss"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-rss"><path d="M4 11a9 9 0 0 1 9 9"></path><path d="M4 4a16 16 0 0 1 16 16"></path><circle cx="5" cy="19" r="1"></circle></svg></a>
+		</p>
+	</footer>
+
+
+
+	<script src="https://wangtu2022.github.io/js/bundle.min.580988ed2982bcbb74a1773c7abea97b43e4c43b9324e10cda0813ec6ec4bb67.js" integrity="sha256-WAmI7SmCvLt0oXc8er6pe0PkxDuTJOEM2ggT7G7Eu2c=" crossorigin="anonymous"></script>
+	
+<script type="application/javascript">
+var doNotTrack = false;
+if (!doNotTrack) {
+	window.ga=window.ga||function(){(ga.q=ga.q||[]).push(arguments)};ga.l=+new Date;
+	ga('create', 'UA-166045776-1', 'auto');
+	
+	ga('send', 'pageview');
+}
+</script>
+<script async src='https://www.google-analytics.com/analytics.js'></script>
+
+
+</body>
+
+</html>

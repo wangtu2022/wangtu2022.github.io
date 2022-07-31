@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="zh-hans">
+
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<meta http-equiv="X-UA-Compatible" content="ie=edge">
+	<meta name="theme-color" content="#494f5c">
+	<meta name="msapplication-TileColor" content="#494f5c">
+<meta itemprop="name" content="Go 错误处理：用 panic 取代 err != nil 的模式">
+<meta itemprop="description" content="前段时间我分享了文章 《先睹为快，Go2 Error 的挣扎之路》后，和一位朋友进行了一次深度交流，他给我分享了他们项目组对于 Go 错误处理的方式调整。
+简单来讲，就是在业务代码中使用 panic 的方式来替代 “永无止境” 的 if err != nil。这就是今天本文的重点内容，我们一起来看看是怎么做，又有什么优缺点。
+为什么想替换 在 Go 语言中 if err != nil 写的太多，还要管方法声明各种，嫌麻烦又不方便：
+err := foo() if err != nil { //do something."><meta itemprop="datePublished" content="2020-12-12T17:21:42+08:00" />
+<meta itemprop="dateModified" content="2020-12-12T17:21:42+08:00" />
+<meta itemprop="wordCount" content="279">
+<meta itemprop="keywords" content="go," /><meta property="og:title" content="Go 错误处理：用 panic 取代 err != nil 的模式" />
+<meta property="og:description" content="前段时间我分享了文章 《先睹为快，Go2 Error 的挣扎之路》后，和一位朋友进行了一次深度交流，他给我分享了他们项目组对于 Go 错误处理的方式调整。
+简单来讲，就是在业务代码中使用 panic 的方式来替代 “永无止境” 的 if err != nil。这就是今天本文的重点内容，我们一起来看看是怎么做，又有什么优缺点。
+为什么想替换 在 Go 语言中 if err != nil 写的太多，还要管方法声明各种，嫌麻烦又不方便：
+err := foo() if err != nil { //do something." />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://wangtu2022.github.io/posts/go/go-error2panic/" /><meta property="article:section" content="posts" />
+<meta property="article:published_time" content="2020-12-12T17:21:42+08:00" />
+<meta property="article:modified_time" content="2020-12-12T17:21:42+08:00" />
+
+<meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="Go 错误处理：用 panic 取代 err != nil 的模式"/>
+<meta name="twitter:description" content="前段时间我分享了文章 《先睹为快，Go2 Error 的挣扎之路》后，和一位朋友进行了一次深度交流，他给我分享了他们项目组对于 Go 错误处理的方式调整。
+简单来讲，就是在业务代码中使用 panic 的方式来替代 “永无止境” 的 if err != nil。这就是今天本文的重点内容，我们一起来看看是怎么做，又有什么优缺点。
+为什么想替换 在 Go 语言中 if err != nil 写的太多，还要管方法声明各种，嫌麻烦又不方便：
+err := foo() if err != nil { //do something."/>
+
+	<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+	<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+	<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+	<link rel="manifest" href="/site.webmanifest">
+	<link rel="mask-icon" href="/safari-pinned-tab.svg" color="">
+	<link rel="shortcut icon" href="/favicon.ico">
+
+	<title>Go 错误处理：用 panic 取代 err != nil 的模式</title>
+	<link rel="stylesheet" href="https://wangtu2022.github.io/css/style.min.d3141168199607bf3a517216ce3c263814eecdbc8fca72a9a88700799a838219.css" integrity="sha256-0xQRaBmWB786UXIWzjwmOBTuzbyPynKpqIcAeZqDghk=" crossorigin="anonymous">
+	
+	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.1/css/all.min.css">
+	<link rel="stylesheet" href="https://wangtu2022.github.io/css/styles.css">
+</head>
+
+<body id="page">
+	
+	<header id="site-header" class="animated slideInUp">
+		<div class="hdr-wrapper section-inner">
+			<div class="hdr-left">
+				<div class="site-branding">
+					<a href="https://wangtu2022.github.io/">煎鱼</a>
+				</div>
+				<nav class="site-nav hide-in-mobile">
+					
+				<a href="https://wangtu2022.github.io/posts/">文章</a>
+				<a href="https://wangtu2022.github.io/tags/">标签</a>
+				<a href="https://wangtu2022.github.io/about/">关于</a>
+
+				</nav>
+			</div>
+			<div class="hdr-right hdr-icons">
+				<button id="toc-btn" class="hdr-btn desktop-only-ib" title="Table of Contents"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-list"><line x1="8" y1="6" x2="21" y2="6"></line><line x1="8" y1="12" x2="21" y2="12"></line><line x1="8" y1="18" x2="21" y2="18"></line><line x1="3" y1="6" x2="3" y2="6"></line><line x1="3" y1="12" x2="3" y2="12"></line><line x1="3" y1="18" x2="3" y2="18"></line></svg></button><span class="hdr-social hide-in-mobile"><a href="https://github.com/eddycjy" target="_blank" rel="noopener me" title="Github"><svg xmlns="http://www.w3.org/2000/svg" class="feather" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"></path></svg></a></span><button id="menu-btn" class="hdr-btn" title="Menu"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-menu"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg></button>
+			</div>
+		</div>
+	</header>
+	<div id="mobile-menu" class="animated fast">
+		<ul>
+			<li><a href="https://wangtu2022.github.io/posts/">文章</a></li>
+			<li><a href="https://wangtu2022.github.io/tags/">标签</a></li>
+			<li><a href="https://wangtu2022.github.io/about/">关于</a></li>
+		</ul>
+	</div>
+
+
+	<main class="site-main section-inner animated fadeIn faster">
+		<article class="thin">
+			<header class="post-header">
+				<div class="post-meta"><span>Dec 12, 2020</span></div>
+				<h1>Go 错误处理：用 panic 取代 err != nil 的模式</h1>
+			</header>
+			<div class="content">
+				<p>前段时间我分享了文章 《先睹为快，Go2 Error 的挣扎之路》后，和一位朋友进行了一次深度交流，他给我分享了他们项目组对于 Go 错误处理的方式调整。</p>
+<p>简单来讲，就是在业务代码中使用 <code>panic</code> 的方式来替代 “永无止境” 的 <code>if err != nil</code>。这就是今天本文的重点内容，我们一起来看看是怎么做，又有什么优缺点。</p>
+<h2 id="为什么想替换">为什么想替换<a href="#为什么想替换" class="anchor" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 7h3a5 5 0 0 1 5 5 5 5 0 0 1-5 5h-3m-6 0H6a5 5 0 0 1-5-5 5 5 0 0 1 5-5h3"></path><line x1="8" y1="12" x2="16" y2="12"></line></svg></a></h2>
+<p>在 Go 语言中 <code>if err != nil</code> 写的太多，还要管方法声明各种，嫌麻烦又不方便：</p>
+<pre tabindex="0"><code>err := foo()
+if err != nil {
+     //do something..
+     return err
+}
+
+err := foo()
+if err != nil {
+     //do something..
+     return err
+}
+
+err := foo()
+if err != nil {
+     //do something..
+     return err
+}
+
+err := foo()
+if err != nil {
+     //do something..
+     return err
+}
+</code></pre><p>上述还是示例代码，比较直面。若是在工程实践，还得各种 package 跳来跳去加 <code>if err != nil</code>，总的来讲比较繁琐，要去关心整体的上下游。更具体的就不赘述了，可以翻看我先前的文章。</p>
+<h2 id="怎么替换-err--nil">怎么替换 err != nil<a href="#怎么替换-err--nil" class="anchor" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 7h3a5 5 0 0 1 5 5 5 5 0 0 1-5 5h-3m-6 0H6a5 5 0 0 1-5-5 5 5 0 0 1 5-5h3"></path><line x1="8" y1="12" x2="16" y2="12"></line></svg></a></h2>
+<p>不想写 <code>if err != nil</code> 的代码，方式之一就是用 <code>panic</code> 来替代他。示例代码如下：</p>
+<pre tabindex="0"><code>func GetFish(db *sql.DB, name string) []string {
+	rows, err := db.Query(&#34;select name from users where `name` = ?&#34;, name)
+	if err != nil {
+		panic(err)
+	}
+	defer rows.Close()
+
+	var names []string
+	for rows.Next() {
+		var name string
+		err := rows.Scan(&amp;name)
+		if err != nil {
+			panic(err)
+		}
+
+		names = append(names, name)
+	}
+
+	err = rows.Err()
+	if err != nil {
+		panic(err)
+	}
+
+	return names
+}
+</code></pre><p>在上述业务代码中，我们通过 <code>panic</code> 的方式取代了 <code>return err</code> 的函数返回，自然其所关联的下游业务代码也就不需要编写 <code>if err != nil</code> 的代码：</p>
+<pre tabindex="0"><code>func main() {
+	fish1 := GetFish(db, &#34;煎鱼&#34;)
+	fish2 := GetFish(db, &#34;咸鱼&#34;)
+	fish3 := GetFish(db, &#34;摸鱼&#34;)
+	...
+}
+</code></pre><p>同时在转换为使用 <code>panic</code> 模式的错误机制后，我们必须要在外层增加 <code>recover</code> 方法：</p>
+<pre tabindex="0"><code>func AppRecovery() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		defer func() {
+			if err := recover(); err != nil {
+				if _, ok := err.(AppErr); ok {
+					// do something...
+				} else {
+					panic(err)
+				}
+			}
+		}()
+	}
+}
+</code></pre><p>每次 <code>panic</code> 后根据其抛出的错误进行断言，识别是否定制的 <code>AppErr</code> 错误类型，若是则可以进行一系列的处理动作。否则可继续向上 <code>panic</code> 抛出给顶级的 <code>Recovery</code> 方法进行处理。</p>
+<p>这就是一个相对完整的 <code>panic</code> 错误链路处理了。</p>
+<h2 id="优缺点">优缺点<a href="#优缺点" class="anchor" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 7h3a5 5 0 0 1 5 5 5 5 0 0 1-5 5h-3m-6 0H6a5 5 0 0 1-5-5 5 5 0 0 1 5-5h3"></path><line x1="8" y1="12" x2="16" y2="12"></line></svg></a></h2>
+<ul>
+<li>
+<p>从优点上来讲：</p>
+<ul>
+<li>
+<p>整体代码结构看起来更加的简洁，仅专注于实现逻辑即可。</p>
+</li>
+<li>
+<p>不需要关注和编写冗杂的 <code>if err != nil</code> 的错误处理代码。</p>
+</li>
+</ul>
+</li>
+<li>
+<p>从缺点上来讲：</p>
+<ul>
+<li>
+<p>认知负担的增加，需要参加项目的每一个新老同学都清楚该模式，要做一个基本规范或培训。</p>
+</li>
+<li>
+<p>存在一定的性能开销，每次 <code>panic</code> 都存在用户态的上下文切换。</p>
+</li>
+<li>
+<p>存在一定的风险性，一旦 <code>panic</code> 没有 <code>recover</code> 住，就会导致事故。</p>
+</li>
+<li>
+<p>Go 官方并不推荐，与 <code>panic</code> 本身的定义相违背，也就是 <code>panic</code> 与 <code>error</code> 的概念混淆。</p>
+</li>
+</ul>
+</li>
+</ul>
+<h2 id="总结">总结<a href="#总结" class="anchor" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 7h3a5 5 0 0 1 5 5 5 5 0 0 1-5 5h-3m-6 0H6a5 5 0 0 1-5-5 5 5 0 0 1 5-5h3"></path><line x1="8" y1="12" x2="16" y2="12"></line></svg></a></h2>
+<p>在今天这篇文章给大家分享了如何使用 <code>panic</code> 的方式来处理 Go 的错误，其必然有利必有有弊，需要做一个权衡了。</p>
+<p>你们团队有没有为了 Go 错误处理做过什么新的调整呢？欢迎在留言区交流和分享。</p>
+
+			</div>
+			<hr class="post-end">
+			<footer class="post-info">
+				<p>
+					<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-tag meta-icon"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"></path><line x1="7" y1="7" x2="7" y2="7"></line></svg><span class="tag"><a href="https://wangtu2022.github.io/tags/go">go</a></span>
+				</p>
+				<p><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-file-text"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>279 Words</p>
+				<p><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-calendar"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>2020-12-12 17:21 &#43;0800</p>
+			</footer>
+		</article>
+		<aside id="toc">
+			<div class="toc-title">Table of Contents</div>
+			<nav id="TableOfContents">
+  <ul>
+    <li><a href="#为什么想替换">为什么想替换</a></li>
+    <li><a href="#怎么替换-err--nil">怎么替换 err != nil</a></li>
+    <li><a href="#优缺点">优缺点</a></li>
+    <li><a href="#总结">总结</a></li>
+  </ul>
+</nav>
+		</aside>
+		<div class="post-nav thin">
+			<a class="next-post" href="https://wangtu2022.github.io/posts/2020-top100/">
+				<span class="post-nav-label"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-arrow-left"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>&nbsp;Newer</span><br><span>吐血整理 | 快速了解全球软件案例（Top100）</span>
+			</a>
+			<a class="prev-post" href="https://wangtu2022.github.io/posts/go/go-concurrent-lock/">
+				<span class="post-nav-label">Older&nbsp;<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-arrow-right"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg></span><br><span>Go 并发：一些有趣的现象和要避开的 “坑”</span>
+			</a>
+		</div>
+		<div id="comments" class="thin">
+</div>
+	</main>
+
+	<footer id="site-footer" class="section-inner thin animated fadeIn faster">
+		<p>&copy; 2022 <a href="https://wangtu2022.github.io/">煎鱼</a> &#183; <a href="http://www.beian.miit.gov.cn/">粤ICP备19076352号</a></p>
+		<p>
+			Made with <a href="https://gohugo.io/" target="_blank" rel="noopener">Hugo</a> &#183; Theme <a href="https://github.com/Track3/hermit" target="_blank" rel="noopener">Hermit</a> &#183; <a href="https://wangtu2022.github.io/posts/index.xml" target="_blank" title="rss"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-rss"><path d="M4 11a9 9 0 0 1 9 9"></path><path d="M4 4a16 16 0 0 1 16 16"></path><circle cx="5" cy="19" r="1"></circle></svg></a>
+		</p>
+	</footer>
+
+
+
+	<script src="https://wangtu2022.github.io/js/bundle.min.580988ed2982bcbb74a1773c7abea97b43e4c43b9324e10cda0813ec6ec4bb67.js" integrity="sha256-WAmI7SmCvLt0oXc8er6pe0PkxDuTJOEM2ggT7G7Eu2c=" crossorigin="anonymous"></script>
+	
+<script type="application/javascript">
+var doNotTrack = false;
+if (!doNotTrack) {
+	window.ga=window.ga||function(){(ga.q=ga.q||[]).push(arguments)};ga.l=+new Date;
+	ga('create', 'UA-166045776-1', 'auto');
+	
+	ga('send', 'pageview');
+}
+</script>
+<script async src='https://www.google-analytics.com/analytics.js'></script>
+
+
+</body>
+
+</html>

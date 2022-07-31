@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="zh-hans">
+
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<meta http-equiv="X-UA-Compatible" content="ie=edge">
+	<meta name="theme-color" content="#494f5c">
+	<meta name="msapplication-TileColor" content="#494f5c">
+<meta itemprop="name" content="详解 Go 空结构体的 3 种使用场景">
+<meta itemprop="description" content="大家好，我是煎鱼。
+在大家初识 Go 语言时，总会拿其他语言的基本特性来类比 Go 语言，说白了就是老知识和新知识产生关联，实现更高的学习效率。
+最常见的类比，就是 “Go 语言如何实现面向对象？”，进一步展开就是 Go 语言如何实现面向对象特性中的继承。
+这不仅在学习中才用到类比，在业内的 Go 面试中也有非常多的面试官喜欢问：
+来自读者微信群
+在今天这篇文章中，煎鱼带大家具体展开了解这块的知识。一起愉快地开始吸鱼之路。
+什么是面向对象 在了解 Go 语言是不是面向对象（简称：OOP） 之前，我们必须先知道 OOP 是啥，得先给他 “下定义”。
+根据 Wikipedia 的定义，我们梳理出 OOP 的几个基本认知：
+面向对象编程（OOP）是一种基于 &ldquo;对象&rdquo; 概念的编程范式，它可以包含数据和代码：数据以字段的形式存在（通常称为属性或属性），代码以程序的形式存在（通常称为方法）。"><meta itemprop="datePublished" content="2021-12-31T12:54:51+08:00" />
+<meta itemprop="dateModified" content="2021-12-31T12:54:51+08:00" />
+<meta itemprop="wordCount" content="326">
+<meta itemprop="keywords" content="go," /><meta property="og:title" content="详解 Go 空结构体的 3 种使用场景" />
+<meta property="og:description" content="大家好，我是煎鱼。
+在大家初识 Go 语言时，总会拿其他语言的基本特性来类比 Go 语言，说白了就是老知识和新知识产生关联，实现更高的学习效率。
+最常见的类比，就是 “Go 语言如何实现面向对象？”，进一步展开就是 Go 语言如何实现面向对象特性中的继承。
+这不仅在学习中才用到类比，在业内的 Go 面试中也有非常多的面试官喜欢问：
+来自读者微信群
+在今天这篇文章中，煎鱼带大家具体展开了解这块的知识。一起愉快地开始吸鱼之路。
+什么是面向对象 在了解 Go 语言是不是面向对象（简称：OOP） 之前，我们必须先知道 OOP 是啥，得先给他 “下定义”。
+根据 Wikipedia 的定义，我们梳理出 OOP 的几个基本认知：
+面向对象编程（OOP）是一种基于 &ldquo;对象&rdquo; 概念的编程范式，它可以包含数据和代码：数据以字段的形式存在（通常称为属性或属性），代码以程序的形式存在（通常称为方法）。" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://wangtu2022.github.io/posts/go/empty-struct/" /><meta property="article:section" content="posts" />
+<meta property="article:published_time" content="2021-12-31T12:54:51+08:00" />
+<meta property="article:modified_time" content="2021-12-31T12:54:51+08:00" />
+
+<meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="详解 Go 空结构体的 3 种使用场景"/>
+<meta name="twitter:description" content="大家好，我是煎鱼。
+在大家初识 Go 语言时，总会拿其他语言的基本特性来类比 Go 语言，说白了就是老知识和新知识产生关联，实现更高的学习效率。
+最常见的类比，就是 “Go 语言如何实现面向对象？”，进一步展开就是 Go 语言如何实现面向对象特性中的继承。
+这不仅在学习中才用到类比，在业内的 Go 面试中也有非常多的面试官喜欢问：
+来自读者微信群
+在今天这篇文章中，煎鱼带大家具体展开了解这块的知识。一起愉快地开始吸鱼之路。
+什么是面向对象 在了解 Go 语言是不是面向对象（简称：OOP） 之前，我们必须先知道 OOP 是啥，得先给他 “下定义”。
+根据 Wikipedia 的定义，我们梳理出 OOP 的几个基本认知：
+面向对象编程（OOP）是一种基于 &ldquo;对象&rdquo; 概念的编程范式，它可以包含数据和代码：数据以字段的形式存在（通常称为属性或属性），代码以程序的形式存在（通常称为方法）。"/>
+
+	<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+	<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+	<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+	<link rel="manifest" href="/site.webmanifest">
+	<link rel="mask-icon" href="/safari-pinned-tab.svg" color="">
+	<link rel="shortcut icon" href="/favicon.ico">
+
+	<title>详解 Go 空结构体的 3 种使用场景</title>
+	<link rel="stylesheet" href="https://wangtu2022.github.io/css/style.min.d3141168199607bf3a517216ce3c263814eecdbc8fca72a9a88700799a838219.css" integrity="sha256-0xQRaBmWB786UXIWzjwmOBTuzbyPynKpqIcAeZqDghk=" crossorigin="anonymous">
+	
+	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.1/css/all.min.css">
+	<link rel="stylesheet" href="https://wangtu2022.github.io/css/styles.css">
+</head>
+
+<body id="page">
+	
+	<header id="site-header" class="animated slideInUp">
+		<div class="hdr-wrapper section-inner">
+			<div class="hdr-left">
+				<div class="site-branding">
+					<a href="https://wangtu2022.github.io/">煎鱼</a>
+				</div>
+				<nav class="site-nav hide-in-mobile">
+					
+				<a href="https://wangtu2022.github.io/posts/">文章</a>
+				<a href="https://wangtu2022.github.io/tags/">标签</a>
+				<a href="https://wangtu2022.github.io/about/">关于</a>
+
+				</nav>
+			</div>
+			<div class="hdr-right hdr-icons">
+				<button id="toc-btn" class="hdr-btn desktop-only-ib" title="Table of Contents"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-list"><line x1="8" y1="6" x2="21" y2="6"></line><line x1="8" y1="12" x2="21" y2="12"></line><line x1="8" y1="18" x2="21" y2="18"></line><line x1="3" y1="6" x2="3" y2="6"></line><line x1="3" y1="12" x2="3" y2="12"></line><line x1="3" y1="18" x2="3" y2="18"></line></svg></button><span class="hdr-social hide-in-mobile"><a href="https://github.com/eddycjy" target="_blank" rel="noopener me" title="Github"><svg xmlns="http://www.w3.org/2000/svg" class="feather" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"></path></svg></a></span><button id="menu-btn" class="hdr-btn" title="Menu"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-menu"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg></button>
+			</div>
+		</div>
+	</header>
+	<div id="mobile-menu" class="animated fast">
+		<ul>
+			<li><a href="https://wangtu2022.github.io/posts/">文章</a></li>
+			<li><a href="https://wangtu2022.github.io/tags/">标签</a></li>
+			<li><a href="https://wangtu2022.github.io/about/">关于</a></li>
+		</ul>
+	</div>
+
+
+	<main class="site-main section-inner animated fadeIn faster">
+		<article class="thin">
+			<header class="post-header">
+				<div class="post-meta"><span>Dec 31, 2021</span></div>
+				<h1>详解 Go 空结构体的 3 种使用场景</h1>
+			</header>
+			<div class="content">
+				<p>大家好，我是煎鱼。</p>
+<p>在大家初识 Go 语言时，总会拿其他语言的基本特性来类比 Go 语言，说白了就是老知识和新知识产生关联，实现更高的学习效率。</p>
+<p><img src="https://p3-juejin.byteimg.com/tos-cn-i-k3u1fbpfcp/87c66858abf04b848643b6fa03f4bdab~tplv-k3u1fbpfcp-zoom-1.image" alt="图片"></p>
+<p>最常见的类比，就是 “Go 语言如何实现面向对象？”，进一步展开就是 Go 语言如何实现面向对象特性中的继承。</p>
+<p>这不仅在学习中才用到类比，在业内的 Go 面试中也有非常多的面试官喜欢问：</p>
+<p><img src="https://p3-juejin.byteimg.com/tos-cn-i-k3u1fbpfcp/d1cc9c2b2e174fc4a82506b368591a70~tplv-k3u1fbpfcp-zoom-1.image" alt="图片"></p>
+<p>来自读者微信群</p>
+<p>在今天这篇文章中，煎鱼带大家具体展开了解这块的知识。一起愉快地开始吸鱼之路。</p>
+<h2 id="什么是面向对象">什么是面向对象<a href="#什么是面向对象" class="anchor" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 7h3a5 5 0 0 1 5 5 5 5 0 0 1-5 5h-3m-6 0H6a5 5 0 0 1-5-5 5 5 0 0 1 5-5h3"></path><line x1="8" y1="12" x2="16" y2="12"></line></svg></a></h2>
+<p>在了解 Go 语言是不是面向对象（简称：OOP） 之前，我们必须先知道 OOP 是啥，得先给他 “下定义”。</p>
+<p>根据 Wikipedia 的定义，我们梳理出 OOP 的几个基本认知：</p>
+<ul>
+<li>
+<p>面向对象编程（OOP）是一种基于 &ldquo;对象&rdquo; 概念的编程范式，它可以包含数据和代码：数据以字段的形式存在（通常称为属性或属性），代码以程序的形式存在（通常称为方法）。</p>
+</li>
+<li>
+<p>对象自己的程序可以访问并经常修改自己的数据字段。</p>
+</li>
+<li>
+<p>对象经常被定义为类的一个实例。</p>
+</li>
+<li>
+<p>对象利用属性和方法的私有/受保护/公共可见性，对象的内部状态受到保护，不受外界影响（被封装）。</p>
+</li>
+</ul>
+<p>基于这几个基本认知进行一步延伸出，面向对象的三大基本特性：</p>
+<ul>
+<li>
+<p>封装。</p>
+</li>
+<li>
+<p>继承。</p>
+</li>
+<li>
+<p>多态。</p>
+</li>
+</ul>
+<p>至此对面向对象的基本概念讲解结束，想更进一步了解的可自行网上冲浪。</p>
+<h2 id="go-是面向对象的语言吗">Go 是面向对象的语言吗<a href="#go-是面向对象的语言吗" class="anchor" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 7h3a5 5 0 0 1 5 5 5 5 0 0 1-5 5h-3m-6 0H6a5 5 0 0 1-5-5 5 5 0 0 1 5-5h3"></path><line x1="8" y1="12" x2="16" y2="12"></line></svg></a></h2>
+<p>“Go 语言是否一门面向对象的语言？”，这是一个日经话题。官方 FAQ 给出的答复是：</p>
+<p><img src="https://p3-juejin.byteimg.com/tos-cn-i-k3u1fbpfcp/bb8296e58a6d4c7c882984dcceaaf9c0~tplv-k3u1fbpfcp-zoom-1.image" alt="图片"></p>
+<p>是的，也不是。原因是：</p>
+<ul>
+<li>
+<p>Go 有类型和方法，并且允许面向对象的编程风格，但没有类型层次。</p>
+</li>
+<li>
+<p>Go 中的 &ldquo;接口 &ldquo;概念提供了一种不同的方法，我们认为这种方法易于使用，而且在某些方面更加通用。还有一些方法可以将类型嵌入到其他类型中，以提供类似的东西，但不等同于子类。</p>
+</li>
+<li>
+<p>Go 中的方法比 C++ 或 Java 中的方法更通用：它们可以为任何类型的数据定义，甚至是内置类型，如普通的、&ldquo;未装箱的 &ldquo;整数。它们并不局限于结构（类）。</p>
+</li>
+<li>
+<p>Go 由于缺乏类型层次，Go 中的 &ldquo;对象 &ldquo;比 C++ 或 Java 等语言更轻巧。</p>
+</li>
+</ul>
+<h2 id="go-实现面向对象编程">Go 实现面向对象编程<a href="#go-实现面向对象编程" class="anchor" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 7h3a5 5 0 0 1 5 5 5 5 0 0 1-5 5h-3m-6 0H6a5 5 0 0 1-5-5 5 5 0 0 1 5-5h3"></path><line x1="8" y1="12" x2="16" y2="12"></line></svg></a></h2>
+<h3 id="封装">封装<a href="#封装" class="anchor" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 7h3a5 5 0 0 1 5 5 5 5 0 0 1-5 5h-3m-6 0H6a5 5 0 0 1-5-5 5 5 0 0 1 5-5h3"></path><line x1="8" y1="12" x2="16" y2="12"></line></svg></a></h3>
+<p>面向对象中的 “封装” 指的是可以隐藏对象的内部属性和实现细节，仅对外提供公开接口调用，这样子用户就不需要关注你内部是怎么实现的。</p>
+<p>在 Go 语言中的属性访问权限，通过首字母大小写来控制：</p>
+<ul>
+<li>
+<p>首字母大写，代表是公共的、可被外部访问的。</p>
+</li>
+<li>
+<p>首字母小写，代表是私有的，不可以被外部访问。</p>
+</li>
+</ul>
+<p>Go 语言的例子如下：</p>
+<pre tabindex="0"><code>type Animal struct {
+ name string
+}
+
+func NewAnimal() *Animal {
+ return &amp;Animal{}
+}
+
+func (p *Animal) SetName(name string) {
+ p.name = name
+}
+
+func (p *Animal) GetName() string {
+ return p.name
+}
+</code></pre><p>在上述例子中，我们声明了一个结构体 <code>Animal</code>，其属性 <code>name</code> 为小写。没法通过外部方法，在配套上存在 Setter 和 Getter 的方法，用于统一的访问和设置控制。</p>
+<p>以此实现在 Go 语言中的基本封装。</p>
+<h3 id="继承">继承<a href="#继承" class="anchor" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 7h3a5 5 0 0 1 5 5 5 5 0 0 1-5 5h-3m-6 0H6a5 5 0 0 1-5-5 5 5 0 0 1 5-5h3"></path><line x1="8" y1="12" x2="16" y2="12"></line></svg></a></h3>
+<p>面向对象中的 “继承” 指的是子类继承父类的特征和行为，使得子类对象（实例）具有父类的实例域和方法，或子类从父类继承方法，使得子类具有父类相同的行为。</p>
+<p><img src="https://p3-juejin.byteimg.com/tos-cn-i-k3u1fbpfcp/ec1cf116a1bf404981cb624009945157~tplv-k3u1fbpfcp-zoom-1.image" alt="图片"></p>
+<p>图来自网络</p>
+<p>从实际的例子来看，就是动物是一个大父类，下面又能细分为 “食草动物”、“食肉动物”，这两者会包含 “动物” 这个父类的基本定义。</p>
+<p>在 Go 语言中，是没有类似 <code>extends</code> 关键字的这种继承的方式，在语言设计上采取的是组合的方式：</p>
+<pre tabindex="0"><code>type Animal struct {
+ Name string
+}
+
+type Cat struct {
+ Animal
+ FeatureA string
+}
+
+type Dog struct {
+ Animal
+ FeatureB string
+}
+</code></pre><p>在上述例子中，我们声明了 <code>Cat</code> 和 <code>Dog</code> 结构体，其在内部匿名组合了 <code>Animal</code> 结构体。因此 <code>Cat</code> 和 <code>Dog</code> 的实例都可以调用 <code>Animal</code> 结构体的方法：</p>
+<pre tabindex="0"><code>func main() {
+ p := NewAnimal()
+ p.SetName(&#34;煎鱼，记得点赞~&#34;)
+
+ dog := Dog{Animal: *p}
+ fmt.Println(dog.GetName())
+}
+</code></pre><p>同时 <code>Cat</code> 和 <code>Dog</code> 的实例可以拥有自己的方法：</p>
+<pre tabindex="0"><code>func (dog *Dog) HelloWorld() {
+ fmt.Println(&#34;脑子进煎鱼了&#34;)
+}
+
+func (cat *Cat) HelloWorld() {
+ fmt.Println(&#34;煎鱼进脑子了&#34;)
+}
+</code></pre><p>上述例子能够正常包含调用 <code>Animal</code> 的相关属性和方法，也能够拥有自己的独立属性和方法，在 Go 语言中达到了类似继承的效果。</p>
+<h3 id="多态">多态<a href="#多态" class="anchor" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 7h3a5 5 0 0 1 5 5 5 5 0 0 1-5 5h-3m-6 0H6a5 5 0 0 1-5-5 5 5 0 0 1 5-5h3"></path><line x1="8" y1="12" x2="16" y2="12"></line></svg></a></h3>
+<p>面向对象中的 “多态” 指的同一个行为具有多种不同表现形式或形态的能力，具体是指一个类实例（对象）的相同方法在不同情形有不同表现形式。</p>
+<p>多态也使得不同内部结构的对象可以共享相同的外部接口，也就是都是一套外部模板，内部实际是什么，只要符合规格就可以。</p>
+<p>在 Go 语言中，多态是通过接口来实现的：</p>
+<pre tabindex="0"><code>type AnimalSounder interface {
+ MakeDNA()
+}
+
+func MakeSomeDNA(animalSounder AnimalSounder) {
+ animalSounder.MakeDNA()
+}
+</code></pre><p>在上述例子中，我们声明了一个接口类型 <code>AnimalSounder</code>，配套一个 <code>MakeSomeDNA</code> 方法，其接受 <code>AnimalSounder</code> 接口类型作为入参。</p>
+<p>因此在 Go 语言中。只要配套的 <code>Cat</code> 和 <code>Dog</code> 的实例也实现了 <code>MakeSomeDNA</code> 方法，那么我们就可以认为他是 <code>AnimalSounder</code> 接口类型：</p>
+<pre tabindex="0"><code>type AnimalSounder interface {
+ MakeDNA()
+}
+
+func MakeSomeDNA(animalSounder AnimalSounder) {
+ animalSounder.MakeDNA()
+}
+
+func (c *Cat) MakeDNA() {
+ fmt.Println(&#34;煎鱼是煎鱼&#34;)
+}
+
+func (c *Dog) MakeDNA() {
+ fmt.Println(&#34;煎鱼其实不是煎鱼&#34;)
+}
+
+func main() {
+ MakeSomeDNA(&amp;Cat{})
+ MakeSomeDNA(&amp;Dog{})
+}
+</code></pre><p>当 <code>Cat</code> 和 <code>Dog</code> 的实例实现了 <code>AnimalSounder</code> 接口类型的约束后，就意味着满足了条件，他们在 Go 语言中就是一个东西。能够作为入参传入 <code>MakeSomeDNA</code> 方法中，再根据不同的实例实现多态行为。</p>
+<h2 id="总结">总结<a href="#总结" class="anchor" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 7h3a5 5 0 0 1 5 5 5 5 0 0 1-5 5h-3m-6 0H6a5 5 0 0 1-5-5 5 5 0 0 1 5-5h3"></path><line x1="8" y1="12" x2="16" y2="12"></line></svg></a></h2>
+<p>通过今天这篇文章，我们基本了解了面向对象的定义和 Go 官方对面向对象这一件事的看法，同时针对面向对象的三大特性：“封装、继承、多态” 在 Go 语言中的实现方法就进行了一一讲解。</p>
+<p>在日常工作中，基本了解这些概念就可以了。若是面试，可以针对三大特性：“封装、继承、多态” 和 五大原则 “单一职责原则（SRP）、开放封闭原则（OCP）、里氏替换原则（LSP）、依赖倒置原则（DIP）、接口隔离原则（ISP）” 进行深入理解和说明。</p>
+<p>在说明后针对上述提到的概念。再在 Go 语言中讲解其具体的实现和利用到的基本原理，互相结合讲解，就能得到一个不错的效果了。</p>
+<h2 id="鼓励">鼓励<a href="#鼓励" class="anchor" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 7h3a5 5 0 0 1 5 5 5 5 0 0 1-5 5h-3m-6 0H6a5 5 0 0 1-5-5 5 5 0 0 1 5-5h3"></path><line x1="8" y1="12" x2="16" y2="12"></line></svg></a></h2>
+<p>若有任何疑问欢迎评论区反馈和交流，<strong>最好的关系是互相成就</strong>，各位的<strong>点赞</strong>就是<a href="https://github.com/eddycjy">煎鱼</a>创作的最大动力，感谢支持。</p>
+<blockquote>
+<p>文章持续更新，可以微信搜【脑子进煎鱼了】阅读，本文 <strong>GitHub</strong> <a href="https://github.com/eddycjy/blog">github.com/eddycjy/blog</a> 已收录，欢迎 Star 催更。</p>
+</blockquote>
+<h2 id="参考">参考<a href="#参考" class="anchor" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 7h3a5 5 0 0 1 5 5 5 5 0 0 1-5 5h-3m-6 0H6a5 5 0 0 1-5-5 5 5 0 0 1 5-5h3"></path><line x1="8" y1="12" x2="16" y2="12"></line></svg></a></h2>
+<ul>
+<li>
+<p>Is Go an Object Oriented language?</p>
+</li>
+<li>
+<p>面向对象的三大基本特征，五大基本原则</p>
+</li>
+<li>
+<p>Go 面向对象编程（译）</p>
+</li>
+</ul>
+
+			</div>
+			<hr class="post-end">
+			<footer class="post-info">
+				<p>
+					<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-tag meta-icon"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"></path><line x1="7" y1="7" x2="7" y2="7"></line></svg><span class="tag"><a href="https://wangtu2022.github.io/tags/go">go</a></span>
+				</p>
+				<p><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-file-text"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>326 Words</p>
+				<p><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-calendar"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>2021-12-31 12:54 &#43;0800</p>
+			</footer>
+		</article>
+		<aside id="toc">
+			<div class="toc-title">Table of Contents</div>
+			<nav id="TableOfContents">
+  <ul>
+    <li><a href="#什么是面向对象">什么是面向对象</a></li>
+    <li><a href="#go-是面向对象的语言吗">Go 是面向对象的语言吗</a></li>
+    <li><a href="#go-实现面向对象编程">Go 实现面向对象编程</a>
+      <ul>
+        <li><a href="#封装">封装</a></li>
+        <li><a href="#继承">继承</a></li>
+        <li><a href="#多态">多态</a></li>
+      </ul>
+    </li>
+    <li><a href="#总结">总结</a></li>
+    <li><a href="#鼓励">鼓励</a></li>
+    <li><a href="#参考">参考</a></li>
+  </ul>
+</nav>
+		</aside>
+		<div class="post-nav thin">
+			<a class="next-post" href="https://wangtu2022.github.io/posts/go/value-quote/">
+				<span class="post-nav-label"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-arrow-left"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>&nbsp;Newer</span><br><span>群里又吵起来了，Go 是传值还是传引用？</span>
+			</a>
+			<a class="prev-post" href="https://wangtu2022.github.io/posts/why-mq/">
+				<span class="post-nav-label">Older&nbsp;<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-arrow-right"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg></span><br><span>《漫谈 MQ》要消息队列（MQ）有什么用？</span>
+			</a>
+		</div>
+		<div id="comments" class="thin">
+</div>
+	</main>
+
+	<footer id="site-footer" class="section-inner thin animated fadeIn faster">
+		<p>&copy; 2022 <a href="https://wangtu2022.github.io/">煎鱼</a> &#183; <a href="http://www.beian.miit.gov.cn/">粤ICP备19076352号</a></p>
+		<p>
+			Made with <a href="https://gohugo.io/" target="_blank" rel="noopener">Hugo</a> &#183; Theme <a href="https://github.com/Track3/hermit" target="_blank" rel="noopener">Hermit</a> &#183; <a href="https://wangtu2022.github.io/posts/index.xml" target="_blank" title="rss"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-rss"><path d="M4 11a9 9 0 0 1 9 9"></path><path d="M4 4a16 16 0 0 1 16 16"></path><circle cx="5" cy="19" r="1"></circle></svg></a>
+		</p>
+	</footer>
+
+
+
+	<script src="https://wangtu2022.github.io/js/bundle.min.580988ed2982bcbb74a1773c7abea97b43e4c43b9324e10cda0813ec6ec4bb67.js" integrity="sha256-WAmI7SmCvLt0oXc8er6pe0PkxDuTJOEM2ggT7G7Eu2c=" crossorigin="anonymous"></script>
+	
+<script type="application/javascript">
+var doNotTrack = false;
+if (!doNotTrack) {
+	window.ga=window.ga||function(){(ga.q=ga.q||[]).push(arguments)};ga.l=+new Date;
+	ga('create', 'UA-166045776-1', 'auto');
+	
+	ga('send', 'pageview');
+}
+</script>
+<script async src='https://www.google-analytics.com/analytics.js'></script>
+
+
+</body>
+
+</html>

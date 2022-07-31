@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="zh-hans">
+
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<meta http-equiv="X-UA-Compatible" content="ie=edge">
+	<meta name="theme-color" content="#494f5c">
+	<meta name="msapplication-TileColor" content="#494f5c">
+<meta itemprop="name" content="Go 切片这道题，吵了一个下午！">
+<meta itemprop="description" content="大家好，我是煎鱼。
+前几天听到咱 Go 读者交流群里的小伙伴私聊我，表示他们在群里一直在讨论一个问题 slice 相关的问题，众说纷纭。
+今天和各位小伙伴们一起来研究一下，避免后续又踩一遍坑，共同进步！
+问题代码 引起群内大范围讨论的代码如下：
+func main() { sl := make([]int, 0, 10) var appenFunc = func(s []int) { s = append(s, 10, 20, 30) fmt.Println(s) } fmt."><meta itemprop="datePublished" content="2021-12-31T12:55:06+08:00" />
+<meta itemprop="dateModified" content="2021-12-31T12:55:06+08:00" />
+<meta itemprop="wordCount" content="272">
+<meta itemprop="keywords" content="go," /><meta property="og:title" content="Go 切片这道题，吵了一个下午！" />
+<meta property="og:description" content="大家好，我是煎鱼。
+前几天听到咱 Go 读者交流群里的小伙伴私聊我，表示他们在群里一直在讨论一个问题 slice 相关的问题，众说纷纭。
+今天和各位小伙伴们一起来研究一下，避免后续又踩一遍坑，共同进步！
+问题代码 引起群内大范围讨论的代码如下：
+func main() { sl := make([]int, 0, 10) var appenFunc = func(s []int) { s = append(s, 10, 20, 30) fmt.Println(s) } fmt." />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://wangtu2022.github.io/posts/go/slice-discuss/" /><meta property="article:section" content="posts" />
+<meta property="article:published_time" content="2021-12-31T12:55:06+08:00" />
+<meta property="article:modified_time" content="2021-12-31T12:55:06+08:00" />
+
+<meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="Go 切片这道题，吵了一个下午！"/>
+<meta name="twitter:description" content="大家好，我是煎鱼。
+前几天听到咱 Go 读者交流群里的小伙伴私聊我，表示他们在群里一直在讨论一个问题 slice 相关的问题，众说纷纭。
+今天和各位小伙伴们一起来研究一下，避免后续又踩一遍坑，共同进步！
+问题代码 引起群内大范围讨论的代码如下：
+func main() { sl := make([]int, 0, 10) var appenFunc = func(s []int) { s = append(s, 10, 20, 30) fmt.Println(s) } fmt."/>
+
+	<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+	<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+	<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+	<link rel="manifest" href="/site.webmanifest">
+	<link rel="mask-icon" href="/safari-pinned-tab.svg" color="">
+	<link rel="shortcut icon" href="/favicon.ico">
+
+	<title>Go 切片这道题，吵了一个下午！</title>
+	<link rel="stylesheet" href="https://wangtu2022.github.io/css/style.min.d3141168199607bf3a517216ce3c263814eecdbc8fca72a9a88700799a838219.css" integrity="sha256-0xQRaBmWB786UXIWzjwmOBTuzbyPynKpqIcAeZqDghk=" crossorigin="anonymous">
+	
+	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.1/css/all.min.css">
+	<link rel="stylesheet" href="https://wangtu2022.github.io/css/styles.css">
+</head>
+
+<body id="page">
+	
+	<header id="site-header" class="animated slideInUp">
+		<div class="hdr-wrapper section-inner">
+			<div class="hdr-left">
+				<div class="site-branding">
+					<a href="https://wangtu2022.github.io/">煎鱼</a>
+				</div>
+				<nav class="site-nav hide-in-mobile">
+					
+				<a href="https://wangtu2022.github.io/posts/">文章</a>
+				<a href="https://wangtu2022.github.io/tags/">标签</a>
+				<a href="https://wangtu2022.github.io/about/">关于</a>
+
+				</nav>
+			</div>
+			<div class="hdr-right hdr-icons">
+				<button id="toc-btn" class="hdr-btn desktop-only-ib" title="Table of Contents"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-list"><line x1="8" y1="6" x2="21" y2="6"></line><line x1="8" y1="12" x2="21" y2="12"></line><line x1="8" y1="18" x2="21" y2="18"></line><line x1="3" y1="6" x2="3" y2="6"></line><line x1="3" y1="12" x2="3" y2="12"></line><line x1="3" y1="18" x2="3" y2="18"></line></svg></button><span class="hdr-social hide-in-mobile"><a href="https://github.com/eddycjy" target="_blank" rel="noopener me" title="Github"><svg xmlns="http://www.w3.org/2000/svg" class="feather" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"></path></svg></a></span><button id="menu-btn" class="hdr-btn" title="Menu"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-menu"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg></button>
+			</div>
+		</div>
+	</header>
+	<div id="mobile-menu" class="animated fast">
+		<ul>
+			<li><a href="https://wangtu2022.github.io/posts/">文章</a></li>
+			<li><a href="https://wangtu2022.github.io/tags/">标签</a></li>
+			<li><a href="https://wangtu2022.github.io/about/">关于</a></li>
+		</ul>
+	</div>
+
+
+	<main class="site-main section-inner animated fadeIn faster">
+		<article class="thin">
+			<header class="post-header">
+				<div class="post-meta"><span>Dec 31, 2021</span></div>
+				<h1>Go 切片这道题，吵了一个下午！</h1>
+			</header>
+			<div class="content">
+				<p>大家好，我是煎鱼。</p>
+<p>前几天听到咱 Go 读者交流群里的小伙伴私聊我，表示他们在群里一直在讨论一个问题 slice 相关的问题，众说纷纭。</p>
+<p><img src="https://files.mdnice.com/user/3610/f2cedcdf-8f6e-42f9-9009-6f1ee0f74f91.png" alt="来自煎鱼的聊天记录"></p>
+<p>今天和各位小伙伴们一起来研究一下，避免后续又踩一遍坑，共同进步！</p>
+<h2 id="问题代码">问题代码<a href="#问题代码" class="anchor" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 7h3a5 5 0 0 1 5 5 5 5 0 0 1-5 5h-3m-6 0H6a5 5 0 0 1-5-5 5 5 0 0 1 5-5h3"></path><line x1="8" y1="12" x2="16" y2="12"></line></svg></a></h2>
+<p>引起群内大范围讨论的代码如下：</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-golang" data-lang="golang"><span class="line"><span class="cl"><span class="kd">func</span> <span class="nf">main</span><span class="p">()</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">	<span class="nx">sl</span> <span class="o">:=</span> <span class="nb">make</span><span class="p">([]</span><span class="kt">int</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">10</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">	<span class="kd">var</span> <span class="nx">appenFunc</span> <span class="p">=</span> <span class="kd">func</span><span class="p">(</span><span class="nx">s</span> <span class="p">[]</span><span class="kt">int</span><span class="p">)</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">		<span class="nx">s</span> <span class="p">=</span> <span class="nb">append</span><span class="p">(</span><span class="nx">s</span><span class="p">,</span> <span class="mi">10</span><span class="p">,</span> <span class="mi">20</span><span class="p">,</span> <span class="mi">30</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">		<span class="nx">fmt</span><span class="p">.</span><span class="nf">Println</span><span class="p">(</span><span class="nx">s</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">	<span class="p">}</span>
+</span></span><span class="line"><span class="cl">	<span class="nx">fmt</span><span class="p">.</span><span class="nf">Println</span><span class="p">(</span><span class="nx">sl</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">	<span class="nf">appenFunc</span><span class="p">(</span><span class="nx">sl</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">	<span class="nx">fmt</span><span class="p">.</span><span class="nf">Println</span><span class="p">(</span><span class="nx">sl</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">	<span class="nx">fmt</span><span class="p">.</span><span class="nf">Println</span><span class="p">(</span><span class="nx">sl</span><span class="p">[:</span><span class="mi">10</span><span class="p">])</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span></code></pre></div><p>你认为程序的输出结果是什么？</p>
+<p>是如下的答案：</p>
+<pre tabindex="0"><code>[]
+[10 20 30]
+[]
+[]
+</code></pre><p>对吗？</p>
+<p>看上去很有道理，但错了。正确的结果是：</p>
+<pre tabindex="0"><code>[]
+[10 20 30]
+[]
+[10 20 30 0 0 0 0 0 0 0]
+</code></pre><p>这下可把大家整懵了，为什么输出 <code>sl</code> 和 <code>sl[:10]</code> 的结果差别这么大，这与预期的输出结果不一致。</p>
+<p>群内小伙伴的问题更明确了，疑惑点是：</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-golang" data-lang="golang"><span class="line"><span class="cl">	<span class="nx">fmt</span><span class="p">.</span><span class="nf">Println</span><span class="p">(</span><span class="nx">sl</span><span class="p">)</span>     
+</span></span><span class="line"><span class="cl">	<span class="nx">fmt</span><span class="p">.</span><span class="nf">Println</span><span class="p">(</span><span class="nx">sl</span><span class="p">[:</span><span class="mi">10</span><span class="p">])</span> 
+</span></span></code></pre></div><p>上述代码中，<strong>为什么第一个 <code>sl</code> 打印结果是空的，第二个 <code>sl</code> 给索引位置就能打印出来</strong>？</p>
+<p>也有小伙伴不断在尝试 <code>sl[:10]</code> 以外的输出，有没有因为一些边界值改变而导致不行。</p>
+<p>例如：</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-golang" data-lang="golang"><span class="line"><span class="cl"><span class="nx">fmt</span><span class="p">.</span><span class="nf">Println</span><span class="p">(</span><span class="nx">sl</span><span class="p">[:])</span>
+</span></span></code></pre></div><p>你认为这个对应的输出结果是什么？</p>
+<p>是如下的答案：</p>
+<pre tabindex="0"><code>[10 20 30 0 0 0 0 0 0 0]
+</code></pre><p>对吗？</p>
+<p>看上去很有道理，但错了。正确的结果是：</p>
+<pre tabindex="0"><code>[]
+</code></pre><p>是没有任何元素输出，这下大家更懵了。为什么 <code>sl[:]</code> 的输出结果为空？</p>
+<p>再看看变量 <code>sl</code> 的长度和容量：</p>
+<pre tabindex="0"><code>fmt.Println(len(sl), cap(sl))
+</code></pre><p>输出结果：</p>
+<pre tabindex="0"><code>0 10
+</code></pre><p>长度竟然是 0 &hellip;迷了？</p>
+<h2 id="挖掘原因">挖掘原因<a href="#挖掘原因" class="anchor" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 7h3a5 5 0 0 1 5 5 5 5 0 0 1-5 5h-3m-6 0H6a5 5 0 0 1-5-5 5 5 0 0 1 5-5h3"></path><line x1="8" y1="12" x2="16" y2="12"></line></svg></a></h2>
+<h3 id="三个问题">三个问题<a href="#三个问题" class="anchor" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 7h3a5 5 0 0 1 5 5 5 5 0 0 1-5 5h-3m-6 0H6a5 5 0 0 1-5-5 5 5 0 0 1 5-5h3"></path><line x1="8" y1="12" x2="16" y2="12"></line></svg></a></h3>
+<p>在研究了问题代码的表象后，我们要进一步的挖掘问题的原因。</p>
+<p>请思考如下三个问题：</p>
+<ol>
+<li>为什么打印 <code>sl[:10]</code> 时，结果包含了 10 个元素，还包含了函数闭包中插入的 10, 20, 30，之间有什么关系？</li>
+<li>为什么打印 <code>sl</code> 变量时，结果为空？</li>
+<li>为什么打印 <code>sl[:]</code> 时，结果为空。但打印 <code>sl[:10]</code> 就正常输出？</li>
+</ol>
+<h3 id="了解底层">了解底层<a href="#了解底层" class="anchor" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 7h3a5 5 0 0 1 5 5 5 5 0 0 1-5 5h-3m-6 0H6a5 5 0 0 1-5-5 5 5 0 0 1 5-5h3"></path><line x1="8" y1="12" x2="16" y2="12"></line></svg></a></h3>
+<p>要分析起源，我们就必须要再提到 slice（切片）的底层实现，slice 底层存储的数据结构指向了一个 array（数组）。</p>
+<p>如下：</p>
+<p><img src="https://files.mdnice.com/user/3610/6a025aba-38f0-4ac5-92bb-515d05adeb68.png" alt="slice 和 array 的友谊小船"></p>
+<p>对应的 Slice 在运行时的表现是 SliceHeader 结构体，定义如下：</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-golang" data-lang="golang"><span class="line"><span class="cl"><span class="kd">type</span> <span class="nx">SliceHeader</span> <span class="kd">struct</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl"> <span class="nx">Data</span> <span class="kt">uintptr</span>
+</span></span><span class="line"><span class="cl"> <span class="nx">Len</span>  <span class="kt">int</span>
+</span></span><span class="line"><span class="cl"> <span class="nx">Cap</span>  <span class="kt">int</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span></code></pre></div><ul>
+<li>Data：指向具体的底层数组。</li>
+<li>Len：代表切片的长度。</li>
+<li>Cap：代表切片的容量。</li>
+</ul>
+<p>核心要记住的是：slice 真正存储数据的地方，是一个数组。slice 的结构中<strong>存储的是指向所引用的数组指针地址</strong>。</p>
+<h3 id="分析原因">分析原因<a href="#分析原因" class="anchor" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 7h3a5 5 0 0 1 5 5 5 5 0 0 1-5 5h-3m-6 0H6a5 5 0 0 1-5-5 5 5 0 0 1 5-5h3"></path><line x1="8" y1="12" x2="16" y2="12"></line></svg></a></h3>
+<p>在了解 slice 的底层后，我们需要来分析问题的起源，也就是那段 Go 程序。</p>
+<p>我们关注到 <code>appenFunc</code> 变量，他其实是一个函数，并且结果中我们所看到的 10, 20, 30，也只有这里有插入的动作。因此这是需要分析的。</p>
+<p>如下：</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-golang" data-lang="golang"><span class="line"><span class="cl"><span class="kd">func</span> <span class="nf">main</span><span class="p">()</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">	<span class="nx">sl</span> <span class="o">:=</span> <span class="nb">make</span><span class="p">([]</span><span class="kt">int</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">10</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">	<span class="kd">var</span> <span class="nx">appenFunc</span> <span class="p">=</span> <span class="kd">func</span><span class="p">(</span><span class="nx">s</span> <span class="p">[]</span><span class="kt">int</span><span class="p">)</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">		<span class="nx">s</span> <span class="p">=</span> <span class="nb">append</span><span class="p">(</span><span class="nx">s</span><span class="p">,</span> <span class="mi">10</span><span class="p">,</span> <span class="mi">20</span><span class="p">,</span> <span class="mi">30</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">	<span class="p">}</span>
+</span></span><span class="line"><span class="cl">	<span class="nf">appenFunc</span><span class="p">(</span><span class="nx">sl</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">	<span class="nx">fmt</span><span class="p">.</span><span class="nf">Println</span><span class="p">(</span><span class="nx">sl</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">	<span class="nx">fmt</span><span class="p">.</span><span class="nf">Println</span><span class="p">(</span><span class="nx">sl</span><span class="p">[:</span><span class="mi">10</span><span class="p">])</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span></code></pre></div><p>但为什么在 <code>appenFunc</code> 函数中所插入的 10, 20, 30 元素，就跑到外面的切片 <code>sl</code> 中去了呢？</p>
+<p>这其实结合 slice 的底层设计和函数传递就明白了，<strong>在 Go 语言中，只有值传递</strong>：</p>
+<p><img src="https://files.mdnice.com/user/3610/3d2999da-e405-4a42-ba37-858487052c3b.png" alt=""></p>
+<p>具体可详见我之前写的《<a href="https://mp.weixin.qq.com/s/qsxvfiyZfRCtgTymO9LBZQ">又吵起来了，Go 是传值还是传引用？</a>》，有明确分析和说明。</p>
+<p>实质上在调用 <code>appenFunc(sl)</code> 函数时，<strong>实际上修改了底层所指向的数组</strong>，自然也就会发生变化，也就不难理解为什么 10, 20, 30 元素会出现了。</p>
+<p>那为什么 <code>sl</code> 变量的长度是 0，甚至有人猜测是不是扩容了，这其实和上面的问题还是一样，因为是值传递，自然也就不会发生变化。</p>
+<p>要记住一个关键点：<strong>如果传过去的值是指向内存空间的地址，是可以对这块内存空间做修改的</strong>。反之，你也改不了。</p>
+<p>至此，也就解决了我们的第一个大问题。</p>
+<h3 id="切片小优化">切片小优化<a href="#切片小优化" class="anchor" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 7h3a5 5 0 0 1 5 5 5 5 0 0 1-5 5h-3m-6 0H6a5 5 0 0 1-5-5 5 5 0 0 1 5-5h3"></path><line x1="8" y1="12" x2="16" y2="12"></line></svg></a></h3>
+<p>还剩下两个大问题，这似乎用上面的结论没法完整解释。虽说程序是诱因，但这块最直接的影响是和切片访问的小优化有关。</p>
+<p>常用的访问切片我们会用：</p>
+<pre tabindex="0"><code>s[low : high]
+</code></pre><p>注意这里是：low、high。可没有用 len、cap 这种定性的词语，也就代表着这里取的值是可变的。</p>
+<p>当是切片（slice）时，表达式 <code>s[low : high]</code> 中的 high，<strong>最大的取值范围对应着切片的容量（cap），不是单纯的长度（len）</strong>。因此调用 <code>fmt.Println(sl[:10])</code> 时可以输出容量范围内的值，不会出现越界。</p>
+<p>相对的 <code>fmt.Println(sl)</code> 因为该切片 len 值为 0，没有指定最大索引值，high 则取 len 值，导致输出结果为空。</p>
+<p>至此，第二和第三个大问题就解决了。</p>
+<p>注：访问元素的定位在 Go 编译期就确定的了，相关逻辑可以在 compile 相关的代码中看到。</p>
+<h2 id="总结">总结<a href="#总结" class="anchor" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 7h3a5 5 0 0 1 5 5 5 5 0 0 1-5 5h-3m-6 0H6a5 5 0 0 1-5-5 5 5 0 0 1 5-5h3"></path><line x1="8" y1="12" x2="16" y2="12"></line></svg></a></h2>
+<p>在今天这篇文章中，我们结合了 Go 语言中切片的基本底层原理、值传递、边界值取值等进行了多轮探讨。</p>
+<p>我们要牢记：<strong>如果传过去的值是指向内存空间的地址，是可以对这块内存空间做修改的</strong>。这在多种应用场景下都是适用的。</p>
+<p><strong>所谓的最大取值范围</strong>，除非官方给你写定 len 或 cap，否则不要过于主观的认为，因为他<strong>会根据访问的数据类型和访问定位等改变</strong>。</p>
+<p>注：欢迎大家一起多多讨论，加我微信号：cJY0728，备注：加群。我拉你进读者交流群，和大家一起捣鼓技术，突破自己。</p>
+<h2 id="参考">参考<a href="#参考" class="anchor" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 7h3a5 5 0 0 1 5 5 5 5 0 0 1-5 5h-3m-6 0H6a5 5 0 0 1-5-5 5 5 0 0 1 5-5h3"></path><line x1="8" y1="12" x2="16" y2="12"></line></svg></a></h2>
+<ul>
+<li>来自读者 1v1 私聊</li>
+<li>来自 Go 读者群</li>
+</ul>
+
+			</div>
+			<hr class="post-end">
+			<footer class="post-info">
+				<p>
+					<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-tag meta-icon"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"></path><line x1="7" y1="7" x2="7" y2="7"></line></svg><span class="tag"><a href="https://wangtu2022.github.io/tags/go">go</a></span>
+				</p>
+				<p><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-file-text"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>272 Words</p>
+				<p><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-calendar"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>2021-12-31 12:55 &#43;0800</p>
+			</footer>
+		</article>
+		<aside id="toc">
+			<div class="toc-title">Table of Contents</div>
+			<nav id="TableOfContents">
+  <ul>
+    <li><a href="#问题代码">问题代码</a></li>
+    <li><a href="#挖掘原因">挖掘原因</a>
+      <ul>
+        <li><a href="#三个问题">三个问题</a></li>
+        <li><a href="#了解底层">了解底层</a></li>
+        <li><a href="#分析原因">分析原因</a></li>
+        <li><a href="#切片小优化">切片小优化</a></li>
+      </ul>
+    </li>
+    <li><a href="#总结">总结</a></li>
+    <li><a href="#参考">参考</a></li>
+  </ul>
+</nav>
+		</aside>
+		<div class="post-nav thin">
+			<a class="next-post" href="https://wangtu2022.github.io/posts/go/map-65/">
+				<span class="post-nav-label"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-arrow-left"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>&nbsp;Newer</span><br><span>面试官：为什么 Go 的负载因子是 6.5？</span>
+			</a>
+			<a class="prev-post" href="https://wangtu2022.github.io/posts/go/goroutine-27/">
+				<span class="post-nav-label">Older&nbsp;<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-arrow-right"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg></span><br><span>会诱发 Goroutine 挂起的 27 个原因</span>
+			</a>
+		</div>
+		<div id="comments" class="thin">
+</div>
+	</main>
+
+	<footer id="site-footer" class="section-inner thin animated fadeIn faster">
+		<p>&copy; 2022 <a href="https://wangtu2022.github.io/">煎鱼</a> &#183; <a href="http://www.beian.miit.gov.cn/">粤ICP备19076352号</a></p>
+		<p>
+			Made with <a href="https://gohugo.io/" target="_blank" rel="noopener">Hugo</a> &#183; Theme <a href="https://github.com/Track3/hermit" target="_blank" rel="noopener">Hermit</a> &#183; <a href="https://wangtu2022.github.io/posts/index.xml" target="_blank" title="rss"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-rss"><path d="M4 11a9 9 0 0 1 9 9"></path><path d="M4 4a16 16 0 0 1 16 16"></path><circle cx="5" cy="19" r="1"></circle></svg></a>
+		</p>
+	</footer>
+
+
+
+	<script src="https://wangtu2022.github.io/js/bundle.min.580988ed2982bcbb74a1773c7abea97b43e4c43b9324e10cda0813ec6ec4bb67.js" integrity="sha256-WAmI7SmCvLt0oXc8er6pe0PkxDuTJOEM2ggT7G7Eu2c=" crossorigin="anonymous"></script>
+	
+<script type="application/javascript">
+var doNotTrack = false;
+if (!doNotTrack) {
+	window.ga=window.ga||function(){(ga.q=ga.q||[]).push(arguments)};ga.l=+new Date;
+	ga('create', 'UA-166045776-1', 'auto');
+	
+	ga('send', 'pageview');
+}
+</script>
+<script async src='https://www.google-analytics.com/analytics.js'></script>
+
+
+</body>
+
+</html>

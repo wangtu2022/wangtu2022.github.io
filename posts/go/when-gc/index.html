@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="zh-hans">
+
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<meta http-equiv="X-UA-Compatible" content="ie=edge">
+	<meta name="theme-color" content="#494f5c">
+	<meta name="msapplication-TileColor" content="#494f5c">
+<meta itemprop="name" content="Go 什么时候会触发 GC？">
+<meta itemprop="description" content="大家好，我是煎鱼。
+Go 语言作为一门新语言，在早期经常遭到唾弃的就是在垃圾回收（下称：GC）机制中 STW（Stop-The-World）的时间过长。
+那么这个时候，我们又会好奇一点，作为 STW 的起始，Go 语言中什么时候才会触发 GC 呢？
+今天就由煎鱼带大家一起来学习研讨一轮。
+什么是 GC 在计算机科学中，垃圾回收（GC）是一种自动管理内存的机制，垃圾回收器会去尝试回收程序不再使用的对象及其占用的内存。
+最早 John McCarthy 在 1959 年左右发明了垃圾回收，以简化 Lisp 中的手动内存管理的机制（来自 @wikipedia）。
+为什么要 GC 手动管理内存挺麻烦，管错或者管漏内存也很糟糕，将会直接导致程序不稳定（持续泄露）甚至直接崩溃。
+GC 触发场景 GC 触发的场景主要分为两大类，分别是："><meta itemprop="datePublished" content="2021-12-31T12:55:08+08:00" />
+<meta itemprop="dateModified" content="2021-12-31T12:55:08+08:00" />
+<meta itemprop="wordCount" content="465">
+<meta itemprop="keywords" content="go,面试题," /><meta property="og:title" content="Go 什么时候会触发 GC？" />
+<meta property="og:description" content="大家好，我是煎鱼。
+Go 语言作为一门新语言，在早期经常遭到唾弃的就是在垃圾回收（下称：GC）机制中 STW（Stop-The-World）的时间过长。
+那么这个时候，我们又会好奇一点，作为 STW 的起始，Go 语言中什么时候才会触发 GC 呢？
+今天就由煎鱼带大家一起来学习研讨一轮。
+什么是 GC 在计算机科学中，垃圾回收（GC）是一种自动管理内存的机制，垃圾回收器会去尝试回收程序不再使用的对象及其占用的内存。
+最早 John McCarthy 在 1959 年左右发明了垃圾回收，以简化 Lisp 中的手动内存管理的机制（来自 @wikipedia）。
+为什么要 GC 手动管理内存挺麻烦，管错或者管漏内存也很糟糕，将会直接导致程序不稳定（持续泄露）甚至直接崩溃。
+GC 触发场景 GC 触发的场景主要分为两大类，分别是：" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://wangtu2022.github.io/posts/go/when-gc/" /><meta property="article:section" content="posts" />
+<meta property="article:published_time" content="2021-12-31T12:55:08+08:00" />
+<meta property="article:modified_time" content="2021-12-31T12:55:08+08:00" />
+
+<meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="Go 什么时候会触发 GC？"/>
+<meta name="twitter:description" content="大家好，我是煎鱼。
+Go 语言作为一门新语言，在早期经常遭到唾弃的就是在垃圾回收（下称：GC）机制中 STW（Stop-The-World）的时间过长。
+那么这个时候，我们又会好奇一点，作为 STW 的起始，Go 语言中什么时候才会触发 GC 呢？
+今天就由煎鱼带大家一起来学习研讨一轮。
+什么是 GC 在计算机科学中，垃圾回收（GC）是一种自动管理内存的机制，垃圾回收器会去尝试回收程序不再使用的对象及其占用的内存。
+最早 John McCarthy 在 1959 年左右发明了垃圾回收，以简化 Lisp 中的手动内存管理的机制（来自 @wikipedia）。
+为什么要 GC 手动管理内存挺麻烦，管错或者管漏内存也很糟糕，将会直接导致程序不稳定（持续泄露）甚至直接崩溃。
+GC 触发场景 GC 触发的场景主要分为两大类，分别是："/>
+
+	<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+	<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+	<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+	<link rel="manifest" href="/site.webmanifest">
+	<link rel="mask-icon" href="/safari-pinned-tab.svg" color="">
+	<link rel="shortcut icon" href="/favicon.ico">
+
+	<title>Go 什么时候会触发 GC？</title>
+	<link rel="stylesheet" href="https://wangtu2022.github.io/css/style.min.d3141168199607bf3a517216ce3c263814eecdbc8fca72a9a88700799a838219.css" integrity="sha256-0xQRaBmWB786UXIWzjwmOBTuzbyPynKpqIcAeZqDghk=" crossorigin="anonymous">
+	
+	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.1/css/all.min.css">
+	<link rel="stylesheet" href="https://wangtu2022.github.io/css/styles.css">
+</head>
+
+<body id="page">
+	
+	<header id="site-header" class="animated slideInUp">
+		<div class="hdr-wrapper section-inner">
+			<div class="hdr-left">
+				<div class="site-branding">
+					<a href="https://wangtu2022.github.io/">煎鱼</a>
+				</div>
+				<nav class="site-nav hide-in-mobile">
+					
+				<a href="https://wangtu2022.github.io/posts/">文章</a>
+				<a href="https://wangtu2022.github.io/tags/">标签</a>
+				<a href="https://wangtu2022.github.io/about/">关于</a>
+
+				</nav>
+			</div>
+			<div class="hdr-right hdr-icons">
+				<button id="toc-btn" class="hdr-btn desktop-only-ib" title="Table of Contents"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-list"><line x1="8" y1="6" x2="21" y2="6"></line><line x1="8" y1="12" x2="21" y2="12"></line><line x1="8" y1="18" x2="21" y2="18"></line><line x1="3" y1="6" x2="3" y2="6"></line><line x1="3" y1="12" x2="3" y2="12"></line><line x1="3" y1="18" x2="3" y2="18"></line></svg></button><span class="hdr-social hide-in-mobile"><a href="https://github.com/eddycjy" target="_blank" rel="noopener me" title="Github"><svg xmlns="http://www.w3.org/2000/svg" class="feather" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"></path></svg></a></span><button id="menu-btn" class="hdr-btn" title="Menu"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-menu"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg></button>
+			</div>
+		</div>
+	</header>
+	<div id="mobile-menu" class="animated fast">
+		<ul>
+			<li><a href="https://wangtu2022.github.io/posts/">文章</a></li>
+			<li><a href="https://wangtu2022.github.io/tags/">标签</a></li>
+			<li><a href="https://wangtu2022.github.io/about/">关于</a></li>
+		</ul>
+	</div>
+
+
+	<main class="site-main section-inner animated fadeIn faster">
+		<article class="thin">
+			<header class="post-header">
+				<div class="post-meta"><span>Dec 31, 2021</span></div>
+				<h1>Go 什么时候会触发 GC？</h1>
+			</header>
+			<div class="content">
+				<p>大家好，我是煎鱼。</p>
+<p>Go 语言作为一门新语言，在早期经常遭到唾弃的就是在垃圾回收（下称：GC）机制中 STW（Stop-The-World）的时间过长。</p>
+<p>那么这个时候，我们又会好奇一点，作为 STW 的起始，Go 语言中什么时候才会触发 GC 呢？</p>
+<p>今天就由煎鱼带大家一起来学习研讨一轮。</p>
+<h2 id="什么是-gc">什么是 GC<a href="#什么是-gc" class="anchor" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 7h3a5 5 0 0 1 5 5 5 5 0 0 1-5 5h-3m-6 0H6a5 5 0 0 1-5-5 5 5 0 0 1 5-5h3"></path><line x1="8" y1="12" x2="16" y2="12"></line></svg></a></h2>
+<p>在计算机科学中，垃圾回收（GC）是一种自动管理内存的机制，垃圾回收器会去尝试回收程序不再使用的对象及其占用的内存。</p>
+<p>最早 John McCarthy 在 1959 年左右发明了垃圾回收，以简化 Lisp 中的手动内存管理的机制（来自 @wikipedia）。</p>
+<p><img src="https://files.mdnice.com/user/3610/09425faf-f521-43a9-a7fa-1db3c5163914.png" alt="图来自网络"></p>
+<h2 id="为什么要-gc">为什么要 GC<a href="#为什么要-gc" class="anchor" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 7h3a5 5 0 0 1 5 5 5 5 0 0 1-5 5h-3m-6 0H6a5 5 0 0 1-5-5 5 5 0 0 1 5-5h3"></path><line x1="8" y1="12" x2="16" y2="12"></line></svg></a></h2>
+<p>手动管理内存挺麻烦，管错或者管漏内存也很糟糕，将会直接导致程序不稳定（持续泄露）甚至直接崩溃。</p>
+<h2 id="gc-触发场景">GC 触发场景<a href="#gc-触发场景" class="anchor" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 7h3a5 5 0 0 1 5 5 5 5 0 0 1-5 5h-3m-6 0H6a5 5 0 0 1-5-5 5 5 0 0 1 5-5h3"></path><line x1="8" y1="12" x2="16" y2="12"></line></svg></a></h2>
+<p>GC 触发的场景主要分为两大类，分别是：</p>
+<ol>
+<li>系统触发：运行时自行根据内置的条件，检查、发现到，则进行 GC 处理，维护整个应用程序的可用性。</li>
+<li>手动触发：开发者在业务代码中自行调用 <code> runtime.GC</code> 方法来触发 GC 行为。</li>
+</ol>
+<h3 id="系统触发">系统触发<a href="#系统触发" class="anchor" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 7h3a5 5 0 0 1 5 5 5 5 0 0 1-5 5h-3m-6 0H6a5 5 0 0 1-5-5 5 5 0 0 1 5-5h3"></path><line x1="8" y1="12" x2="16" y2="12"></line></svg></a></h3>
+<p>在系统触发的场景中，Go 源码的 <code>src/runtime/mgc.go</code> 文件，明确标识了 GC 系统触发的三种场景，分别如下：</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-golang" data-lang="golang"><span class="line"><span class="cl"><span class="kd">const</span> <span class="p">(</span>
+</span></span><span class="line"><span class="cl">	<span class="nx">gcTriggerHeap</span> <span class="nx">gcTriggerKind</span> <span class="p">=</span> <span class="kc">iota</span>
+</span></span><span class="line"><span class="cl">	<span class="nx">gcTriggerTime</span>
+</span></span><span class="line"><span class="cl">	<span class="nx">gcTriggerCycle</span>
+</span></span><span class="line"><span class="cl"><span class="p">)</span>
+</span></span></code></pre></div><ul>
+<li>gcTriggerHeap：当所分配的堆大小达到阈值（由控制器计算的触发堆的大小）时，将会触发。</li>
+<li>gcTriggerTime：当距离上一个 GC 周期的时间超过一定时间时，将会触发。
+-时间周期以 <code>runtime.forcegcperiod</code> 变量为准，默认 2 分钟。</li>
+<li>gcTriggerCycle：如果没有开启 GC，则启动 GC。
+<ul>
+<li>在手动触发的 <code>runtime.GC</code> 方法中涉及。</li>
+</ul>
+</li>
+</ul>
+<h3 id="手动触发">手动触发<a href="#手动触发" class="anchor" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 7h3a5 5 0 0 1 5 5 5 5 0 0 1-5 5h-3m-6 0H6a5 5 0 0 1-5-5 5 5 0 0 1 5-5h3"></path><line x1="8" y1="12" x2="16" y2="12"></line></svg></a></h3>
+<p>在手动触发的场景下，Go 语言中仅有 <code>runtime.GC</code> 方法可以触发，也就没什么额外的分类的。</p>
+<p><img src="https://files.mdnice.com/user/3610/8da69a96-6445-4e20-9234-a0c74ba2b5de.png" alt=""></p>
+<p>但我们要思考的是，一般我们在什么业务场景中，要涉及到手动干涉 GC，强制触发他呢？</p>
+<p>需要手动强制触发的场景极其少见，可能会是在某些业务方法执行完后，因其占用了过多的内存，需要人为释放。又或是 debug 程序所需。</p>
+<h2 id="基本流程">基本流程<a href="#基本流程" class="anchor" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 7h3a5 5 0 0 1 5 5 5 5 0 0 1-5 5h-3m-6 0H6a5 5 0 0 1-5-5 5 5 0 0 1 5-5h3"></path><line x1="8" y1="12" x2="16" y2="12"></line></svg></a></h2>
+<p>在了解到 Go 语言会触发 GC 的场景后，我们进一步看看触发 GC 的流程代码是怎么样的，我们可以借助手动触发的 <code>runtime.GC</code> 方法来作为突破口。</p>
+<p>核心代码如下：</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-golang" data-lang="golang"><span class="line"><span class="cl"><span class="kd">func</span> <span class="nf">GC</span><span class="p">()</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">	<span class="nx">n</span> <span class="o">:=</span> <span class="nx">atomic</span><span class="p">.</span><span class="nf">Load</span><span class="p">(</span><span class="o">&amp;</span><span class="nx">work</span><span class="p">.</span><span class="nx">cycles</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">	<span class="nf">gcWaitOnMark</span><span class="p">(</span><span class="nx">n</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">	<span class="nf">gcStart</span><span class="p">(</span><span class="nx">gcTrigger</span><span class="p">{</span><span class="nx">kind</span><span class="p">:</span> <span class="nx">gcTriggerCycle</span><span class="p">,</span> <span class="nx">n</span><span class="p">:</span> <span class="nx">n</span> <span class="o">+</span> <span class="mi">1</span><span class="p">})</span>
+</span></span><span class="line"><span class="cl">  
+</span></span><span class="line"><span class="cl">	<span class="nf">gcWaitOnMark</span><span class="p">(</span><span class="nx">n</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">	<span class="k">for</span> <span class="nx">atomic</span><span class="p">.</span><span class="nf">Load</span><span class="p">(</span><span class="o">&amp;</span><span class="nx">work</span><span class="p">.</span><span class="nx">cycles</span><span class="p">)</span> <span class="o">==</span> <span class="nx">n</span><span class="o">+</span><span class="mi">1</span> <span class="o">&amp;&amp;</span> <span class="nf">sweepone</span><span class="p">()</span> <span class="o">!=</span> <span class="p">^</span><span class="nb">uintptr</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">		<span class="nx">sweep</span><span class="p">.</span><span class="nx">nbgsweep</span><span class="o">++</span>
+</span></span><span class="line"><span class="cl">		<span class="nf">Gosched</span><span class="p">()</span>
+</span></span><span class="line"><span class="cl">	<span class="p">}</span>
+</span></span><span class="line"><span class="cl">  
+</span></span><span class="line"><span class="cl">	<span class="k">for</span> <span class="nx">atomic</span><span class="p">.</span><span class="nf">Load</span><span class="p">(</span><span class="o">&amp;</span><span class="nx">work</span><span class="p">.</span><span class="nx">cycles</span><span class="p">)</span> <span class="o">==</span> <span class="nx">n</span><span class="o">+</span><span class="mi">1</span> <span class="o">&amp;&amp;</span> <span class="nx">atomic</span><span class="p">.</span><span class="nf">Load</span><span class="p">(</span><span class="o">&amp;</span><span class="nx">mheap_</span><span class="p">.</span><span class="nx">sweepers</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">0</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">		<span class="nf">Gosched</span><span class="p">()</span>
+</span></span><span class="line"><span class="cl">	<span class="p">}</span>
+</span></span><span class="line"><span class="cl">  
+</span></span><span class="line"><span class="cl">	<span class="nx">mp</span> <span class="o">:=</span> <span class="nf">acquirem</span><span class="p">()</span>
+</span></span><span class="line"><span class="cl">	<span class="nx">cycle</span> <span class="o">:=</span> <span class="nx">atomic</span><span class="p">.</span><span class="nf">Load</span><span class="p">(</span><span class="o">&amp;</span><span class="nx">work</span><span class="p">.</span><span class="nx">cycles</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">	<span class="k">if</span> <span class="nx">cycle</span> <span class="o">==</span> <span class="nx">n</span><span class="o">+</span><span class="mi">1</span> <span class="o">||</span> <span class="p">(</span><span class="nx">gcphase</span> <span class="o">==</span> <span class="nx">_GCmark</span> <span class="o">&amp;&amp;</span> <span class="nx">cycle</span> <span class="o">==</span> <span class="nx">n</span><span class="o">+</span><span class="mi">2</span><span class="p">)</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">		<span class="nf">mProf_PostSweep</span><span class="p">()</span>
+</span></span><span class="line"><span class="cl">	<span class="p">}</span>
+</span></span><span class="line"><span class="cl">	<span class="nf">releasem</span><span class="p">(</span><span class="nx">mp</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span></code></pre></div><ol>
+<li>在开始新的一轮 GC 周期前，需要调用 <code>gcWaitOnMark</code> 方法上一轮 GC 的标记结束（含扫描终止、标记、或标记终止等）。</li>
+<li>开始新的一轮 GC 周期，调用 <code>gcStart</code> 方法触发 GC 行为，开始扫描标记阶段。</li>
+<li>需要调用 <code>gcWaitOnMark</code> 方法等待，直到当前 GC 周期的扫描、标记、标记终止完成。</li>
+<li>需要调用 <code>sweepone</code> 方法，扫描未扫除的堆跨度，并持续扫除，保证清理完成。在等待扫除完毕前的阻塞时间，会调用 <code>Gosched</code> 让出。</li>
+<li>在本轮 GC 已经基本完成后，会调用 <code>mProf_PostSweep</code> 方法。以此记录最后一次标记终止时的堆配置文件快照。</li>
+<li>结束，释放 M。</li>
+</ol>
+<h2 id="在哪触发">在哪触发<a href="#在哪触发" class="anchor" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 7h3a5 5 0 0 1 5 5 5 5 0 0 1-5 5h-3m-6 0H6a5 5 0 0 1-5-5 5 5 0 0 1 5-5h3"></path><line x1="8" y1="12" x2="16" y2="12"></line></svg></a></h2>
+<p>看完 GC 的基本流程后，我们有了一个基本的了解。但可能又有小伙伴有疑惑了？</p>
+<p>本文的标题是 “GC 什么时候会触发 GC”，虽然我们前面知道了触发的时机。但是&hellip;.Go 是哪里实现的触发的机制，似乎在流程中完全没有看到？</p>
+<h3 id="监控线程">监控线程<a href="#监控线程" class="anchor" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 7h3a5 5 0 0 1 5 5 5 5 0 0 1-5 5h-3m-6 0H6a5 5 0 0 1-5-5 5 5 0 0 1 5-5h3"></path><line x1="8" y1="12" x2="16" y2="12"></line></svg></a></h3>
+<p>实质上在 Go 运行时（runtime）初始化时，会启动一个 goroutine，用于处理 GC 机制的相关事项。</p>
+<p>代码如下：</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-golang" data-lang="golang"><span class="line"><span class="cl"><span class="kd">func</span> <span class="nf">init</span><span class="p">()</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">	<span class="k">go</span> <span class="nf">forcegchelper</span><span class="p">()</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="kd">func</span> <span class="nf">forcegchelper</span><span class="p">()</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">	<span class="nx">forcegc</span><span class="p">.</span><span class="nx">g</span> <span class="p">=</span> <span class="nf">getg</span><span class="p">()</span>
+</span></span><span class="line"><span class="cl">	<span class="nf">lockInit</span><span class="p">(</span><span class="o">&amp;</span><span class="nx">forcegc</span><span class="p">.</span><span class="nx">lock</span><span class="p">,</span> <span class="nx">lockRankForcegc</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">	<span class="k">for</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">		<span class="nf">lock</span><span class="p">(</span><span class="o">&amp;</span><span class="nx">forcegc</span><span class="p">.</span><span class="nx">lock</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">		<span class="k">if</span> <span class="nx">forcegc</span><span class="p">.</span><span class="nx">idle</span> <span class="o">!=</span> <span class="mi">0</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">			<span class="nf">throw</span><span class="p">(</span><span class="s">&#34;forcegc: phase error&#34;</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">		<span class="p">}</span>
+</span></span><span class="line"><span class="cl">		<span class="nx">atomic</span><span class="p">.</span><span class="nf">Store</span><span class="p">(</span><span class="o">&amp;</span><span class="nx">forcegc</span><span class="p">.</span><span class="nx">idle</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">		<span class="nf">goparkunlock</span><span class="p">(</span><span class="o">&amp;</span><span class="nx">forcegc</span><span class="p">.</span><span class="nx">lock</span><span class="p">,</span> <span class="nx">waitReasonForceGCIdle</span><span class="p">,</span> <span class="nx">traceEvGoBlock</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">    <span class="c1">// this goroutine is explicitly resumed by sysmon
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>		<span class="k">if</span> <span class="nx">debug</span><span class="p">.</span><span class="nx">gctrace</span> <span class="p">&gt;</span> <span class="mi">0</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">			<span class="nb">println</span><span class="p">(</span><span class="s">&#34;GC forced&#34;</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">		<span class="p">}</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">		<span class="nf">gcStart</span><span class="p">(</span><span class="nx">gcTrigger</span><span class="p">{</span><span class="nx">kind</span><span class="p">:</span> <span class="nx">gcTriggerTime</span><span class="p">,</span> <span class="nx">now</span><span class="p">:</span> <span class="nf">nanotime</span><span class="p">()})</span>
+</span></span><span class="line"><span class="cl">	<span class="p">}</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span></code></pre></div><p>在这段程序中，需要特别关注的是在 <code>forcegchelper</code> 方法中，会调用 <code>goparkunlock</code> 方法让该 goroutine 陷入休眠等待状态，以减少不必要的资源开销。</p>
+<p>在休眠后，会由 <code>sysmon</code> 这一个系统监控线程来进行监控、唤醒等行为：</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-golang" data-lang="golang"><span class="line"><span class="cl"><span class="kd">func</span> <span class="nf">sysmon</span><span class="p">()</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">	<span class="o">...</span>
+</span></span><span class="line"><span class="cl">	<span class="k">for</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">		<span class="o">...</span>
+</span></span><span class="line"><span class="cl">		<span class="c1">// check if we need to force a GC
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>		<span class="k">if</span> <span class="nx">t</span> <span class="o">:=</span> <span class="p">(</span><span class="nx">gcTrigger</span><span class="p">{</span><span class="nx">kind</span><span class="p">:</span> <span class="nx">gcTriggerTime</span><span class="p">,</span> <span class="nx">now</span><span class="p">:</span> <span class="nx">now</span><span class="p">});</span> <span class="nx">t</span><span class="p">.</span><span class="nf">test</span><span class="p">()</span> <span class="o">&amp;&amp;</span> <span class="nx">atomic</span><span class="p">.</span><span class="nf">Load</span><span class="p">(</span><span class="o">&amp;</span><span class="nx">forcegc</span><span class="p">.</span><span class="nx">idle</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">0</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">			<span class="nf">lock</span><span class="p">(</span><span class="o">&amp;</span><span class="nx">forcegc</span><span class="p">.</span><span class="nx">lock</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">			<span class="nx">forcegc</span><span class="p">.</span><span class="nx">idle</span> <span class="p">=</span> <span class="mi">0</span>
+</span></span><span class="line"><span class="cl">			<span class="kd">var</span> <span class="nx">list</span> <span class="nx">gList</span>
+</span></span><span class="line"><span class="cl">			<span class="nx">list</span><span class="p">.</span><span class="nf">push</span><span class="p">(</span><span class="nx">forcegc</span><span class="p">.</span><span class="nx">g</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">			<span class="nf">injectglist</span><span class="p">(</span><span class="o">&amp;</span><span class="nx">list</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">			<span class="nf">unlock</span><span class="p">(</span><span class="o">&amp;</span><span class="nx">forcegc</span><span class="p">.</span><span class="nx">lock</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">		<span class="p">}</span>
+</span></span><span class="line"><span class="cl">		<span class="k">if</span> <span class="nx">debug</span><span class="p">.</span><span class="nx">schedtrace</span> <span class="p">&gt;</span> <span class="mi">0</span> <span class="o">&amp;&amp;</span> <span class="nx">lasttrace</span><span class="o">+</span><span class="nb">int64</span><span class="p">(</span><span class="nx">debug</span><span class="p">.</span><span class="nx">schedtrace</span><span class="p">)</span><span class="o">*</span><span class="mi">1000000</span> <span class="o">&lt;=</span> <span class="nx">now</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">			<span class="nx">lasttrace</span> <span class="p">=</span> <span class="nx">now</span>
+</span></span><span class="line"><span class="cl">			<span class="nf">schedtrace</span><span class="p">(</span><span class="nx">debug</span><span class="p">.</span><span class="nx">scheddetail</span> <span class="p">&gt;</span> <span class="mi">0</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">		<span class="p">}</span>
+</span></span><span class="line"><span class="cl">		<span class="nf">unlock</span><span class="p">(</span><span class="o">&amp;</span><span class="nx">sched</span><span class="p">.</span><span class="nx">sysmonlock</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">	<span class="p">}</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span></code></pre></div><p>这段代码核心的行为就是不断地在 for 循环中，对 <code>gcTriggerTime</code> 和 <code>now</code> 变量进行比较，判断是否达到一定的时间（默认为 2 分钟）。</p>
+<p>若达到意味着满足条件，会将 <code>forcegc.g</code> 放到全局队列中接受新的一轮调度，再进行对上面 <code>forcegchelper</code> 的唤醒。</p>
+<h3 id="堆内存申请">堆内存申请<a href="#堆内存申请" class="anchor" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 7h3a5 5 0 0 1 5 5 5 5 0 0 1-5 5h-3m-6 0H6a5 5 0 0 1-5-5 5 5 0 0 1 5-5h3"></path><line x1="8" y1="12" x2="16" y2="12"></line></svg></a></h3>
+<p>在了解定时触发的机制后，另外一个场景就是分配的堆空间的时候，那么我们要看的地方就非常明确了。</p>
+<p>那就是运行时申请堆内存的 <code>mallocgc</code> 方法。核心代码如下：</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-golang" data-lang="golang"><span class="line"><span class="cl"><span class="kd">func</span> <span class="nf">mallocgc</span><span class="p">(</span><span class="nx">size</span> <span class="kt">uintptr</span><span class="p">,</span> <span class="nx">typ</span> <span class="o">*</span><span class="nx">_type</span><span class="p">,</span> <span class="nx">needzero</span> <span class="kt">bool</span><span class="p">)</span> <span class="nx">unsafe</span><span class="p">.</span><span class="nx">Pointer</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">	<span class="nx">shouldhelpgc</span> <span class="o">:=</span> <span class="kc">false</span>
+</span></span><span class="line"><span class="cl">	<span class="o">...</span>
+</span></span><span class="line"><span class="cl">	<span class="k">if</span> <span class="nx">size</span> <span class="o">&lt;=</span> <span class="nx">maxSmallSize</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">		<span class="k">if</span> <span class="nx">noscan</span> <span class="o">&amp;&amp;</span> <span class="nx">size</span> <span class="p">&lt;</span> <span class="nx">maxTinySize</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">			<span class="o">...</span>
+</span></span><span class="line"><span class="cl">			<span class="c1">// Allocate a new maxTinySize block.
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>			<span class="nx">span</span> <span class="p">=</span> <span class="nx">c</span><span class="p">.</span><span class="nx">alloc</span><span class="p">[</span><span class="nx">tinySpanClass</span><span class="p">]</span>
+</span></span><span class="line"><span class="cl">			<span class="nx">v</span> <span class="o">:=</span> <span class="nf">nextFreeFast</span><span class="p">(</span><span class="nx">span</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">			<span class="k">if</span> <span class="nx">v</span> <span class="o">==</span> <span class="mi">0</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">				<span class="nx">v</span><span class="p">,</span> <span class="nx">span</span><span class="p">,</span> <span class="nx">shouldhelpgc</span> <span class="p">=</span> <span class="nx">c</span><span class="p">.</span><span class="nf">nextFree</span><span class="p">(</span><span class="nx">tinySpanClass</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">			<span class="p">}</span>
+</span></span><span class="line"><span class="cl">			<span class="o">...</span>
+</span></span><span class="line"><span class="cl">			<span class="nx">spc</span> <span class="o">:=</span> <span class="nf">makeSpanClass</span><span class="p">(</span><span class="nx">sizeclass</span><span class="p">,</span> <span class="nx">noscan</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">			<span class="nx">span</span> <span class="p">=</span> <span class="nx">c</span><span class="p">.</span><span class="nx">alloc</span><span class="p">[</span><span class="nx">spc</span><span class="p">]</span>
+</span></span><span class="line"><span class="cl">			<span class="nx">v</span> <span class="o">:=</span> <span class="nf">nextFreeFast</span><span class="p">(</span><span class="nx">span</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">			<span class="k">if</span> <span class="nx">v</span> <span class="o">==</span> <span class="mi">0</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">				<span class="nx">v</span><span class="p">,</span> <span class="nx">span</span><span class="p">,</span> <span class="nx">shouldhelpgc</span> <span class="p">=</span> <span class="nx">c</span><span class="p">.</span><span class="nf">nextFree</span><span class="p">(</span><span class="nx">spc</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">			<span class="p">}</span>
+</span></span><span class="line"><span class="cl">			<span class="o">...</span>
+</span></span><span class="line"><span class="cl">		<span class="p">}</span>
+</span></span><span class="line"><span class="cl">	<span class="p">}</span> <span class="k">else</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">		<span class="nx">shouldhelpgc</span> <span class="p">=</span> <span class="kc">true</span>
+</span></span><span class="line"><span class="cl">		<span class="nx">span</span> <span class="p">=</span> <span class="nx">c</span><span class="p">.</span><span class="nf">allocLarge</span><span class="p">(</span><span class="nx">size</span><span class="p">,</span> <span class="nx">needzero</span><span class="p">,</span> <span class="nx">noscan</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">		<span class="o">...</span>
+</span></span><span class="line"><span class="cl">	<span class="p">}</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">	<span class="k">if</span> <span class="nx">shouldhelpgc</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">		<span class="k">if</span> <span class="nx">t</span> <span class="o">:=</span> <span class="p">(</span><span class="nx">gcTrigger</span><span class="p">{</span><span class="nx">kind</span><span class="p">:</span> <span class="nx">gcTriggerHeap</span><span class="p">});</span> <span class="nx">t</span><span class="p">.</span><span class="nf">test</span><span class="p">()</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">			<span class="nf">gcStart</span><span class="p">(</span><span class="nx">t</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">		<span class="p">}</span>
+</span></span><span class="line"><span class="cl">	<span class="p">}</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">	<span class="k">return</span> <span class="nx">x</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span></code></pre></div><ul>
+<li>小对象：如果申请小对象时，发现当前内存空间不存在空闲跨度时，将会需要调用 <code>nextFree</code> 方法获取新的可用的对象，可能会触发 GC 行为。</li>
+<li>大对象：如果申请大于 32k 以上的大对象时，可能会触发 GC 行为。</li>
+</ul>
+<h2 id="总结">总结<a href="#总结" class="anchor" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 7h3a5 5 0 0 1 5 5 5 5 0 0 1-5 5h-3m-6 0H6a5 5 0 0 1-5-5 5 5 0 0 1 5-5h3"></path><line x1="8" y1="12" x2="16" y2="12"></line></svg></a></h2>
+<p>在这篇文章中，我们介绍了 Go 语言触发 GC 的两大类场景，并分别基于大类中的细分场景进行了一一说明。</p>
+<p>一般来讲，我们对其了解大概就可以了。若小伙伴们对其内部具体实现感兴趣，也可以以文章中的代码具体再打开看。</p>
+<p>但需要注意，很有可能 Go 版本一升级，可能又变了，学思想要紧 ：）</p>
+
+			</div>
+			<hr class="post-end">
+			<footer class="post-info">
+				<p>
+					<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-tag meta-icon"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"></path><line x1="7" y1="7" x2="7" y2="7"></line></svg><span class="tag"><a href="https://wangtu2022.github.io/tags/go">go</a></span><span class="tag"><a href="https://wangtu2022.github.io/tags/%E9%9D%A2%E8%AF%95%E9%A2%98">面试题</a></span>
+				</p>
+				<p><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-file-text"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>465 Words</p>
+				<p><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-calendar"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>2021-12-31 12:55 &#43;0800</p>
+			</footer>
+		</article>
+		<aside id="toc">
+			<div class="toc-title">Table of Contents</div>
+			<nav id="TableOfContents">
+  <ul>
+    <li><a href="#什么是-gc">什么是 GC</a></li>
+    <li><a href="#为什么要-gc">为什么要 GC</a></li>
+    <li><a href="#gc-触发场景">GC 触发场景</a>
+      <ul>
+        <li><a href="#系统触发">系统触发</a></li>
+        <li><a href="#手动触发">手动触发</a></li>
+      </ul>
+    </li>
+    <li><a href="#基本流程">基本流程</a></li>
+    <li><a href="#在哪触发">在哪触发</a>
+      <ul>
+        <li><a href="#监控线程">监控线程</a></li>
+        <li><a href="#堆内存申请">堆内存申请</a></li>
+      </ul>
+    </li>
+    <li><a href="#总结">总结</a></li>
+  </ul>
+</nav>
+		</aside>
+		<div class="post-nav thin">
+			<a class="next-post" href="https://wangtu2022.github.io/posts/go/slice-leak/">
+				<span class="post-nav-label"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-arrow-left"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>&nbsp;Newer</span><br><span>Go 切片导致内存泄露，被坑两次了！</span>
+			</a>
+			<a class="prev-post" href="https://wangtu2022.github.io/posts/go/map-reset/">
+				<span class="post-nav-label">Older&nbsp;<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-arrow-right"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg></span><br><span>Go map 如何缩容？</span>
+			</a>
+		</div>
+		<div id="comments" class="thin">
+</div>
+	</main>
+
+	<footer id="site-footer" class="section-inner thin animated fadeIn faster">
+		<p>&copy; 2022 <a href="https://wangtu2022.github.io/">煎鱼</a> &#183; <a href="http://www.beian.miit.gov.cn/">粤ICP备19076352号</a></p>
+		<p>
+			Made with <a href="https://gohugo.io/" target="_blank" rel="noopener">Hugo</a> &#183; Theme <a href="https://github.com/Track3/hermit" target="_blank" rel="noopener">Hermit</a> &#183; <a href="https://wangtu2022.github.io/posts/index.xml" target="_blank" title="rss"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-rss"><path d="M4 11a9 9 0 0 1 9 9"></path><path d="M4 4a16 16 0 0 1 16 16"></path><circle cx="5" cy="19" r="1"></circle></svg></a>
+		</p>
+	</footer>
+
+
+
+	<script src="https://wangtu2022.github.io/js/bundle.min.580988ed2982bcbb74a1773c7abea97b43e4c43b9324e10cda0813ec6ec4bb67.js" integrity="sha256-WAmI7SmCvLt0oXc8er6pe0PkxDuTJOEM2ggT7G7Eu2c=" crossorigin="anonymous"></script>
+	
+<script type="application/javascript">
+var doNotTrack = false;
+if (!doNotTrack) {
+	window.ga=window.ga||function(){(ga.q=ga.q||[]).push(arguments)};ga.l=+new Date;
+	ga('create', 'UA-166045776-1', 'auto');
+	
+	ga('send', 'pageview');
+}
+</script>
+<script async src='https://www.google-analytics.com/analytics.js'></script>
+
+
+</body>
+
+</html>

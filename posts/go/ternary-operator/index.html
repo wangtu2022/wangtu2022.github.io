@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="zh-hans">
+
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<meta http-equiv="X-UA-Compatible" content="ie=edge">
+	<meta name="theme-color" content="#494f5c">
+	<meta name="msapplication-TileColor" content="#494f5c">
+<meta itemprop="name" content="Go 凭什么不支持三元运算符？">
+<meta itemprop="description" content="大家好，我是煎鱼。
+这是一个很多其他语言工程师转 Go 语言的时间节点，这就难免不论一番比较。其中一个经典的运算上的就是 “三元运算符”：
+为什么 Go 语言不支持三元运算符，Go 不支持三元运算符就是设计的不好，是历史在开倒车吗？
+今天就由煎鱼来和大家一起摸索为什么。
+三元运算符是什么 三元运算符，在典型的数学意义上，或者从解析器的角度来看，是一个需要三个参数的运算符。而我们日常中，最常见的是二元运算符：
+x &#43; y x / y x * y 还有一元运算符：
+-a ~b !c 以及今天的男主角 “三元运算符”。在 C/C&#43;&#43; 等多种语言中，我们可以根据条件声明和初始化变量的习惯来选择性使用三元条件运算符：
+int index = val &gt; 0 ?"><meta itemprop="datePublished" content="2021-12-31T12:54:50+08:00" />
+<meta itemprop="dateModified" content="2021-12-31T12:54:50+08:00" />
+<meta itemprop="wordCount" content="267">
+<meta itemprop="keywords" content="go,为什么," /><meta property="og:title" content="Go 凭什么不支持三元运算符？" />
+<meta property="og:description" content="大家好，我是煎鱼。
+这是一个很多其他语言工程师转 Go 语言的时间节点，这就难免不论一番比较。其中一个经典的运算上的就是 “三元运算符”：
+为什么 Go 语言不支持三元运算符，Go 不支持三元运算符就是设计的不好，是历史在开倒车吗？
+今天就由煎鱼来和大家一起摸索为什么。
+三元运算符是什么 三元运算符，在典型的数学意义上，或者从解析器的角度来看，是一个需要三个参数的运算符。而我们日常中，最常见的是二元运算符：
+x &#43; y x / y x * y 还有一元运算符：
+-a ~b !c 以及今天的男主角 “三元运算符”。在 C/C&#43;&#43; 等多种语言中，我们可以根据条件声明和初始化变量的习惯来选择性使用三元条件运算符：
+int index = val &gt; 0 ?" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://wangtu2022.github.io/posts/go/ternary-operator/" /><meta property="article:section" content="posts" />
+<meta property="article:published_time" content="2021-12-31T12:54:50+08:00" />
+<meta property="article:modified_time" content="2021-12-31T12:54:50+08:00" />
+
+<meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="Go 凭什么不支持三元运算符？"/>
+<meta name="twitter:description" content="大家好，我是煎鱼。
+这是一个很多其他语言工程师转 Go 语言的时间节点，这就难免不论一番比较。其中一个经典的运算上的就是 “三元运算符”：
+为什么 Go 语言不支持三元运算符，Go 不支持三元运算符就是设计的不好，是历史在开倒车吗？
+今天就由煎鱼来和大家一起摸索为什么。
+三元运算符是什么 三元运算符，在典型的数学意义上，或者从解析器的角度来看，是一个需要三个参数的运算符。而我们日常中，最常见的是二元运算符：
+x &#43; y x / y x * y 还有一元运算符：
+-a ~b !c 以及今天的男主角 “三元运算符”。在 C/C&#43;&#43; 等多种语言中，我们可以根据条件声明和初始化变量的习惯来选择性使用三元条件运算符：
+int index = val &gt; 0 ?"/>
+
+	<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+	<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+	<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+	<link rel="manifest" href="/site.webmanifest">
+	<link rel="mask-icon" href="/safari-pinned-tab.svg" color="">
+	<link rel="shortcut icon" href="/favicon.ico">
+
+	<title>Go 凭什么不支持三元运算符？</title>
+	<link rel="stylesheet" href="https://wangtu2022.github.io/css/style.min.d3141168199607bf3a517216ce3c263814eecdbc8fca72a9a88700799a838219.css" integrity="sha256-0xQRaBmWB786UXIWzjwmOBTuzbyPynKpqIcAeZqDghk=" crossorigin="anonymous">
+	
+	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.1/css/all.min.css">
+	<link rel="stylesheet" href="https://wangtu2022.github.io/css/styles.css">
+</head>
+
+<body id="page">
+	
+	<header id="site-header" class="animated slideInUp">
+		<div class="hdr-wrapper section-inner">
+			<div class="hdr-left">
+				<div class="site-branding">
+					<a href="https://wangtu2022.github.io/">煎鱼</a>
+				</div>
+				<nav class="site-nav hide-in-mobile">
+					
+				<a href="https://wangtu2022.github.io/posts/">文章</a>
+				<a href="https://wangtu2022.github.io/tags/">标签</a>
+				<a href="https://wangtu2022.github.io/about/">关于</a>
+
+				</nav>
+			</div>
+			<div class="hdr-right hdr-icons">
+				<button id="toc-btn" class="hdr-btn desktop-only-ib" title="Table of Contents"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-list"><line x1="8" y1="6" x2="21" y2="6"></line><line x1="8" y1="12" x2="21" y2="12"></line><line x1="8" y1="18" x2="21" y2="18"></line><line x1="3" y1="6" x2="3" y2="6"></line><line x1="3" y1="12" x2="3" y2="12"></line><line x1="3" y1="18" x2="3" y2="18"></line></svg></button><span class="hdr-social hide-in-mobile"><a href="https://github.com/eddycjy" target="_blank" rel="noopener me" title="Github"><svg xmlns="http://www.w3.org/2000/svg" class="feather" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"></path></svg></a></span><button id="menu-btn" class="hdr-btn" title="Menu"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-menu"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg></button>
+			</div>
+		</div>
+	</header>
+	<div id="mobile-menu" class="animated fast">
+		<ul>
+			<li><a href="https://wangtu2022.github.io/posts/">文章</a></li>
+			<li><a href="https://wangtu2022.github.io/tags/">标签</a></li>
+			<li><a href="https://wangtu2022.github.io/about/">关于</a></li>
+		</ul>
+	</div>
+
+
+	<main class="site-main section-inner animated fadeIn faster">
+		<article class="thin">
+			<header class="post-header">
+				<div class="post-meta"><span>Dec 31, 2021</span></div>
+				<h1>Go 凭什么不支持三元运算符？</h1>
+			</header>
+			<div class="content">
+				<p>大家好，我是煎鱼。</p>
+<p>这是一个很多其他语言工程师转 Go 语言的时间节点，这就难免不论一番比较。其中一个经典的运算上的就是 “三元运算符”：</p>
+<p><img src="https://p3-juejin.byteimg.com/tos-cn-i-k3u1fbpfcp/05766eebaf454d7fb91b60ab1c851cf4~tplv-k3u1fbpfcp-zoom-1.image" alt="图片"></p>
+<p>为什么 Go 语言不支持三元运算符，Go 不支持三元运算符就是设计的不好，是历史在开倒车吗？</p>
+<p>今天就由煎鱼来和大家一起摸索为什么。</p>
+<h2 id="三元运算符是什么">三元运算符是什么<a href="#三元运算符是什么" class="anchor" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 7h3a5 5 0 0 1 5 5 5 5 0 0 1-5 5h-3m-6 0H6a5 5 0 0 1-5-5 5 5 0 0 1 5-5h3"></path><line x1="8" y1="12" x2="16" y2="12"></line></svg></a></h2>
+<p>三元运算符，在典型的数学意义上，或者从解析器的角度来看，是一个需要三个参数的运算符。而我们日常中，最常见的是二元运算符：</p>
+<pre tabindex="0"><code>x + y
+x / y
+x * y
+</code></pre><p>还有一元运算符：</p>
+<pre tabindex="0"><code>-a
+~b
+!c
+</code></pre><p>以及今天的男主角 “三元运算符”。在 C/C++ 等多种语言中，我们可以根据条件声明和初始化变量的习惯来选择性使用三元条件运算符：</p>
+<pre tabindex="0"><code>int index = val &gt; 0 ? val : -val
+</code></pre><h2 id="go-使用三元运算符">Go 使用三元运算符<a href="#go-使用三元运算符" class="anchor" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 7h3a5 5 0 0 1 5 5 5 5 0 0 1-5 5h-3m-6 0H6a5 5 0 0 1-5-5 5 5 0 0 1 5-5h3"></path><line x1="8" y1="12" x2="16" y2="12"></line></svg></a></h2>
+<p>想在 Go 语言里也使用三元运算符时，发现居然没有&hellip;想要实现与上面相同的代码段的方式似乎只能：</p>
+<pre tabindex="0"><code>var index int
+
+if val &gt; 0 {
+    index = val
+} else {
+    index = -val
+}
+</code></pre><p>看上去十分的冗余，不够简洁。</p>
+<h2 id="为什么-go-没有三元运算符">为什么 Go 没有三元运算符<a href="#为什么-go-没有三元运算符" class="anchor" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 7h3a5 5 0 0 1 5 5 5 5 0 0 1-5 5h-3m-6 0H6a5 5 0 0 1-5-5 5 5 0 0 1 5-5h3"></path><line x1="8" y1="12" x2="16" y2="12"></line></svg></a></h2>
+<p>为什么 Go 没有 <code>?:</code> 操作符，没有的话，官方推荐的方式是怎么样的。</p>
+<p>通过 Go FAQ 我们可以得知：</p>
+<p><img src="https://p3-juejin.byteimg.com/tos-cn-i-k3u1fbpfcp/9ca7870161614747ae7decb88b4ce427~tplv-k3u1fbpfcp-zoom-1.image" alt="图片"></p>
+<p>Go 官方就是推荐我们使用前面提到的方式来替代，并且明确了如下态度：</p>
+<ul>
+<li>
+<p>Go 中没有 <code>?:</code> 的原因是语言的设计者看到这个操作经常被用来创建难以理解的复杂表达式。</p>
+</li>
+<li>
+<p>在替代方案上，if-else 形式虽然较长，但无疑是更清晰的。一门语言只需要一个条件控制流结构。</p>
+</li>
+</ul>
+<p>整体来讲，Go 语言的设计者是为了考虑<strong>可读性</strong>拒绝了实现三元运算符，&ldquo;less is more.&rdquo; 也是标榜台词了。</p>
+<h2 id="社区争议">社区争议<a href="#社区争议" class="anchor" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 7h3a5 5 0 0 1 5 5 5 5 0 0 1-5 5h-3m-6 0H6a5 5 0 0 1-5-5 5 5 0 0 1 5-5h3"></path><line x1="8" y1="12" x2="16" y2="12"></line></svg></a></h2>
+<p>Go 语言的一些点与众不同，基本是大家皆知的。无论是 if err != nil，又或是本次的三元运算符，要大家用 if-else 替代：</p>
+<pre tabindex="0"><code>if expr {
+    n = trueVal
+} else {
+    n = falseVal
+}
+</code></pre><h3 id="反对和同意">反对和同意<a href="#反对和同意" class="anchor" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 7h3a5 5 0 0 1 5 5 5 5 0 0 1-5 5h-3m-6 0H6a5 5 0 0 1-5-5 5 5 0 0 1 5-5h3"></path><line x1="8" y1="12" x2="16" y2="12"></line></svg></a></h3>
+<h4 id="反对">反对<a href="#反对" class="anchor" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 7h3a5 5 0 0 1 5 5 5 5 0 0 1-5 5h-3m-6 0H6a5 5 0 0 1-5-5 5 5 0 0 1 5-5h3"></path><line x1="8" y1="12" x2="16" y2="12"></line></svg></a></h4>
+<p>因此有社区小伙伴给出了反对，基本分为如下几类：</p>
+<ol>
+<li>
+<p>认为 if-else 也有以类似情况能被滥用，设计者的理由不够充分，认为是 “借口”。</p>
+</li>
+<li>
+<p>认为三元运算符的 “丑陋” 问题，是开发者的编码问题，而不是语言问题。三元在各种语言中很常见，它们是正常的，Go 语言也应该要有。</p>
+</li>
+<li>
+<p>认为用 if-else 替代三元运算符也很麻烦，让开发者多读了 3-4 行和额外的缩进级别。</p>
+</li>
+</ol>
+<h4 id="同意">同意<a href="#同意" class="anchor" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 7h3a5 5 0 0 1 5 5 5 5 0 0 1-5 5h-3m-6 0H6a5 5 0 0 1-5-5 5 5 0 0 1 5-5h3"></path><line x1="8" y1="12" x2="16" y2="12"></line></svg></a></h4>
+<p>认可这个决策的也有不少，为此给出了大量的真实工程案例。</p>
+<p>一般来讲，我们用三元运算符是希望这么用：</p>
+<pre tabindex="0"><code>cond ? true_value : false_value
+</code></pre><p>你可能见过这么用：</p>
+<pre tabindex="0"><code>cond ? value_a + value_b : value_c * value_d
+</code></pre><p>还见过这样：</p>
+<pre tabindex="0"><code>(((cond_a ? val_one) : cond_b) ? val_two) : val_three
+
+cond_a ? (val_one : (cond_b ? (val_two : val_three)))
+</code></pre><p>还能嵌套三元运算符：</p>
+<pre tabindex="0"><code>int a = cond_a ? val_one :
+    cond_b ? val_two :
+    cond_c ? val_three : val_four;
+</code></pre><p>也能出现可读性更差的：</p>
+<pre tabindex="0"><code>void rgb_to_lightness_(
+  const double re, const double gr, const double bl, double &amp;li)
+{
+  li=((re &lt; gr) ? ((gr &lt; bl) ? bl : gr) : ((re &lt; bl) ? bl : re) +
+                            (gr &lt; re)
+                          ? ((bl &lt; gr) ? bl : gr)
+                          : ((bl &lt; re) ? bl : re)) / 2.0;
+}
+</code></pre><p>说白了就是真实的代码工程中，大家见到过大量三元运算符滥用的场景，纷纷给出了大量的难理解的例子，让大家困扰不堪。</p>
+<h2 id="总结">总结<a href="#总结" class="anchor" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 7h3a5 5 0 0 1 5 5 5 5 0 0 1-5 5h-3m-6 0H6a5 5 0 0 1-5-5 5 5 0 0 1 5-5h3"></path><line x1="8" y1="12" x2="16" y2="12"></line></svg></a></h2>
+<p>在这篇文章中，首先针对 “三元运算符” 做了基本的介绍。紧接着根据 Go 语言不支持三元的态度进行了说明，且面向社区的争议我们分为了正反方面的基本诠释。</p>
+<p>实际上一个简单的 <code>?:</code> 既整洁又实用，但是没有很好又高效的办法方法可以防止丑陋的嵌套，也就是排除可读性的问题。</p>
+<p>在真实的业务工程中，常常能看到一个三元运算符，<strong>一开始只是很简单。后面嵌套越加越深，逻辑越写越复杂，从而带来了许多维护上的问题</strong>。</p>
+<p>给大家抛出如下问题：</p>
+<ul>
+<li>
+<p>你认为 Go 语言是否要有三元运算符呢？</p>
+</li>
+<li>
+<p>如果要有，复杂嵌套的三元运算符又如何考虑呢？</p>
+</li>
+</ul>
+<p><strong>欢迎大家在评论区留言和交流 ：）</strong></p>
+<h2 id="鼓励">鼓励<a href="#鼓励" class="anchor" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 7h3a5 5 0 0 1 5 5 5 5 0 0 1-5 5h-3m-6 0H6a5 5 0 0 1-5-5 5 5 0 0 1 5-5h3"></path><line x1="8" y1="12" x2="16" y2="12"></line></svg></a></h2>
+<p>若有任何疑问欢迎评论区反馈和交流，<strong>最好的关系是互相成就</strong>，各位的<strong>点赞</strong>就是<a href="https://github.com/eddycjy">煎鱼</a>创作的最大动力，感谢支持。</p>
+<blockquote>
+<p>文章持续更新，可以微信搜【脑子进煎鱼了】阅读，本文 <strong>GitHub</strong> <a href="https://github.com/eddycjy/blog">github.com/eddycjy/blog</a> 已收录，学习 Go 语言可以看 <a href="https://github.com/eddycjy/go-developer-roadmap">Go 学习地图和路线</a>，欢迎 Star 催更。</p>
+</blockquote>
+
+			</div>
+			<hr class="post-end">
+			<footer class="post-info">
+				<p>
+					<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-tag meta-icon"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"></path><line x1="7" y1="7" x2="7" y2="7"></line></svg><span class="tag"><a href="https://wangtu2022.github.io/tags/go">go</a></span><span class="tag"><a href="https://wangtu2022.github.io/tags/%E4%B8%BA%E4%BB%80%E4%B9%88">为什么</a></span>
+				</p>
+				<p><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-file-text"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>267 Words</p>
+				<p><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-calendar"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>2021-12-31 12:54 &#43;0800</p>
+			</footer>
+		</article>
+		<aside id="toc">
+			<div class="toc-title">Table of Contents</div>
+			<nav id="TableOfContents">
+  <ul>
+    <li><a href="#三元运算符是什么">三元运算符是什么</a></li>
+    <li><a href="#go-使用三元运算符">Go 使用三元运算符</a></li>
+    <li><a href="#为什么-go-没有三元运算符">为什么 Go 没有三元运算符</a></li>
+    <li><a href="#社区争议">社区争议</a>
+      <ul>
+        <li><a href="#反对和同意">反对和同意</a></li>
+      </ul>
+    </li>
+    <li><a href="#总结">总结</a></li>
+    <li><a href="#鼓励">鼓励</a></li>
+  </ul>
+</nav>
+		</aside>
+		<div class="post-nav thin">
+			<a class="next-post" href="https://wangtu2022.github.io/posts/mq-nodus/">
+				<span class="post-nav-label"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-arrow-left"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>&nbsp;Newer</span><br><span>《漫谈 MQ》设计 MQ 的 3 个难点</span>
+			</a>
+			<a class="prev-post" href="https://wangtu2022.github.io/posts/go/sync-map/">
+				<span class="post-nav-label">Older&nbsp;<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-arrow-right"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg></span><br><span>Go 并发读写 sync.map 的强大之处</span>
+			</a>
+		</div>
+		<div id="comments" class="thin">
+</div>
+	</main>
+
+	<footer id="site-footer" class="section-inner thin animated fadeIn faster">
+		<p>&copy; 2022 <a href="https://wangtu2022.github.io/">煎鱼</a> &#183; <a href="http://www.beian.miit.gov.cn/">粤ICP备19076352号</a></p>
+		<p>
+			Made with <a href="https://gohugo.io/" target="_blank" rel="noopener">Hugo</a> &#183; Theme <a href="https://github.com/Track3/hermit" target="_blank" rel="noopener">Hermit</a> &#183; <a href="https://wangtu2022.github.io/posts/index.xml" target="_blank" title="rss"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-rss"><path d="M4 11a9 9 0 0 1 9 9"></path><path d="M4 4a16 16 0 0 1 16 16"></path><circle cx="5" cy="19" r="1"></circle></svg></a>
+		</p>
+	</footer>
+
+
+
+	<script src="https://wangtu2022.github.io/js/bundle.min.580988ed2982bcbb74a1773c7abea97b43e4c43b9324e10cda0813ec6ec4bb67.js" integrity="sha256-WAmI7SmCvLt0oXc8er6pe0PkxDuTJOEM2ggT7G7Eu2c=" crossorigin="anonymous"></script>
+	
+<script type="application/javascript">
+var doNotTrack = false;
+if (!doNotTrack) {
+	window.ga=window.ga||function(){(ga.q=ga.q||[]).push(arguments)};ga.l=+new Date;
+	ga('create', 'UA-166045776-1', 'auto');
+	
+	ga('send', 'pageview');
+}
+</script>
+<script async src='https://www.google-analytics.com/analytics.js'></script>
+
+
+</body>
+
+</html>

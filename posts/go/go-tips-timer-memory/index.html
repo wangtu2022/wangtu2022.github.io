@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="zh-hans">
+
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<meta http-equiv="X-UA-Compatible" content="ie=edge">
+	<meta name="theme-color" content="#494f5c">
+	<meta name="msapplication-TileColor" content="#494f5c">
+<meta itemprop="name" content="Go 内存泄露之痛，这篇把 Go timer.After 问题根因讲透了！">
+<meta itemprop="description" content="大家好，我是煎鱼。
+前几天在公众号分享了一篇 Go timer 源码解析的文章《难以驾驭的 Go timer，一文带你参透计时器的奥秘》。
+在评论区有小伙伴提到了经典的 timer.After 泄露问题，希望我能聊聊，这是一个不能不知的一个大 “坑”。
+今天这篇文章煎鱼就带大家来研讨一下这个问题。
+timer.After 今天是男主角是Go 标准库 time 所提供的 After 方法。函数签名如下：
+func After(d Duration) &lt;-chan Time 该方法可以在一定时间（根据所传入的 Duration）后主动返回 time.Time 类型的 channel 消息。"><meta itemprop="datePublished" content="2021-04-05T16:16:47+08:00" />
+<meta itemprop="dateModified" content="2021-04-05T16:16:47+08:00" />
+<meta itemprop="wordCount" content="271">
+<meta itemprop="keywords" content="go,面试题," /><meta property="og:title" content="Go 内存泄露之痛，这篇把 Go timer.After 问题根因讲透了！" />
+<meta property="og:description" content="大家好，我是煎鱼。
+前几天在公众号分享了一篇 Go timer 源码解析的文章《难以驾驭的 Go timer，一文带你参透计时器的奥秘》。
+在评论区有小伙伴提到了经典的 timer.After 泄露问题，希望我能聊聊，这是一个不能不知的一个大 “坑”。
+今天这篇文章煎鱼就带大家来研讨一下这个问题。
+timer.After 今天是男主角是Go 标准库 time 所提供的 After 方法。函数签名如下：
+func After(d Duration) &lt;-chan Time 该方法可以在一定时间（根据所传入的 Duration）后主动返回 time.Time 类型的 channel 消息。" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://wangtu2022.github.io/posts/go/go-tips-timer-memory/" /><meta property="article:section" content="posts" />
+<meta property="article:published_time" content="2021-04-05T16:16:47+08:00" />
+<meta property="article:modified_time" content="2021-04-05T16:16:47+08:00" />
+
+<meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="Go 内存泄露之痛，这篇把 Go timer.After 问题根因讲透了！"/>
+<meta name="twitter:description" content="大家好，我是煎鱼。
+前几天在公众号分享了一篇 Go timer 源码解析的文章《难以驾驭的 Go timer，一文带你参透计时器的奥秘》。
+在评论区有小伙伴提到了经典的 timer.After 泄露问题，希望我能聊聊，这是一个不能不知的一个大 “坑”。
+今天这篇文章煎鱼就带大家来研讨一下这个问题。
+timer.After 今天是男主角是Go 标准库 time 所提供的 After 方法。函数签名如下：
+func After(d Duration) &lt;-chan Time 该方法可以在一定时间（根据所传入的 Duration）后主动返回 time.Time 类型的 channel 消息。"/>
+
+	<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+	<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+	<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+	<link rel="manifest" href="/site.webmanifest">
+	<link rel="mask-icon" href="/safari-pinned-tab.svg" color="">
+	<link rel="shortcut icon" href="/favicon.ico">
+
+	<title>Go 内存泄露之痛，这篇把 Go timer.After 问题根因讲透了！</title>
+	<link rel="stylesheet" href="https://wangtu2022.github.io/css/style.min.d3141168199607bf3a517216ce3c263814eecdbc8fca72a9a88700799a838219.css" integrity="sha256-0xQRaBmWB786UXIWzjwmOBTuzbyPynKpqIcAeZqDghk=" crossorigin="anonymous">
+	
+	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.1/css/all.min.css">
+	<link rel="stylesheet" href="https://wangtu2022.github.io/css/styles.css">
+</head>
+
+<body id="page">
+	
+	<header id="site-header" class="animated slideInUp">
+		<div class="hdr-wrapper section-inner">
+			<div class="hdr-left">
+				<div class="site-branding">
+					<a href="https://wangtu2022.github.io/">煎鱼</a>
+				</div>
+				<nav class="site-nav hide-in-mobile">
+					
+				<a href="https://wangtu2022.github.io/posts/">文章</a>
+				<a href="https://wangtu2022.github.io/tags/">标签</a>
+				<a href="https://wangtu2022.github.io/about/">关于</a>
+
+				</nav>
+			</div>
+			<div class="hdr-right hdr-icons">
+				<span class="hdr-social hide-in-mobile"><a href="https://github.com/eddycjy" target="_blank" rel="noopener me" title="Github"><svg xmlns="http://www.w3.org/2000/svg" class="feather" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"></path></svg></a></span><button id="menu-btn" class="hdr-btn" title="Menu"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-menu"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg></button>
+			</div>
+		</div>
+	</header>
+	<div id="mobile-menu" class="animated fast">
+		<ul>
+			<li><a href="https://wangtu2022.github.io/posts/">文章</a></li>
+			<li><a href="https://wangtu2022.github.io/tags/">标签</a></li>
+			<li><a href="https://wangtu2022.github.io/about/">关于</a></li>
+		</ul>
+	</div>
+
+
+	<main class="site-main section-inner animated fadeIn faster">
+		<article class="thin">
+			<header class="post-header">
+				<div class="post-meta"><span>Apr 5, 2021</span></div>
+				<h1>Go 内存泄露之痛，这篇把 Go timer.After 问题根因讲透了！</h1>
+			</header>
+			<div class="content">
+				<p>大家好，我是煎鱼。</p>
+<p>前几天在公众号分享了一篇 Go timer 源码解析的文章《难以驾驭的 Go timer，一文带你参透计时器的奥秘》。</p>
+<p>在评论区有小伙伴提到了经典的 <code>timer.After</code> 泄露问题，希望我能聊聊，这是一个不能不知的一个大 “坑”。</p>
+<p>今天这篇文章煎鱼就带大家来研讨一下这个问题。</p>
+<h2 id="timerafter">timer.After<a href="#timerafter" class="anchor" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 7h3a5 5 0 0 1 5 5 5 5 0 0 1-5 5h-3m-6 0H6a5 5 0 0 1-5-5 5 5 0 0 1 5-5h3"></path><line x1="8" y1="12" x2="16" y2="12"></line></svg></a></h2>
+<p>今天是男主角是Go 标准库 time 所提供的 <code>After</code> 方法。函数签名如下：</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-golang" data-lang="golang"><span class="line"><span class="cl"><span class="kd">func</span> <span class="nf">After</span><span class="p">(</span><span class="nx">d</span> <span class="nx">Duration</span><span class="p">)</span> <span class="o">&lt;-</span><span class="kd">chan</span> <span class="nx">Time</span> 
+</span></span></code></pre></div><p>该方法可以在一定时间（根据所传入的 Duration）后主动返回 <code>time.Time</code> 类型的 channel 消息。</p>
+<p>在常见的场景下，我们会基于此方法做一些计时器相关的功能开发，例子如下：</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-golang" data-lang="golang"><span class="line"><span class="cl"><span class="kd">func</span> <span class="nf">main</span><span class="p">()</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="nx">ch</span> <span class="o">:=</span> <span class="nb">make</span><span class="p">(</span><span class="kd">chan</span> <span class="kt">string</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">    <span class="k">go</span> <span class="kd">func</span><span class="p">()</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">        <span class="nx">time</span><span class="p">.</span><span class="nf">Sleep</span><span class="p">(</span><span class="nx">time</span><span class="p">.</span><span class="nx">Second</span> <span class="o">*</span> <span class="mi">3</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">        <span class="nx">ch</span> <span class="o">&lt;-</span> <span class="s">&#34;脑子进煎鱼了&#34;</span>
+</span></span><span class="line"><span class="cl">    <span class="p">}()</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="k">select</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="k">case</span> <span class="nx">_</span> <span class="p">=</span> <span class="o">&lt;-</span><span class="nx">ch</span><span class="p">:</span>
+</span></span><span class="line"><span class="cl">    <span class="k">case</span> <span class="o">&lt;-</span><span class="nx">time</span><span class="p">.</span><span class="nf">After</span><span class="p">(</span><span class="nx">time</span><span class="p">.</span><span class="nx">Second</span> <span class="o">*</span> <span class="mi">1</span><span class="p">):</span>
+</span></span><span class="line"><span class="cl">        <span class="nx">fmt</span><span class="p">.</span><span class="nf">Println</span><span class="p">(</span><span class="s">&#34;煎鱼出去了，超时了！！！&#34;</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">    <span class="p">}</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span></code></pre></div><p>在运行 1 秒钟后，输出结果：</p>
+<pre tabindex="0"><code>煎鱼出去了，超时了！！！
+</code></pre><p>上述程序在在运行 1 秒钟后将触发 <code>time.After</code> 方法的定时消息返回，输出了超时的结果。</p>
+<h2 id="坑在哪里">坑在哪里<a href="#坑在哪里" class="anchor" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 7h3a5 5 0 0 1 5 5 5 5 0 0 1-5 5h-3m-6 0H6a5 5 0 0 1-5-5 5 5 0 0 1 5-5h3"></path><line x1="8" y1="12" x2="16" y2="12"></line></svg></a></h2>
+<p>从例子来看似乎非常正常，也没什么 “坑” 的样子。难道是 <code>timer.After</code> 方法的虚晃一枪？</p>
+<p>我们再看一个不像是有问题例子，这在 Go 工程中经常能看见，只是大家都没怎么关注。</p>
+<p>代码如下：</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-golang" data-lang="golang"><span class="line"><span class="cl"><span class="kd">func</span> <span class="nf">main</span><span class="p">()</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="nx">ch</span> <span class="o">:=</span> <span class="nb">make</span><span class="p">(</span><span class="kd">chan</span> <span class="kt">int</span><span class="p">,</span> <span class="mi">10</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">    <span class="k">go</span> <span class="kd">func</span><span class="p">()</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">        <span class="nx">in</span> <span class="o">:=</span> <span class="mi">1</span>
+</span></span><span class="line"><span class="cl">        <span class="k">for</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">            <span class="nx">in</span><span class="o">++</span>
+</span></span><span class="line"><span class="cl">            <span class="nx">ch</span> <span class="o">&lt;-</span> <span class="nx">in</span>
+</span></span><span class="line"><span class="cl">        <span class="p">}</span>
+</span></span><span class="line"><span class="cl">    <span class="p">}()</span>
+</span></span><span class="line"><span class="cl">    
+</span></span><span class="line"><span class="cl">    <span class="k">for</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">        <span class="k">select</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">        <span class="k">case</span> <span class="nx">_</span> <span class="p">=</span> <span class="o">&lt;-</span><span class="nx">ch</span><span class="p">:</span>
+</span></span><span class="line"><span class="cl">            <span class="c1">// do something...
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>            <span class="k">continue</span>
+</span></span><span class="line"><span class="cl">        <span class="k">case</span> <span class="o">&lt;-</span><span class="nx">time</span><span class="p">.</span><span class="nf">After</span><span class="p">(</span><span class="mi">3</span> <span class="o">*</span> <span class="nx">time</span><span class="p">.</span><span class="nx">Minute</span><span class="p">):</span>
+</span></span><span class="line"><span class="cl">            <span class="nx">fmt</span><span class="p">.</span><span class="nf">Printf</span><span class="p">(</span><span class="s">&#34;现在是：%d，我脑子进煎鱼了！&#34;</span><span class="p">,</span> <span class="nx">time</span><span class="p">.</span><span class="nf">Now</span><span class="p">().</span><span class="nf">Unix</span><span class="p">())</span>
+</span></span><span class="line"><span class="cl">        <span class="p">}</span>
+</span></span><span class="line"><span class="cl">    <span class="p">}</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span></code></pre></div><p>在上述代码中，我们构造了一个 <code>for+select+channel</code> 的一个经典的处理模式。</p>
+<p>同时在 <code>select+case</code> 中调用了 <code>time.After</code> 方法做超时控制，避免在 <code>channel</code> 等待时阻塞过久，引发其他问题。</p>
+<p>看上去都没什么问题，但是细心一看。在运行了一段时间后，粗暴的利用 <code>top</code> 命令一看：</p>
+<p><img src="https://image.eddycjy.com/4ad756d034cbbe7e7a19d9b4eb0c4843.jpg" alt="运行了一会后，10+GB"></p>
+<p>我的 Go 工程的内存占用竟然已经达到了 10+GB 之高，并且还在持续增长，非常可怕。</p>
+<p>在所设置的超时时间到达后，Go 工程的内存占用似乎一时半会也没有要回退下去的样子，这，到底发生了什么事？</p>
+<h2 id="为什么">为什么<a href="#为什么" class="anchor" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 7h3a5 5 0 0 1 5 5 5 5 0 0 1-5 5h-3m-6 0H6a5 5 0 0 1-5-5 5 5 0 0 1 5-5h3"></path><line x1="8" y1="12" x2="16" y2="12"></line></svg></a></h2>
+<p>抱着一脸懵逼的煎鱼，我默默的掏出我早已埋好的 PProf，这是 Go 语言中最强的性能分析剖析工具，在我出版的 《Go 语言编程之旅》特意有花量章节的篇幅大面积将讲解过。</p>
+<p>在 Go 语言中，PProf 是用于可视化和分析性能分析数据的工具，PProf 以 profile.proto 读取分析样本的集合，并生成报告以可视化并帮助分析数据（支持文本和图形报告）。</p>
+<p>我们直接用 <code>go tool pprof</code> 分析 Go 工程中函数内存申请情况，如下图：</p>
+<p><img src="https://image.eddycjy.com/c9552708ee112bceef4ac80f1ead50bd.jpg" alt="PProf"></p>
+<p>从图来分析，可以发现是不断地在调用 <code>time.After</code>，从而导致计时器 <code>time.NerTimer</code> 的不断创建和内存申请。</p>
+<p>这就非常奇怪了，因为我们的 Go 工程里只有几行代码与 <code>time</code> 相关联：</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-golang" data-lang="golang"><span class="line"><span class="cl"><span class="kd">func</span> <span class="nf">main</span><span class="p">()</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="o">...</span>
+</span></span><span class="line"><span class="cl">    <span class="k">for</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">        <span class="k">select</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">        <span class="o">...</span>
+</span></span><span class="line"><span class="cl">        <span class="k">case</span> <span class="o">&lt;-</span><span class="nx">time</span><span class="p">.</span><span class="nf">After</span><span class="p">(</span><span class="mi">3</span> <span class="o">*</span> <span class="nx">time</span><span class="p">.</span><span class="nx">Minute</span><span class="p">):</span>
+</span></span><span class="line"><span class="cl">            <span class="nx">fmt</span><span class="p">.</span><span class="nf">Printf</span><span class="p">(</span><span class="s">&#34;现在是：%d，我脑子进煎鱼了！&#34;</span><span class="p">,</span> <span class="nx">time</span><span class="p">.</span><span class="nf">Now</span><span class="p">().</span><span class="nf">Unix</span><span class="p">())</span>
+</span></span><span class="line"><span class="cl">        <span class="p">}</span>
+</span></span><span class="line"><span class="cl">    <span class="p">}</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span></code></pre></div><p>由于 Demo 足够的小，我们相信这就是问题代码，但原因是什么呢？</p>
+<p>原因在于 <code>for</code>+<code>select</code>，再加上 <code>time.After</code> 的组合会导致内存泄露。因为 <code>for</code>在循环时，就会调用都 <code>select</code> 语句，因此在每次进行 <code>select</code> 时，都会重新初始化一个全新的计时器（Timer）。</p>
+<p>我们这个计时器，是在 3 分钟后才会被触发去执行某些事，但重点在于计时器激活后，却又发现和 <code>select</code> 之间没有引用关系了，因此很合理的也就被 GC 给清理掉了，因为没有人需要 “我” 了。</p>
+<p><img src="https://image.eddycjy.com/b84d7d95fc2ca3d9688ae56461449512.jpg" alt=""></p>
+<p>要命的还在后头，被抛弃的 <code>time.After</code> 的定时任务还是在时间堆中等待触发，在定时任务未到期之前，是不会被 GC 清除的。</p>
+<p><img src="https://image.eddycjy.com/8c2b0ebbce7d8e0d4432bb7c81a50c6e.jpg" alt=""></p>
+<p>但很可惜，他 “永远” 不会到期了，也就是为什么我们的 Go 工程内存会不断飙高，其实是 <code>time.After</code> 产生的内存孤儿们导致了泄露。</p>
+<h2 id="解决办法">解决办法<a href="#解决办法" class="anchor" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 7h3a5 5 0 0 1 5 5 5 5 0 0 1-5 5h-3m-6 0H6a5 5 0 0 1-5-5 5 5 0 0 1 5-5h3"></path><line x1="8" y1="12" x2="16" y2="12"></line></svg></a></h2>
+<p>既然我们知道了问题的根因代码是不断的重复创建 <code>time.After</code>，又没法完整的走完释放的闭环，那解决办法也就有了。</p>
+<p>改进后的代码如下：</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-golang" data-lang="golang"><span class="line"><span class="cl"><span class="kd">func</span> <span class="nf">main</span><span class="p">()</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="nx">timer</span> <span class="o">:=</span> <span class="nx">time</span><span class="p">.</span><span class="nf">NewTimer</span><span class="p">(</span><span class="mi">3</span> <span class="o">*</span> <span class="nx">time</span><span class="p">.</span><span class="nx">Minute</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">    <span class="k">defer</span> <span class="nx">timer</span><span class="p">.</span><span class="nf">Stop</span><span class="p">()</span>
+</span></span><span class="line"><span class="cl">    
+</span></span><span class="line"><span class="cl">    <span class="o">...</span>
+</span></span><span class="line"><span class="cl">    <span class="k">for</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">        <span class="k">select</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">        <span class="o">...</span>
+</span></span><span class="line"><span class="cl">        <span class="k">case</span> <span class="o">&lt;-</span><span class="nx">timer</span><span class="p">.</span><span class="nx">C</span><span class="p">:</span>
+</span></span><span class="line"><span class="cl">            <span class="nx">fmt</span><span class="p">.</span><span class="nf">Printf</span><span class="p">(</span><span class="s">&#34;现在是：%d，我脑子进煎鱼了！&#34;</span><span class="p">,</span> <span class="nx">time</span><span class="p">.</span><span class="nf">Now</span><span class="p">().</span><span class="nf">Unix</span><span class="p">())</span>
+</span></span><span class="line"><span class="cl">        <span class="p">}</span>
+</span></span><span class="line"><span class="cl">    <span class="p">}</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span></code></pre></div><p>经过一段时间的摸鱼后，再使用 PProf 进行采集和查看：</p>
+<p><img src="https://image.eddycjy.com/bed36b48fb6e75d690208e1b1b149369.jpg" alt="PProf"></p>
+<p>Go 进程的各项指标正常，完好的解决了这个内存泄露的问题。</p>
+<h2 id="总结">总结<a href="#总结" class="anchor" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 7h3a5 5 0 0 1 5 5 5 5 0 0 1-5 5h-3m-6 0H6a5 5 0 0 1-5-5 5 5 0 0 1 5-5h3"></path><line x1="8" y1="12" x2="16" y2="12"></line></svg></a></h2>
+<p>在今天这篇文章中，我们介绍了标准库 <code>time</code> 的基本常规使用，同时针对 Go 小伙伴所提出的 <code>time.After</code> 方法的使用不当，所导致的内存泄露进行了重现和问题解析。</p>
+<p>其根因就在于 Go 语言时间堆的处理机制和常规 <code>for</code>+<code>select</code>+<code>time.After</code> 组合的下意识写法所导致的泄露。</p>
+<p>突然想起我有一个朋友在公司里有看到过类似的代码&hellip;</p>
+<p>不知道你在日常工作中有没有遇到过相似的问题呢，欢迎留言区评论和交流。</p>
+
+			</div>
+			<hr class="post-end">
+			<footer class="post-info">
+				<p>
+					<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-tag meta-icon"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"></path><line x1="7" y1="7" x2="7" y2="7"></line></svg><span class="tag"><a href="https://wangtu2022.github.io/tags/go">go</a></span><span class="tag"><a href="https://wangtu2022.github.io/tags/%E9%9D%A2%E8%AF%95%E9%A2%98">面试题</a></span>
+				</p>
+				<p><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-file-text"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>271 Words</p>
+				<p><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-calendar"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>2021-04-05 16:16 &#43;0800</p>
+			</footer>
+		</article>
+		<div class="post-nav thin">
+			<a class="next-post" href="https://wangtu2022.github.io/posts/go/go-tips-goroutineloop/">
+				<span class="post-nav-label"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-arrow-left"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>&nbsp;Newer</span><br><span>Go 面试官：单核 CPU，开两个 Goroutine，其中一个死循环，会怎么样？</span>
+			</a>
+			<a class="prev-post" href="https://wangtu2022.github.io/posts/go/go-tips-sturct/">
+				<span class="post-nav-label">Older&nbsp;<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-arrow-right"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg></span><br><span>Go 面试官：Go 结构体是否可以比较，为什么？</span>
+			</a>
+		</div>
+		<div id="comments" class="thin">
+</div>
+	</main>
+
+	<footer id="site-footer" class="section-inner thin animated fadeIn faster">
+		<p>&copy; 2022 <a href="https://wangtu2022.github.io/">煎鱼</a> &#183; <a href="http://www.beian.miit.gov.cn/">粤ICP备19076352号</a></p>
+		<p>
+			Made with <a href="https://gohugo.io/" target="_blank" rel="noopener">Hugo</a> &#183; Theme <a href="https://github.com/Track3/hermit" target="_blank" rel="noopener">Hermit</a> &#183; <a href="https://wangtu2022.github.io/posts/index.xml" target="_blank" title="rss"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-rss"><path d="M4 11a9 9 0 0 1 9 9"></path><path d="M4 4a16 16 0 0 1 16 16"></path><circle cx="5" cy="19" r="1"></circle></svg></a>
+		</p>
+	</footer>
+
+
+
+	<script src="https://wangtu2022.github.io/js/bundle.min.580988ed2982bcbb74a1773c7abea97b43e4c43b9324e10cda0813ec6ec4bb67.js" integrity="sha256-WAmI7SmCvLt0oXc8er6pe0PkxDuTJOEM2ggT7G7Eu2c=" crossorigin="anonymous"></script>
+	
+<script type="application/javascript">
+var doNotTrack = false;
+if (!doNotTrack) {
+	window.ga=window.ga||function(){(ga.q=ga.q||[]).push(arguments)};ga.l=+new Date;
+	ga('create', 'UA-166045776-1', 'auto');
+	
+	ga('send', 'pageview');
+}
+</script>
+<script async src='https://www.google-analytics.com/analytics.js'></script>
+
+
+</body>
+
+</html>

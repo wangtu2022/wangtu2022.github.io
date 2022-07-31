@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="zh-hans">
+
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<meta http-equiv="X-UA-Compatible" content="ie=edge">
+	<meta name="theme-color" content="#494f5c">
+	<meta name="msapplication-TileColor" content="#494f5c">
+<meta itemprop="name" content="Go map 如何缩容？">
+<meta itemprop="description" content="大家好，我是煎鱼。
+前几天看到 Go 圈子的著名股神（不是我&hellip;），在归类中简单的提到了 Go 语言中 map 的缩容的描述，这让我对其产生了兴趣，想要来一探究竟。
+我们常常喊扩缩容，扩缩容，但社区里都是清一色分析扩容机制，Go 面试官也都是卷 Go 语言 map 的扩容机制&hellip;
+在 Go 语言中的 map 缩容机制是怎么做的呢，今天就由煎鱼带大家一起研讨围观一轮。
+基本分析 在 Go 底层源码 src/runtime/map.go 中，扩缩容的处理方法是 grow 为前缀的方法来处理的。
+其中扩缩容涉及到的是插入元素的操作，对应 mapassign 方法："><meta itemprop="datePublished" content="2021-12-31T12:55:07+08:00" />
+<meta itemprop="dateModified" content="2021-12-31T12:55:07+08:00" />
+<meta itemprop="wordCount" content="272">
+<meta itemprop="keywords" content="go,面试题," /><meta property="og:title" content="Go map 如何缩容？" />
+<meta property="og:description" content="大家好，我是煎鱼。
+前几天看到 Go 圈子的著名股神（不是我&hellip;），在归类中简单的提到了 Go 语言中 map 的缩容的描述，这让我对其产生了兴趣，想要来一探究竟。
+我们常常喊扩缩容，扩缩容，但社区里都是清一色分析扩容机制，Go 面试官也都是卷 Go 语言 map 的扩容机制&hellip;
+在 Go 语言中的 map 缩容机制是怎么做的呢，今天就由煎鱼带大家一起研讨围观一轮。
+基本分析 在 Go 底层源码 src/runtime/map.go 中，扩缩容的处理方法是 grow 为前缀的方法来处理的。
+其中扩缩容涉及到的是插入元素的操作，对应 mapassign 方法：" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://wangtu2022.github.io/posts/go/map-reset/" /><meta property="article:section" content="posts" />
+<meta property="article:published_time" content="2021-12-31T12:55:07+08:00" />
+<meta property="article:modified_time" content="2021-12-31T12:55:07+08:00" />
+
+<meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="Go map 如何缩容？"/>
+<meta name="twitter:description" content="大家好，我是煎鱼。
+前几天看到 Go 圈子的著名股神（不是我&hellip;），在归类中简单的提到了 Go 语言中 map 的缩容的描述，这让我对其产生了兴趣，想要来一探究竟。
+我们常常喊扩缩容，扩缩容，但社区里都是清一色分析扩容机制，Go 面试官也都是卷 Go 语言 map 的扩容机制&hellip;
+在 Go 语言中的 map 缩容机制是怎么做的呢，今天就由煎鱼带大家一起研讨围观一轮。
+基本分析 在 Go 底层源码 src/runtime/map.go 中，扩缩容的处理方法是 grow 为前缀的方法来处理的。
+其中扩缩容涉及到的是插入元素的操作，对应 mapassign 方法："/>
+
+	<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+	<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+	<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+	<link rel="manifest" href="/site.webmanifest">
+	<link rel="mask-icon" href="/safari-pinned-tab.svg" color="">
+	<link rel="shortcut icon" href="/favicon.ico">
+
+	<title>Go map 如何缩容？</title>
+	<link rel="stylesheet" href="https://wangtu2022.github.io/css/style.min.d3141168199607bf3a517216ce3c263814eecdbc8fca72a9a88700799a838219.css" integrity="sha256-0xQRaBmWB786UXIWzjwmOBTuzbyPynKpqIcAeZqDghk=" crossorigin="anonymous">
+	
+	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.1/css/all.min.css">
+	<link rel="stylesheet" href="https://wangtu2022.github.io/css/styles.css">
+</head>
+
+<body id="page">
+	
+	<header id="site-header" class="animated slideInUp">
+		<div class="hdr-wrapper section-inner">
+			<div class="hdr-left">
+				<div class="site-branding">
+					<a href="https://wangtu2022.github.io/">煎鱼</a>
+				</div>
+				<nav class="site-nav hide-in-mobile">
+					
+				<a href="https://wangtu2022.github.io/posts/">文章</a>
+				<a href="https://wangtu2022.github.io/tags/">标签</a>
+				<a href="https://wangtu2022.github.io/about/">关于</a>
+
+				</nav>
+			</div>
+			<div class="hdr-right hdr-icons">
+				<button id="toc-btn" class="hdr-btn desktop-only-ib" title="Table of Contents"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-list"><line x1="8" y1="6" x2="21" y2="6"></line><line x1="8" y1="12" x2="21" y2="12"></line><line x1="8" y1="18" x2="21" y2="18"></line><line x1="3" y1="6" x2="3" y2="6"></line><line x1="3" y1="12" x2="3" y2="12"></line><line x1="3" y1="18" x2="3" y2="18"></line></svg></button><span class="hdr-social hide-in-mobile"><a href="https://github.com/eddycjy" target="_blank" rel="noopener me" title="Github"><svg xmlns="http://www.w3.org/2000/svg" class="feather" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"></path></svg></a></span><button id="menu-btn" class="hdr-btn" title="Menu"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-menu"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg></button>
+			</div>
+		</div>
+	</header>
+	<div id="mobile-menu" class="animated fast">
+		<ul>
+			<li><a href="https://wangtu2022.github.io/posts/">文章</a></li>
+			<li><a href="https://wangtu2022.github.io/tags/">标签</a></li>
+			<li><a href="https://wangtu2022.github.io/about/">关于</a></li>
+		</ul>
+	</div>
+
+
+	<main class="site-main section-inner animated fadeIn faster">
+		<article class="thin">
+			<header class="post-header">
+				<div class="post-meta"><span>Dec 31, 2021</span></div>
+				<h1>Go map 如何缩容？</h1>
+			</header>
+			<div class="content">
+				<p>大家好，我是煎鱼。</p>
+<p>前几天看到 Go 圈子的著名股神（不是我&hellip;），在归类中简单的提到了 Go 语言中 map 的缩容的描述，这让我对其产生了兴趣，想要来一探究竟。</p>
+<p>我们常常喊扩缩容，扩缩容，但社区里都是清一色分析扩容机制，Go 面试官也都是卷 Go 语言 map 的扩容机制&hellip;</p>
+<p>在 <strong>Go 语言中的 map 缩容机制是怎么做的</strong>呢，今天就由煎鱼带大家一起研讨围观一轮。</p>
+<h2 id="基本分析">基本分析<a href="#基本分析" class="anchor" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 7h3a5 5 0 0 1 5 5 5 5 0 0 1-5 5h-3m-6 0H6a5 5 0 0 1-5-5 5 5 0 0 1 5-5h3"></path><line x1="8" y1="12" x2="16" y2="12"></line></svg></a></h2>
+<p>在 Go 底层源码 src/runtime/map.go 中，扩缩容的处理方法是 grow 为前缀的方法来处理的。</p>
+<p>其中扩缩容涉及到的是插入元素的操作，对应 mapassign 方法：</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-golang" data-lang="golang"><span class="line"><span class="cl"><span class="kd">func</span> <span class="nf">mapassign</span><span class="p">(</span><span class="nx">t</span> <span class="o">*</span><span class="nx">maptype</span><span class="p">,</span> <span class="nx">h</span> <span class="o">*</span><span class="nx">hmap</span><span class="p">,</span> <span class="nx">key</span> <span class="nx">unsafe</span><span class="p">.</span><span class="nx">Pointer</span><span class="p">)</span> <span class="nx">unsafe</span><span class="p">.</span><span class="nx">Pointer</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">  <span class="o">...</span>
+</span></span><span class="line"><span class="cl">	<span class="k">if</span> <span class="p">!</span><span class="nx">h</span><span class="p">.</span><span class="nf">growing</span><span class="p">()</span> <span class="o">&amp;&amp;</span> <span class="p">(</span><span class="nf">overLoadFactor</span><span class="p">(</span><span class="nx">h</span><span class="p">.</span><span class="nx">count</span><span class="o">+</span><span class="mi">1</span><span class="p">,</span> <span class="nx">h</span><span class="p">.</span><span class="nx">B</span><span class="p">)</span> <span class="o">||</span> <span class="nf">tooManyOverflowBuckets</span><span class="p">(</span><span class="nx">h</span><span class="p">.</span><span class="nx">noverflow</span><span class="p">,</span> <span class="nx">h</span><span class="p">.</span><span class="nx">B</span><span class="p">))</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">		<span class="nf">hashGrow</span><span class="p">(</span><span class="nx">t</span><span class="p">,</span> <span class="nx">h</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">		<span class="k">goto</span> <span class="nx">again</span>
+</span></span><span class="line"><span class="cl">	<span class="p">}</span>
+</span></span><span class="line"><span class="cl">  <span class="o">...</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="kd">func</span> <span class="p">(</span><span class="nx">h</span> <span class="o">*</span><span class="nx">hmap</span><span class="p">)</span> <span class="nf">growing</span><span class="p">()</span> <span class="kt">bool</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">	<span class="k">return</span> <span class="nx">h</span><span class="p">.</span><span class="nx">oldbuckets</span> <span class="o">!=</span> <span class="kc">nil</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="kd">func</span> <span class="nf">overLoadFactor</span><span class="p">(</span><span class="nx">count</span> <span class="kt">int</span><span class="p">,</span> <span class="nx">B</span> <span class="kt">uint8</span><span class="p">)</span> <span class="kt">bool</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">	<span class="k">return</span> <span class="nx">count</span> <span class="p">&gt;</span> <span class="nx">bucketCnt</span> <span class="o">&amp;&amp;</span> <span class="nb">uintptr</span><span class="p">(</span><span class="nx">count</span><span class="p">)</span> <span class="p">&gt;</span> <span class="nx">loadFactorNum</span><span class="o">*</span><span class="p">(</span><span class="nf">bucketShift</span><span class="p">(</span><span class="nx">B</span><span class="p">)</span><span class="o">/</span><span class="nx">loadFactorDen</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="kd">func</span> <span class="nf">tooManyOverflowBuckets</span><span class="p">(</span><span class="nx">noverflow</span> <span class="kt">uint16</span><span class="p">,</span> <span class="nx">B</span> <span class="kt">uint8</span><span class="p">)</span> <span class="kt">bool</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">	<span class="k">if</span> <span class="nx">B</span> <span class="p">&gt;</span> <span class="mi">15</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">		<span class="nx">B</span> <span class="p">=</span> <span class="mi">15</span>
+</span></span><span class="line"><span class="cl">	<span class="p">}</span>
+</span></span><span class="line"><span class="cl">  
+</span></span><span class="line"><span class="cl">	<span class="k">return</span> <span class="nx">noverflow</span> <span class="o">&gt;=</span> <span class="nb">uint16</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span><span class="o">&lt;&lt;</span><span class="p">(</span><span class="nx">B</span><span class="o">&amp;</span><span class="mi">15</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span></code></pre></div><p>核心看到针对扩缩容的判断逻辑：</p>
+<ul>
+<li>当前没有在扩容：条件为 oldbuckets 不为 nil。</li>
+<li>是否可以进行扩容：条件为 <code>hmap.count</code>&gt; hash 桶数量 <code>(2^B)*6.5</code>。其中 <code>hmap.count</code> 指的是map 的数据数目， <code>2^B</code> 仅指 hash 数组的大小，不包含溢出桶。</li>
+<li>是否可以进行缩容：条件为溢出桶（noverflow）的数量 &gt;= 32768（1&laquo;15）。</li>
+</ul>
+<p>而我们可以关注到，无论是扩容还是缩容，其都是由 <code>hashGrow</code> 方法进行处理：</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-golang" data-lang="golang"><span class="line"><span class="cl"><span class="kd">func</span> <span class="nf">hashGrow</span><span class="p">(</span><span class="nx">t</span> <span class="o">*</span><span class="nx">maptype</span><span class="p">,</span> <span class="nx">h</span> <span class="o">*</span><span class="nx">hmap</span><span class="p">)</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">	<span class="nx">bigger</span> <span class="o">:=</span> <span class="nb">uint8</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">	<span class="k">if</span> <span class="p">!</span><span class="nf">overLoadFactor</span><span class="p">(</span><span class="nx">h</span><span class="p">.</span><span class="nx">count</span><span class="o">+</span><span class="mi">1</span><span class="p">,</span> <span class="nx">h</span><span class="p">.</span><span class="nx">B</span><span class="p">)</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">		<span class="nx">bigger</span> <span class="p">=</span> <span class="mi">0</span>
+</span></span><span class="line"><span class="cl">		<span class="nx">h</span><span class="p">.</span><span class="nx">flags</span> <span class="o">|=</span> <span class="nx">sameSizeGrow</span>
+</span></span><span class="line"><span class="cl">	<span class="p">}</span>
+</span></span><span class="line"><span class="cl">  <span class="o">...</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span></code></pre></div><p>若是扩容，则 bigger 为 1，也就是 B+1。代表 hash 表容量扩大 1 倍。不满足就是缩容，也就是 hash 表容量不变。</p>
+<p>可以得出结论：map 的<strong>扩缩容的主要区别在于 hmap.B 的容量大小改变</strong>。而缩容由于 hmap.B 压根没变，内存空间的占用也是没有变化的。</p>
+<h2 id="带来的隐患">带来的隐患<a href="#带来的隐患" class="anchor" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 7h3a5 5 0 0 1 5 5 5 5 0 0 1-5 5h-3m-6 0H6a5 5 0 0 1-5-5 5 5 0 0 1 5-5h3"></path><line x1="8" y1="12" x2="16" y2="12"></line></svg></a></h2>
+<p>这种方式其实是存在运行隐患的，也就是<strong>导致在删除元素时，并不会释放内存，使得分配的总内存不断增加</strong>。如果一个不小心，拿 map 来做大 key/value 的存储，也不注意管理，很容易就内存爆了。</p>
+<p>也就是 Go 语言的 map 目前实现的是 ”伪缩容“，仅针对溢出桶过多的情况。若是触发缩容，hash 数组的占用的内存大小不变。</p>
+<p>若要实现 ”真缩容“，Go Contributor @josharian 表示目前<strong>唯一可用的解决方法是：创建一个新的 map 并从旧的 map 中复制元素</strong>。</p>
+<p>示例如下：</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-golang" data-lang="golang"><span class="line"><span class="cl"><span class="nx">old</span> <span class="o">:=</span> <span class="nb">make</span><span class="p">(</span><span class="kd">map</span><span class="p">[</span><span class="kt">int</span><span class="p">]</span><span class="kt">int</span><span class="p">,</span> <span class="mi">9999999</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="nx">new</span> <span class="o">:=</span> <span class="nb">make</span><span class="p">(</span><span class="kd">map</span><span class="p">[</span><span class="kt">int</span><span class="p">]</span><span class="kt">int</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="nx">old</span><span class="p">))</span>
+</span></span><span class="line"><span class="cl"><span class="k">for</span> <span class="nx">k</span><span class="p">,</span> <span class="nx">v</span> <span class="o">:=</span> <span class="k">range</span> <span class="nx">old</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="nx">new</span><span class="p">[</span><span class="nx">k</span><span class="p">]</span> <span class="p">=</span> <span class="nx">v</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span><span class="line"><span class="cl"><span class="nx">old</span> <span class="p">=</span> <span class="nx">new</span>
+</span></span><span class="line"><span class="cl"><span class="o">...</span>
+</span></span></code></pre></div><p>无比的像，复制粘贴，大的往小的挪动，再删掉大的就可以了。</p>
+<p>果然程序员的解决方案都是相似的。</p>
+<h2 id="为什么不支持">为什么不支持<a href="#为什么不支持" class="anchor" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 7h3a5 5 0 0 1 5 5 5 5 0 0 1-5 5h-3m-6 0H6a5 5 0 0 1-5-5 5 5 0 0 1 5-5h3"></path><line x1="8" y1="12" x2="16" y2="12"></line></svg></a></h2>
+<p>下述内容会主要基于如下两个 issues 和 proposal 来分析：</p>
+<ol>
+<li>《<a href="https://github.com/golang/go/issues/20135" title="runtime: shrink map as elements are deleted">runtime: shrink map as elements are deleted</a>》</li>
+<li>《<a href="https://github.com/golang/go/issues/45328" title="proposal: runtime: add way to clear and reuse a map's working storage">proposal: runtime: add way to clear and reuse a map&rsquo;s working storage</a>》</li>
+</ol>
+<p>目前 map 的缩容处理起来比较棘手，最早的 issues 是 2016 年提出的，也有人提过一些提案，但都因为种种原因被拒绝了。</p>
+<p>简单来讲，就是没有找到一个很好的方法实现，存在明确的实现成本问题，没法很方便的 ”告诉“ Go 运行时，我要：</p>
+<ol>
+<li>记得保留存储空间，我要立即重用 map。</li>
+<li>赶紧释放存储空间，map 从现在开始会小很多。</li>
+</ol>
+<p>抽象来看症结是：<strong>需要保证增长结果在下一个开始之前完成</strong>，此处的增长指的是 ”从小到大，从一个大小到相同大小，从大到小“ 的复杂过程。</p>
+<p>这属于一个多重 case，从而导致也就一直拖着，慢慢想。</p>
+<h2 id="总结">总结<a href="#总结" class="anchor" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 7h3a5 5 0 0 1 5 5 5 5 0 0 1-5 5h-3m-6 0H6a5 5 0 0 1-5-5 5 5 0 0 1 5-5h3"></path><line x1="8" y1="12" x2="16" y2="12"></line></svg></a></h2>
+<p>Go 语言中 map 的扩容机制是大家经常思考和学习的，但是缩容方面现在也是一个大 ”坑“。虽然不误用就没问题。</p>
+<p>但是一旦新同学来了，不知道，一塞，就会出问题。我有一个朋友，之前面试时，就听闻有人会塞几个 GB 的数据进 map，可想而知还是很危险的。</p>
+<p>现有 map 的缩容机制，是存在短板的，背后有着比较多重的纠结，不知道你<strong>有没有什么好的建议或想法呢，欢迎大家一起来讨论</strong>！</p>
+
+			</div>
+			<hr class="post-end">
+			<footer class="post-info">
+				<p>
+					<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-tag meta-icon"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"></path><line x1="7" y1="7" x2="7" y2="7"></line></svg><span class="tag"><a href="https://wangtu2022.github.io/tags/go">go</a></span><span class="tag"><a href="https://wangtu2022.github.io/tags/%E9%9D%A2%E8%AF%95%E9%A2%98">面试题</a></span>
+				</p>
+				<p><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-file-text"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>272 Words</p>
+				<p><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-calendar"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>2021-12-31 12:55 &#43;0800</p>
+			</footer>
+		</article>
+		<aside id="toc">
+			<div class="toc-title">Table of Contents</div>
+			<nav id="TableOfContents">
+  <ul>
+    <li><a href="#基本分析">基本分析</a></li>
+    <li><a href="#带来的隐患">带来的隐患</a></li>
+    <li><a href="#为什么不支持">为什么不支持</a></li>
+    <li><a href="#总结">总结</a></li>
+  </ul>
+</nav>
+		</aside>
+		<div class="post-nav thin">
+			<a class="next-post" href="https://wangtu2022.github.io/posts/go/when-gc/">
+				<span class="post-nav-label"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-arrow-left"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>&nbsp;Newer</span><br><span>Go 什么时候会触发 GC？</span>
+			</a>
+			<a class="prev-post" href="https://wangtu2022.github.io/posts/go/map-65/">
+				<span class="post-nav-label">Older&nbsp;<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-arrow-right"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg></span><br><span>面试官：为什么 Go 的负载因子是 6.5？</span>
+			</a>
+		</div>
+		<div id="comments" class="thin">
+</div>
+	</main>
+
+	<footer id="site-footer" class="section-inner thin animated fadeIn faster">
+		<p>&copy; 2022 <a href="https://wangtu2022.github.io/">煎鱼</a> &#183; <a href="http://www.beian.miit.gov.cn/">粤ICP备19076352号</a></p>
+		<p>
+			Made with <a href="https://gohugo.io/" target="_blank" rel="noopener">Hugo</a> &#183; Theme <a href="https://github.com/Track3/hermit" target="_blank" rel="noopener">Hermit</a> &#183; <a href="https://wangtu2022.github.io/posts/index.xml" target="_blank" title="rss"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-rss"><path d="M4 11a9 9 0 0 1 9 9"></path><path d="M4 4a16 16 0 0 1 16 16"></path><circle cx="5" cy="19" r="1"></circle></svg></a>
+		</p>
+	</footer>
+
+
+
+	<script src="https://wangtu2022.github.io/js/bundle.min.580988ed2982bcbb74a1773c7abea97b43e4c43b9324e10cda0813ec6ec4bb67.js" integrity="sha256-WAmI7SmCvLt0oXc8er6pe0PkxDuTJOEM2ggT7G7Eu2c=" crossorigin="anonymous"></script>
+	
+<script type="application/javascript">
+var doNotTrack = false;
+if (!doNotTrack) {
+	window.ga=window.ga||function(){(ga.q=ga.q||[]).push(arguments)};ga.l=+new Date;
+	ga('create', 'UA-166045776-1', 'auto');
+	
+	ga('send', 'pageview');
+}
+</script>
+<script async src='https://www.google-analytics.com/analytics.js'></script>
+
+
+</body>
+
+</html>

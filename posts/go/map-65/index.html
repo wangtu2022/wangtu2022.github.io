@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html lang="zh-hans">
+
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<meta http-equiv="X-UA-Compatible" content="ie=edge">
+	<meta name="theme-color" content="#494f5c">
+	<meta name="msapplication-TileColor" content="#494f5c">
+<meta itemprop="name" content="面试官：为什么 Go 的负载因子是 6.5？">
+<meta itemprop="description" content="大家好，我是煎鱼。
+最近我有一个朋友，在网上看到一个有趣的段子，引发了我一些兴趣。
+如下图：
+听说是在最后的闲聊、吹水、聊人生、乱扯环节了，不是在技术环节了，所以大家也不用太在意什么技术评估法则（别杠）。
+煎鱼作为一名技术号主，看到这里的 6.5，就想给大家挖一挖，这到底是何物，和大家一同学习和增长知识！
+6.5 是什么 实际上在 Go 语言中，就存在 6.5 这一概念，与 map 存在直接关系，因此我们需要先了解 map 的基本数据结构，再介绍 6.5 的背景和由来。
+开始学习 6.5 吧！
+了解 map 底层 我以前在写《深入理解 Go map：初始化和访问元素》时有介绍过 map 的基础数据结构。"><meta itemprop="datePublished" content="2021-12-31T12:55:07+08:00" />
+<meta itemprop="dateModified" content="2021-12-31T12:55:07+08:00" />
+<meta itemprop="wordCount" content="264">
+<meta itemprop="keywords" content="go,面试题," /><meta property="og:title" content="面试官：为什么 Go 的负载因子是 6.5？" />
+<meta property="og:description" content="大家好，我是煎鱼。
+最近我有一个朋友，在网上看到一个有趣的段子，引发了我一些兴趣。
+如下图：
+听说是在最后的闲聊、吹水、聊人生、乱扯环节了，不是在技术环节了，所以大家也不用太在意什么技术评估法则（别杠）。
+煎鱼作为一名技术号主，看到这里的 6.5，就想给大家挖一挖，这到底是何物，和大家一同学习和增长知识！
+6.5 是什么 实际上在 Go 语言中，就存在 6.5 这一概念，与 map 存在直接关系，因此我们需要先了解 map 的基本数据结构，再介绍 6.5 的背景和由来。
+开始学习 6.5 吧！
+了解 map 底层 我以前在写《深入理解 Go map：初始化和访问元素》时有介绍过 map 的基础数据结构。" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://wangtu2022.github.io/posts/go/map-65/" /><meta property="article:section" content="posts" />
+<meta property="article:published_time" content="2021-12-31T12:55:07+08:00" />
+<meta property="article:modified_time" content="2021-12-31T12:55:07+08:00" />
+
+<meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="面试官：为什么 Go 的负载因子是 6.5？"/>
+<meta name="twitter:description" content="大家好，我是煎鱼。
+最近我有一个朋友，在网上看到一个有趣的段子，引发了我一些兴趣。
+如下图：
+听说是在最后的闲聊、吹水、聊人生、乱扯环节了，不是在技术环节了，所以大家也不用太在意什么技术评估法则（别杠）。
+煎鱼作为一名技术号主，看到这里的 6.5，就想给大家挖一挖，这到底是何物，和大家一同学习和增长知识！
+6.5 是什么 实际上在 Go 语言中，就存在 6.5 这一概念，与 map 存在直接关系，因此我们需要先了解 map 的基本数据结构，再介绍 6.5 的背景和由来。
+开始学习 6.5 吧！
+了解 map 底层 我以前在写《深入理解 Go map：初始化和访问元素》时有介绍过 map 的基础数据结构。"/>
+
+	<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+	<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+	<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+	<link rel="manifest" href="/site.webmanifest">
+	<link rel="mask-icon" href="/safari-pinned-tab.svg" color="">
+	<link rel="shortcut icon" href="/favicon.ico">
+
+	<title>面试官：为什么 Go 的负载因子是 6.5？</title>
+	<link rel="stylesheet" href="https://wangtu2022.github.io/css/style.min.d3141168199607bf3a517216ce3c263814eecdbc8fca72a9a88700799a838219.css" integrity="sha256-0xQRaBmWB786UXIWzjwmOBTuzbyPynKpqIcAeZqDghk=" crossorigin="anonymous">
+	
+	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.1/css/all.min.css">
+	<link rel="stylesheet" href="https://wangtu2022.github.io/css/styles.css">
+</head>
+
+<body id="page">
+	
+	<header id="site-header" class="animated slideInUp">
+		<div class="hdr-wrapper section-inner">
+			<div class="hdr-left">
+				<div class="site-branding">
+					<a href="https://wangtu2022.github.io/">煎鱼</a>
+				</div>
+				<nav class="site-nav hide-in-mobile">
+					
+				<a href="https://wangtu2022.github.io/posts/">文章</a>
+				<a href="https://wangtu2022.github.io/tags/">标签</a>
+				<a href="https://wangtu2022.github.io/about/">关于</a>
+
+				</nav>
+			</div>
+			<div class="hdr-right hdr-icons">
+				<button id="toc-btn" class="hdr-btn desktop-only-ib" title="Table of Contents"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-list"><line x1="8" y1="6" x2="21" y2="6"></line><line x1="8" y1="12" x2="21" y2="12"></line><line x1="8" y1="18" x2="21" y2="18"></line><line x1="3" y1="6" x2="3" y2="6"></line><line x1="3" y1="12" x2="3" y2="12"></line><line x1="3" y1="18" x2="3" y2="18"></line></svg></button><span class="hdr-social hide-in-mobile"><a href="https://github.com/eddycjy" target="_blank" rel="noopener me" title="Github"><svg xmlns="http://www.w3.org/2000/svg" class="feather" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"></path></svg></a></span><button id="menu-btn" class="hdr-btn" title="Menu"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-menu"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg></button>
+			</div>
+		</div>
+	</header>
+	<div id="mobile-menu" class="animated fast">
+		<ul>
+			<li><a href="https://wangtu2022.github.io/posts/">文章</a></li>
+			<li><a href="https://wangtu2022.github.io/tags/">标签</a></li>
+			<li><a href="https://wangtu2022.github.io/about/">关于</a></li>
+		</ul>
+	</div>
+
+
+	<main class="site-main section-inner animated fadeIn faster">
+		<article class="thin">
+			<header class="post-header">
+				<div class="post-meta"><span>Dec 31, 2021</span></div>
+				<h1>面试官：为什么 Go 的负载因子是 6.5？</h1>
+			</header>
+			<div class="content">
+				<p>大家好，我是煎鱼。</p>
+<p>最近我有一个朋友，在网上看到一个有趣的段子，引发了我一些兴趣。</p>
+<p>如下图：</p>
+<p><img src="https://files.mdnice.com/user/3610/e81547d8-8de7-4310-a62f-e59ce4c0def2.png" alt=""></p>
+<p>听说是在最后的闲聊、吹水、聊人生、乱扯环节了，不是在技术环节了，所以大家也不用太在意什么技术评估法则（别杠）。</p>
+<p>煎鱼作为一名技术号主，看到这里的 6.5，就想给大家挖一挖，这到底是何物，和大家一同学习和增长知识！</p>
+<h2 id="65-是什么">6.5 是什么<a href="#65-是什么" class="anchor" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 7h3a5 5 0 0 1 5 5 5 5 0 0 1-5 5h-3m-6 0H6a5 5 0 0 1-5-5 5 5 0 0 1 5-5h3"></path><line x1="8" y1="12" x2="16" y2="12"></line></svg></a></h2>
+<p>实际上在 Go 语言中，就存在 6.5 这一概念，与 map 存在直接关系，因此我们需要先了解 map 的基本数据结构，再介绍 6.5 的背景和由来。</p>
+<p>开始学习 6.5 吧！</p>
+<h3 id="了解-map-底层">了解 map 底层<a href="#了解-map-底层" class="anchor" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 7h3a5 5 0 0 1 5 5 5 5 0 0 1-5 5h-3m-6 0H6a5 5 0 0 1-5-5 5 5 0 0 1 5-5h3"></path><line x1="8" y1="12" x2="16" y2="12"></line></svg></a></h3>
+<p>我以前在写《<a href="https://eddycjy.com/posts/go/map/2019-03-05-map-access/">深入理解 Go map：初始化和访问元素</a>》时有介绍过 map 的基础数据结构。</p>
+<p>基本结构如下图：</p>
+<p><img src="https://files.mdnice.com/user/3610/8679a84f-0d21-485d-b55f-dc9d70d5ddd1.png" alt="map 基本数据结构"></p>
+<p>其中重要的一个基本单位是 hmap：</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-golang" data-lang="golang"><span class="line"><span class="cl"><span class="kd">type</span> <span class="nx">hmap</span> <span class="kd">struct</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">	<span class="nx">count</span>     <span class="kt">int</span>
+</span></span><span class="line"><span class="cl">	<span class="nx">flags</span>     <span class="kt">uint8</span>
+</span></span><span class="line"><span class="cl">	<span class="nx">B</span>         <span class="kt">uint8</span>
+</span></span><span class="line"><span class="cl">	<span class="nx">noverflow</span> <span class="kt">uint16</span>
+</span></span><span class="line"><span class="cl">	<span class="nx">hash0</span>     <span class="kt">uint32</span>
+</span></span><span class="line"><span class="cl">	<span class="nx">buckets</span>    <span class="nx">unsafe</span><span class="p">.</span><span class="nx">Pointer</span>
+</span></span><span class="line"><span class="cl">	<span class="nx">oldbuckets</span> <span class="nx">unsafe</span><span class="p">.</span><span class="nx">Pointer</span>
+</span></span><span class="line"><span class="cl">	<span class="nx">nevacuate</span>  <span class="kt">uintptr</span>
+</span></span><span class="line"><span class="cl">	<span class="nx">extra</span> <span class="o">*</span><span class="nx">mapextra</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="kd">type</span> <span class="nx">mapextra</span> <span class="kd">struct</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">	<span class="nx">overflow</span>    <span class="o">*</span><span class="p">[]</span><span class="o">*</span><span class="nx">bmap</span>
+</span></span><span class="line"><span class="cl">	<span class="nx">oldoverflow</span> <span class="o">*</span><span class="p">[]</span><span class="o">*</span><span class="nx">bmap</span>
+</span></span><span class="line"><span class="cl">	<span class="nx">nextOverflow</span> <span class="o">*</span><span class="nx">bmap</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span></code></pre></div><ul>
+<li>count：map 的大小，也就是 len() 的值，代指 map 中的键值对个数。</li>
+<li>flags：状态标识，主要是 goroutine 写入和扩容机制的相关状态控制。并发读写的判断条件之一就是该值。</li>
+<li>B：<strong>桶，最大可容纳的元素数量，值为 负载因子（默认 6.5） * 2 ^ B，是 2 的指数</strong>。</li>
+<li>noverflow：溢出桶的数量。</li>
+<li>hash0：哈希因子。</li>
+<li>buckets：保存当前桶数据的指针地址（指向一段连续的内存地址，主要存储键值对数据）。</li>
+<li>oldbuckets，保存旧桶的指针地址。</li>
+<li>nevacuate：迁移进度。</li>
+<li>extra：原有 buckets 满载后，会发生扩容动作，在 Go 的机制中使用了增量扩容，如下为细项：
+<ul>
+<li>overflow 为 hmap.buckets （当前）溢出桶的指针地址。</li>
+<li>oldoverflow 为 hmap.oldbuckets （旧）溢出桶的指针地址。</li>
+<li>nextOverflow 为空闲溢出桶的指针地址。</li>
+</ul>
+</li>
+</ul>
+<p>我们关注到 hmap 的 B 字段，其值就是 6.5，他就是我们在苦苦寻找的 6.5，但他又是什么呢？</p>
+<h3 id="什么是负载因子">什么是负载因子<a href="#什么是负载因子" class="anchor" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 7h3a5 5 0 0 1 5 5 5 5 0 0 1-5 5h-3m-6 0H6a5 5 0 0 1-5-5 5 5 0 0 1 5-5h3"></path><line x1="8" y1="12" x2="16" y2="12"></line></svg></a></h3>
+<p>B 值，这里就涉及到一个概念：<strong>负载因子（load factor），用于衡量当前哈希表中空间占用率的核心指标</strong>，也就是每个 bucket 桶存储的平均元素个数。</p>
+<p>另外负载因子<strong>与扩容、迁移</strong>等重新散列（rehash）行为有直接关系：</p>
+<ul>
+<li>在程序运行时，会不断地进行插入、删除等，会导致 bucket 不均，内存利用率低，需要迁移。</li>
+<li>在程序运行时，出现负载因子过大，需要做扩容，解决 bucket 过大的问题。</li>
+</ul>
+<p>负载因子是哈希表中的一个重要指标，在各种版本的哈希表实现中都有类似的东西，主要目的是<strong>为了平衡 buckets 的存储空间大小和查找元素时的性能高低</strong>。</p>
+<p>在接触各种哈希表时都可以关注一下，做不同的对比，看看各家的考量。</p>
+<h2 id="为什么是-65">为什么是 6.5<a href="#为什么是-65" class="anchor" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 7h3a5 5 0 0 1 5 5 5 5 0 0 1-5 5h-3m-6 0H6a5 5 0 0 1-5-5 5 5 0 0 1 5-5h3"></path><line x1="8" y1="12" x2="16" y2="12"></line></svg></a></h2>
+<p>了解是什么后，我们进一步深挖。</p>
+<p>为什么 Go 语言中哈希表的负载因子是 6.5，为什么不是 8 ，也不是 1。这里面有可靠的数据支撑吗？</p>
+<h3 id="测试报告">测试报告<a href="#测试报告" class="anchor" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 7h3a5 5 0 0 1 5 5 5 5 0 0 1-5 5h-3m-6 0H6a5 5 0 0 1-5-5 5 5 0 0 1 5-5h3"></path><line x1="8" y1="12" x2="16" y2="12"></line></svg></a></h3>
+<p>实际上这是 Go 官方的经过认真的测试得出的数字，一起来看看官方的这份测试报告。</p>
+<p>报告中共包含 4 个关键指标，如下：</p>
+<table>
+<thead>
+<tr>
+<th>loadFactor</th>
+<th>%overflow</th>
+<th>bytes/entry</th>
+<th>hitprobe</th>
+<th>missprobe</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>4.00</td>
+<td>2.13</td>
+<td>20.77</td>
+<td>3.00</td>
+<td>4.00</td>
+</tr>
+<tr>
+<td>4.50</td>
+<td>4.05</td>
+<td>17.30</td>
+<td>3.25</td>
+<td>4.50</td>
+</tr>
+<tr>
+<td>5.00</td>
+<td>6.85</td>
+<td>14.77</td>
+<td>3.50</td>
+<td>5.00</td>
+</tr>
+<tr>
+<td>5.50</td>
+<td>10.55</td>
+<td>12.94</td>
+<td>3.75</td>
+<td>5.50</td>
+</tr>
+<tr>
+<td>6.00</td>
+<td>15.27</td>
+<td>11.67</td>
+<td>4.00</td>
+<td>6.00</td>
+</tr>
+<tr>
+<td>6.50</td>
+<td>20.90</td>
+<td>10.79</td>
+<td>4.25</td>
+<td>6.50</td>
+</tr>
+<tr>
+<td>7.00</td>
+<td>27.14</td>
+<td>10.15</td>
+<td>4.50</td>
+<td>7.00</td>
+</tr>
+<tr>
+<td>7.50</td>
+<td>34.03</td>
+<td>9.73</td>
+<td>4.75</td>
+<td>7.50</td>
+</tr>
+<tr>
+<td>8.00</td>
+<td>41.10</td>
+<td>9.40</td>
+<td>5.00</td>
+<td>8.00</td>
+</tr>
+</tbody>
+</table>
+<ul>
+<li>loadFactor：负载因子，也有叫装载因子。</li>
+<li>%overflow：溢出率，有溢出 bukcet 的百分比。</li>
+<li>bytes/entry：每对 key/elem 的开销字节数.</li>
+<li>hitprobe：查找一个存在的 key 时，要查找的平均个数。</li>
+<li>missprobe：查找一个不存在的 key 时，要查找的平均个数。</li>
+</ul>
+<h3 id="选择数值">选择数值<a href="#选择数值" class="anchor" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 7h3a5 5 0 0 1 5 5 5 5 0 0 1-5 5h-3m-6 0H6a5 5 0 0 1-5-5 5 5 0 0 1 5-5h3"></path><line x1="8" y1="12" x2="16" y2="12"></line></svg></a></h3>
+<p>结合测试报告一看，好家伙，不测不知道，一测吓一跳，有依据了。</p>
+<p>Go 官方发现：<strong>负载因子太大了，会有很多溢出的桶。太小了，就会浪费很多空间</strong>（too large and we have lots of overflow buckets, too small and we waste a lot of space）。</p>
+<p><img src="https://files.mdnice.com/user/3610/93b87f8d-a0ad-4503-b4f9-e3cf040468df.png" alt="来自 Go 官方源码说明"></p>
+<p>根据这份测试结果和讨论，Go 官方把 Go 中的 map 的负载因子硬编码为 6.5，这就是 6.5 的选择缘由。</p>
+<p>这意味着在 Go 语言中，<strong>当 B（bucket）平均每个存储的元素大于或等于 6.5 时，就会触发扩容行为</strong>，这是作为我们用户对这个数值最近的接触。</p>
+<h2 id="总结">总结<a href="#总结" class="anchor" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 7h3a5 5 0 0 1 5 5 5 5 0 0 1-5 5h-3m-6 0H6a5 5 0 0 1-5-5 5 5 0 0 1 5-5h3"></path><line x1="8" y1="12" x2="16" y2="12"></line></svg></a></h2>
+<p>在今天这篇文章中，我们先快速了解了 Go 语言中 map 的基本数据结构和设计，这和我们要解释的问题紧密相关。</p>
+<p>紧接着针对开头所提出的 6.5，进行了介绍和说明，这其实是 map 中的负载因子。其数值的确定来源于 Go 官方的测试。</p>
+<p>为什么是 6.5，你懂了吗？</p>
+<h2 id="参考">参考<a href="#参考" class="anchor" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 7h3a5 5 0 0 1 5 5 5 5 0 0 1-5 5h-3m-6 0H6a5 5 0 0 1-5-5 5 5 0 0 1 5-5h3"></path><line x1="8" y1="12" x2="16" y2="12"></line></svg></a></h2>
+<ul>
+<li><a href="https://golang.org/src/runtime/map.go">src/runtime/map.go</a></li>
+<li><a href="https://juejin.cn/post/6954707500151078919">深度解析golang map</a></li>
+<li><a href="https://zhuanlan.zhihu.com/p/366472077">golang中map底层B值的计算逻辑</a></li>
+</ul>
+
+			</div>
+			<hr class="post-end">
+			<footer class="post-info">
+				<p>
+					<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-tag meta-icon"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"></path><line x1="7" y1="7" x2="7" y2="7"></line></svg><span class="tag"><a href="https://wangtu2022.github.io/tags/go">go</a></span><span class="tag"><a href="https://wangtu2022.github.io/tags/%E9%9D%A2%E8%AF%95%E9%A2%98">面试题</a></span>
+				</p>
+				<p><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-file-text"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>264 Words</p>
+				<p><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-calendar"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>2021-12-31 12:55 &#43;0800</p>
+			</footer>
+		</article>
+		<aside id="toc">
+			<div class="toc-title">Table of Contents</div>
+			<nav id="TableOfContents">
+  <ul>
+    <li><a href="#65-是什么">6.5 是什么</a>
+      <ul>
+        <li><a href="#了解-map-底层">了解 map 底层</a></li>
+        <li><a href="#什么是负载因子">什么是负载因子</a></li>
+      </ul>
+    </li>
+    <li><a href="#为什么是-65">为什么是 6.5</a>
+      <ul>
+        <li><a href="#测试报告">测试报告</a></li>
+        <li><a href="#选择数值">选择数值</a></li>
+      </ul>
+    </li>
+    <li><a href="#总结">总结</a></li>
+    <li><a href="#参考">参考</a></li>
+  </ul>
+</nav>
+		</aside>
+		<div class="post-nav thin">
+			<a class="next-post" href="https://wangtu2022.github.io/posts/go/map-reset/">
+				<span class="post-nav-label"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-arrow-left"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>&nbsp;Newer</span><br><span>Go map 如何缩容？</span>
+			</a>
+			<a class="prev-post" href="https://wangtu2022.github.io/posts/go/slice-discuss/">
+				<span class="post-nav-label">Older&nbsp;<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-arrow-right"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg></span><br><span>Go 切片这道题，吵了一个下午！</span>
+			</a>
+		</div>
+		<div id="comments" class="thin">
+</div>
+	</main>
+
+	<footer id="site-footer" class="section-inner thin animated fadeIn faster">
+		<p>&copy; 2022 <a href="https://wangtu2022.github.io/">煎鱼</a> &#183; <a href="http://www.beian.miit.gov.cn/">粤ICP备19076352号</a></p>
+		<p>
+			Made with <a href="https://gohugo.io/" target="_blank" rel="noopener">Hugo</a> &#183; Theme <a href="https://github.com/Track3/hermit" target="_blank" rel="noopener">Hermit</a> &#183; <a href="https://wangtu2022.github.io/posts/index.xml" target="_blank" title="rss"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-rss"><path d="M4 11a9 9 0 0 1 9 9"></path><path d="M4 4a16 16 0 0 1 16 16"></path><circle cx="5" cy="19" r="1"></circle></svg></a>
+		</p>
+	</footer>
+
+
+
+	<script src="https://wangtu2022.github.io/js/bundle.min.580988ed2982bcbb74a1773c7abea97b43e4c43b9324e10cda0813ec6ec4bb67.js" integrity="sha256-WAmI7SmCvLt0oXc8er6pe0PkxDuTJOEM2ggT7G7Eu2c=" crossorigin="anonymous"></script>
+	
+<script type="application/javascript">
+var doNotTrack = false;
+if (!doNotTrack) {
+	window.ga=window.ga||function(){(ga.q=ga.q||[]).push(arguments)};ga.l=+new Date;
+	ga('create', 'UA-166045776-1', 'auto');
+	
+	ga('send', 'pageview');
+}
+</script>
+<script async src='https://www.google-analytics.com/analytics.js'></script>
+
+
+</body>
+
+</html>

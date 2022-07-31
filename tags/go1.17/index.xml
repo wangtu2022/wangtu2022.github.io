@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>go1.17 on 煎鱼</title>
+    <link>https://wangtu2022.github.io/tags/go1.17/</link>
+    <description>Recent content in go1.17 on 煎鱼</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>zh-hans</language>
+    <copyright>This work is licensed under a Creative Commons Attribution-NonCommercial 4.0 International License.</copyright>
+    <lastBuildDate>Fri, 31 Dec 2021 12:54:56 +0800</lastBuildDate><atom:link href="https://wangtu2022.github.io/tags/go1.17/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>时隔 3 年，Go1.17 增强构建约束！</title>
+      <link>https://wangtu2022.github.io/posts/go/117-build/</link>
+      <pubDate>Fri, 31 Dec 2021 12:54:56 +0800</pubDate>
+      
+      <guid>https://wangtu2022.github.io/posts/go/117-build/</guid>
+      <description>大家好，我是煎鱼。
+Go1.17rc1 在前几天终于正式发布了：
+看到 Go1.17 增加了一个新特性，是面向 Go 构建时的构建约束的增强。认真一看，是一个时隔 3 年的提案了，原本还在 Go2 和 Go1 之间左右摇摆，这下在 6 月底 Russ Cox 就输出了新草案：《Bug-resistant build constraints — Draft Design》。紧接着直接计划在 Go1.17 发布了。
+一气呵成，真实版高效能了。
+如下图：
+之前小咸鱼有遇到好几个朋友，在报错时压根不知道 Go 有这个约束语法，以为只是个单纯的注释，直接不明所以然，感觉科普之路任重道远。</description>
+    </item>
+    
+  </channel>
+</rss>

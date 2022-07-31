@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="zh-hans">
+
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<meta http-equiv="X-UA-Compatible" content="ie=edge">
+	<meta name="theme-color" content="#494f5c">
+	<meta name="msapplication-TileColor" content="#494f5c">
+<meta itemprop="name" content="用 Go struct 不能犯的一个低级错误！">
+<meta itemprop="description" content="大家好，我是煎鱼。
+前段时间我分享了 《手撕 Go 面试官：Go 结构体是否可以比较，为什么？》的文章，把基本 Go struct 的比较依据研究了一番。这不，最近有一位读者，遇到了一个关于 struct 的新问题，不得解。
+大家一起来看看，建议大家在看到代码例子后先思考一下答案，再往下看。
+独立思考很重要。
+疑惑的例子 其给出的例子一如下：
+type People struct {} func main() { a := &amp;People{} b := &amp;People{} fmt.Println(a == b) } 你认为输出结果是什么呢？"><meta itemprop="datePublished" content="2021-06-17T12:44:27+08:00" />
+<meta itemprop="dateModified" content="2021-06-17T12:44:27+08:00" />
+<meta itemprop="wordCount" content="436">
+<meta itemprop="keywords" content="go," /><meta property="og:title" content="用 Go struct 不能犯的一个低级错误！" />
+<meta property="og:description" content="大家好，我是煎鱼。
+前段时间我分享了 《手撕 Go 面试官：Go 结构体是否可以比较，为什么？》的文章，把基本 Go struct 的比较依据研究了一番。这不，最近有一位读者，遇到了一个关于 struct 的新问题，不得解。
+大家一起来看看，建议大家在看到代码例子后先思考一下答案，再往下看。
+独立思考很重要。
+疑惑的例子 其给出的例子一如下：
+type People struct {} func main() { a := &amp;People{} b := &amp;People{} fmt.Println(a == b) } 你认为输出结果是什么呢？" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://wangtu2022.github.io/posts/go/go-empty-struct/" /><meta property="article:section" content="posts" />
+<meta property="article:published_time" content="2021-06-17T12:44:27+08:00" />
+<meta property="article:modified_time" content="2021-06-17T12:44:27+08:00" />
+
+<meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="用 Go struct 不能犯的一个低级错误！"/>
+<meta name="twitter:description" content="大家好，我是煎鱼。
+前段时间我分享了 《手撕 Go 面试官：Go 结构体是否可以比较，为什么？》的文章，把基本 Go struct 的比较依据研究了一番。这不，最近有一位读者，遇到了一个关于 struct 的新问题，不得解。
+大家一起来看看，建议大家在看到代码例子后先思考一下答案，再往下看。
+独立思考很重要。
+疑惑的例子 其给出的例子一如下：
+type People struct {} func main() { a := &amp;People{} b := &amp;People{} fmt.Println(a == b) } 你认为输出结果是什么呢？"/>
+
+	<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+	<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+	<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+	<link rel="manifest" href="/site.webmanifest">
+	<link rel="mask-icon" href="/safari-pinned-tab.svg" color="">
+	<link rel="shortcut icon" href="/favicon.ico">
+
+	<title>用 Go struct 不能犯的一个低级错误！</title>
+	<link rel="stylesheet" href="https://wangtu2022.github.io/css/style.min.d3141168199607bf3a517216ce3c263814eecdbc8fca72a9a88700799a838219.css" integrity="sha256-0xQRaBmWB786UXIWzjwmOBTuzbyPynKpqIcAeZqDghk=" crossorigin="anonymous">
+	
+	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.1/css/all.min.css">
+	<link rel="stylesheet" href="https://wangtu2022.github.io/css/styles.css">
+</head>
+
+<body id="page">
+	
+	<header id="site-header" class="animated slideInUp">
+		<div class="hdr-wrapper section-inner">
+			<div class="hdr-left">
+				<div class="site-branding">
+					<a href="https://wangtu2022.github.io/">煎鱼</a>
+				</div>
+				<nav class="site-nav hide-in-mobile">
+					
+				<a href="https://wangtu2022.github.io/posts/">文章</a>
+				<a href="https://wangtu2022.github.io/tags/">标签</a>
+				<a href="https://wangtu2022.github.io/about/">关于</a>
+
+				</nav>
+			</div>
+			<div class="hdr-right hdr-icons">
+				<span class="hdr-social hide-in-mobile"><a href="https://github.com/eddycjy" target="_blank" rel="noopener me" title="Github"><svg xmlns="http://www.w3.org/2000/svg" class="feather" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"></path></svg></a></span><button id="menu-btn" class="hdr-btn" title="Menu"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-menu"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg></button>
+			</div>
+		</div>
+	</header>
+	<div id="mobile-menu" class="animated fast">
+		<ul>
+			<li><a href="https://wangtu2022.github.io/posts/">文章</a></li>
+			<li><a href="https://wangtu2022.github.io/tags/">标签</a></li>
+			<li><a href="https://wangtu2022.github.io/about/">关于</a></li>
+		</ul>
+	</div>
+
+
+	<main class="site-main section-inner animated fadeIn faster">
+		<article class="thin">
+			<header class="post-header">
+				<div class="post-meta"><span>Jun 17, 2021</span></div>
+				<h1>用 Go struct 不能犯的一个低级错误！</h1>
+			</header>
+			<div class="content">
+				<p>大家好，我是煎鱼。</p>
+<p>前段时间我分享了 《手撕 Go 面试官：Go 结构体是否可以比较，为什么？》的文章，把基本 Go struct 的比较依据研究了一番。这不，最近有一位读者，遇到了一个关于 struct 的新问题，不得解。</p>
+<p>大家一起来看看，建议大家在看到代码例子后先思考一下答案，再往下看。</p>
+<p>独立思考很重要。</p>
+<h2 id="疑惑的例子">疑惑的例子<a href="#疑惑的例子" class="anchor" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 7h3a5 5 0 0 1 5 5 5 5 0 0 1-5 5h-3m-6 0H6a5 5 0 0 1-5-5 5 5 0 0 1 5-5h3"></path><line x1="8" y1="12" x2="16" y2="12"></line></svg></a></h2>
+<p>其给出的例子一如下：</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-golang" data-lang="golang"><span class="line"><span class="cl"><span class="kd">type</span> <span class="nx">People</span> <span class="kd">struct</span> <span class="p">{}</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="kd">func</span> <span class="nf">main</span><span class="p">()</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl"> <span class="nx">a</span> <span class="o">:=</span> <span class="o">&amp;</span><span class="nx">People</span><span class="p">{}</span>
+</span></span><span class="line"><span class="cl"> <span class="nx">b</span> <span class="o">:=</span> <span class="o">&amp;</span><span class="nx">People</span><span class="p">{}</span>
+</span></span><span class="line"><span class="cl"> <span class="nx">fmt</span><span class="p">.</span><span class="nf">Println</span><span class="p">(</span><span class="nx">a</span> <span class="o">==</span> <span class="nx">b</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span></code></pre></div><p>你认为输出结果是什么呢？</p>
+<p>输出结果是：false。</p>
+<p>再稍加改造一下，例子二如下：</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-golang" data-lang="golang"><span class="line"><span class="cl"><span class="kd">type</span> <span class="nx">People</span> <span class="kd">struct</span> <span class="p">{}</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="kd">func</span> <span class="nf">main</span><span class="p">()</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl"> <span class="nx">a</span> <span class="o">:=</span> <span class="o">&amp;</span><span class="nx">People</span><span class="p">{}</span>
+</span></span><span class="line"><span class="cl"> <span class="nx">b</span> <span class="o">:=</span> <span class="o">&amp;</span><span class="nx">People</span><span class="p">{}</span>
+</span></span><span class="line"><span class="cl"> <span class="nx">fmt</span><span class="p">.</span><span class="nf">Printf</span><span class="p">(</span><span class="s">&#34;%p\n&#34;</span><span class="p">,</span> <span class="nx">a</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"> <span class="nx">fmt</span><span class="p">.</span><span class="nf">Printf</span><span class="p">(</span><span class="s">&#34;%p\n&#34;</span><span class="p">,</span> <span class="nx">b</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"> <span class="nx">fmt</span><span class="p">.</span><span class="nf">Println</span><span class="p">(</span><span class="nx">a</span> <span class="o">==</span> <span class="nx">b</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span></code></pre></div><p>输出结果是：true。</p>
+<p>他的问题是 &ldquo;<strong>为什么第一个返回 false 第二个返回 true，是什么原因导致的</strong>？</p>
+<p>煎鱼进一步的精简这个例子，得到最小示例：</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-golang" data-lang="golang"><span class="line"><span class="cl"><span class="kd">func</span> <span class="nf">main</span><span class="p">()</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">	<span class="nx">a</span> <span class="o">:=</span> <span class="nb">new</span><span class="p">(</span><span class="kd">struct</span><span class="p">{})</span>
+</span></span><span class="line"><span class="cl">	<span class="nx">b</span> <span class="o">:=</span> <span class="nb">new</span><span class="p">(</span><span class="kd">struct</span><span class="p">{})</span>
+</span></span><span class="line"><span class="cl">	<span class="nb">println</span><span class="p">(</span><span class="nx">a</span><span class="p">,</span> <span class="nx">b</span><span class="p">,</span> <span class="nx">a</span> <span class="o">==</span> <span class="nx">b</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">	<span class="nx">c</span> <span class="o">:=</span> <span class="nb">new</span><span class="p">(</span><span class="kd">struct</span><span class="p">{})</span>
+</span></span><span class="line"><span class="cl">	<span class="nx">d</span> <span class="o">:=</span> <span class="nb">new</span><span class="p">(</span><span class="kd">struct</span><span class="p">{})</span>
+</span></span><span class="line"><span class="cl">	<span class="nx">fmt</span><span class="p">.</span><span class="nf">Println</span><span class="p">(</span><span class="nx">c</span><span class="p">,</span> <span class="nx">d</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">	<span class="nb">println</span><span class="p">(</span><span class="nx">c</span><span class="p">,</span> <span class="nx">d</span><span class="p">,</span> <span class="nx">c</span> <span class="o">==</span> <span class="nx">d</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span></code></pre></div><p>输出结果：</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">// a, b<span class="p">;</span> <span class="nv">a</span> <span class="o">==</span> b
+</span></span><span class="line"><span class="cl">0xc00005cf57 0xc00005cf57 <span class="nb">false</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">// c, d
+</span></span><span class="line"><span class="cl"><span class="p">&amp;</span><span class="o">{}</span> <span class="p">&amp;</span><span class="o">{}</span>
+</span></span><span class="line"><span class="cl">// c, d, <span class="nv">c</span> <span class="o">==</span> d
+</span></span><span class="line"><span class="cl">0x118c370 0x118c370 <span class="nb">true</span>
+</span></span></code></pre></div><p>第一段代码的结果是 false，第二段的结果是 true，且可以看到内存地址指向的完全一样，也就是排除了输出后变量内存指向改变导致的原因。</p>
+<p>进一步来看，似乎是 <code>fmt.Print</code> 方法导致的，但一个标准库里的输出方法，会导致这种奇怪的问题？</p>
+<h2 id="问题剖析">问题剖析<a href="#问题剖析" class="anchor" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 7h3a5 5 0 0 1 5 5 5 5 0 0 1-5 5h-3m-6 0H6a5 5 0 0 1-5-5 5 5 0 0 1 5-5h3"></path><line x1="8" y1="12" x2="16" y2="12"></line></svg></a></h2>
+<p>如果之前有被这个 “坑” 过，或有看过源码的同学。可能能够快速的意识到，导致这个输出是<strong>逃逸分析</strong>所致的结果。</p>
+<p>我们对例子进行逃逸分析：</p>
+<pre tabindex="0"><code>// 源代码结构
+$ cat -n main.go
+     5	func main() {
+     6		a := new(struct{})
+     7		b := new(struct{})
+     8		println(a, b, a == b)
+     9	
+    10		c := new(struct{})
+    11		d := new(struct{})
+    12		fmt.Println(c, d)
+    13		println(c, d, c == d)
+    14	}
+
+// 进行逃逸分析
+$ go run -gcflags=&#34;-m -l&#34; main.go
+# command-line-arguments
+./main.go:6:10: a does not escape
+./main.go:7:10: b does not escape
+./main.go:10:10: c escapes to heap
+./main.go:11:10: d escapes to heap
+./main.go:12:13: ... argument does not escape
+</code></pre><p>通过分析可得知变量 a, b 均是分配在栈中，而变量 c, d 分配在堆中。</p>
+<p>其关键原因是因为调用了 <code>fmt.Println</code> 方法，该方法内部是涉及到大量的反射相关方法的调用，会造成逃逸行为，也就是分配到堆上。</p>
+<h3 id="为什么逃逸后相等">为什么逃逸后相等<a href="#为什么逃逸后相等" class="anchor" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 7h3a5 5 0 0 1 5 5 5 5 0 0 1-5 5h-3m-6 0H6a5 5 0 0 1-5-5 5 5 0 0 1 5-5h3"></path><line x1="8" y1="12" x2="16" y2="12"></line></svg></a></h3>
+<p>关注第一个细节，就是 “为什么逃逸后，两个空 struct 会是相等的？”。</p>
+<p>这里主要与 Go runtime 的一个优化细节有关，如下：</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-golang" data-lang="golang"><span class="line"><span class="cl"><span class="c1">// runtime/malloc.go
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="kd">var</span> <span class="nx">zerobase</span> <span class="kt">uintptr</span>
+</span></span></code></pre></div><p>变量 <code>zerobase</code> 是所有 0 字节分配的基础地址。更进一步来讲，就是空（0字节）的在进行了逃逸分析后，往堆分配的都会指向 <code>zerobase</code> 这一个地址。</p>
+<p>所以空 struct 在逃逸后本质上指向了 <code>zerobase</code>，其两者比较就是相等的，返回了 true。</p>
+<h3 id="为什么没逃逸不相等">为什么没逃逸不相等<a href="#为什么没逃逸不相等" class="anchor" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 7h3a5 5 0 0 1 5 5 5 5 0 0 1-5 5h-3m-6 0H6a5 5 0 0 1-5-5 5 5 0 0 1 5-5h3"></path><line x1="8" y1="12" x2="16" y2="12"></line></svg></a></h3>
+<p>关注第二个细节，就是 “为什么没逃逸前，两个空 struct 比较不相等？”。</p>
+<p><img src="https://p3-juejin.byteimg.com/tos-cn-i-k3u1fbpfcp/dc05fb027a9a481f83053f08b1ee2868~tplv-k3u1fbpfcp-zoom-1.image" alt="Go spec"></p>
+<p>从 Go spec 来看，这是 Go 团队刻意而为之的设计，不希望大家依赖这一个来做判断依据。如下：</p>
+<blockquote>
+<blockquote>
+<p>This is an intentional language choice to give implementations flexibility in how they handle pointers to zero-sized objects. If every pointer to a zero-sized object were required to be different, then each allocation of a zero-sized object would have to allocate at least one byte. If every pointer to a zero-sized object were required to be the same, it would be different to handle taking the address of a zero-sized field within a larger struct.</p>
+</blockquote>
+</blockquote>
+<p>还说了一句很经典的，细品：</p>
+<blockquote>
+<blockquote>
+<p>Pointers to distinct zero-size variables may or may not be equal.</p>
+</blockquote>
+</blockquote>
+<p>另外空 struct 在实际使用中的场景是比较少的，常见的是：</p>
+<ul>
+<li>设置 context，传递时作为 key 时用到。</li>
+<li>设置空 struct 业务场景中临时用到。</li>
+</ul>
+<p>但业务场景的情况下，也大多数会随着业务发展而不断改变，假设有个远古时代的 Go 代码，依赖了空 struct 的直接判断，岂不是事故上身？</p>
+<h4 id="不可直接依赖">不可直接依赖<a href="#不可直接依赖" class="anchor" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 7h3a5 5 0 0 1 5 5 5 5 0 0 1-5 5h-3m-6 0H6a5 5 0 0 1-5-5 5 5 0 0 1 5-5h3"></path><line x1="8" y1="12" x2="16" y2="12"></line></svg></a></h4>
+<p>因此 Go 团队这番操作，与 Go map 的随机性如出一辙，避免大家对这类逻辑的直接依赖，是值得思考的。</p>
+<p>而在没逃逸的场景下，两个空 struct 的比较动作，你以为是真的在比较。实际上已经在代码优化阶段被直接优化掉，转为了 false。</p>
+<p>因此，虽然在代码上看上去是 == 在做比较，实际上结果是 a == b 时就直接转为了 false，比都不需要比了。</p>
+<p>你说妙不？</p>
+<h4 id="没逃逸让他相等">没逃逸让他相等<a href="#没逃逸让他相等" class="anchor" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 7h3a5 5 0 0 1 5 5 5 5 0 0 1-5 5h-3m-6 0H6a5 5 0 0 1-5-5 5 5 0 0 1 5-5h3"></path><line x1="8" y1="12" x2="16" y2="12"></line></svg></a></h4>
+<p>既然我们知道了他是在代码优化阶段被优化的，那么相对的，知道了原理的我们也可以借助在 go 编译运行时的 gcflags 指令，让他不优化。</p>
+<p>在运行前面的例子时，执行 <code>-gcflags=&quot;-N -l&quot;</code> 指令：</p>
+<pre tabindex="0"><code>$ go run -gcflags=&#34;-N -l&#34; main.go 
+0xc000092f06 0xc000092f06 true
+&amp;{} &amp;{}
+0x118c370 0x118c370 true
+</code></pre><p>你看，两个比较的结果都是 true 了。</p>
+<h2 id="总结">总结<a href="#总结" class="anchor" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 7h3a5 5 0 0 1 5 5 5 5 0 0 1-5 5h-3m-6 0H6a5 5 0 0 1-5-5 5 5 0 0 1 5-5h3"></path><line x1="8" y1="12" x2="16" y2="12"></line></svg></a></h2>
+<p>在今天这篇文章中，我们针对 Go 语言中的空结构体（struct）的比较场景进行了进一步的补全。经过这两篇文章的洗礼，你会更好的理解 Go 结构体为什么叫既可比较又不可比较了。</p>
+<p>而空结构比较的奇妙，主要原因如下：</p>
+<ul>
+<li>若逃逸到堆上，空结构体则默认分配的是 <code>runtime.zerobase</code> 变量，是专门用于分配到堆上的 0 字节基础地址。因此两个空结构体，都是 <code>runtime.zerobase</code>，一比较当然就是 true 了。</li>
+<li>若没有发生逃逸，也就分配到栈上。在 Go 编译器的代码优化阶段，会对其进行优化，直接返回 false。并不是传统意义上的，真的去比较了。</li>
+</ul>
+<p>不会有人拿来出面试题，不会吧，为什么 Go 结构体说可比较又不可比较？</p>
+<p>若有任何疑问欢迎评论区反馈和交流，<strong>最好的关系是互相成就</strong>，各位的<strong>点赞</strong>就是<a href="https://github.com/eddycjy">煎鱼</a>创作的最大动力，感谢支持。</p>
+<blockquote>
+<p>文章持续更新，可以微信搜【脑子进煎鱼了】阅读，回复【<strong>000</strong>】有我准备的一线大厂面试算法题解和资料；本文 <strong>GitHub</strong> <a href="https://github.com/eddycjy/blog">github.com/eddycjy/blog</a> 已收录，欢迎 Star 催更。</p>
+</blockquote>
+<h2 id="参考">参考<a href="#参考" class="anchor" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 7h3a5 5 0 0 1 5 5 5 5 0 0 1-5 5h-3m-6 0H6a5 5 0 0 1-5-5 5 5 0 0 1 5-5h3"></path><line x1="8" y1="12" x2="16" y2="12"></line></svg></a></h2>
+<ul>
+<li>欧神的微信交流</li>
+<li>曹大的一个空 struct 的“坑”</li>
+</ul>
+
+			</div>
+			<hr class="post-end">
+			<footer class="post-info">
+				<p>
+					<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-tag meta-icon"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"></path><line x1="7" y1="7" x2="7" y2="7"></line></svg><span class="tag"><a href="https://wangtu2022.github.io/tags/go">go</a></span>
+				</p>
+				<p><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-file-text"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>436 Words</p>
+				<p><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-calendar"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>2021-06-17 12:44 &#43;0800</p>
+			</footer>
+		</article>
+		<div class="post-nav thin">
+			<a class="next-post" href="https://wangtu2022.github.io/posts/go/gmp-why-p/">
+				<span class="post-nav-label"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-arrow-left"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>&nbsp;Newer</span><br><span>经典面试题：你觉得 Go 在什么时候会抢占 P？</span>
+			</a>
+			<a class="prev-post" href="https://wangtu2022.github.io/posts/go/go-bootstrap0/">
+				<span class="post-nav-label">Older&nbsp;<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-arrow-right"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg></span><br><span>详解 Go 程序的启动流程，你知道 g0，m0 是什么吗？</span>
+			</a>
+		</div>
+		<div id="comments" class="thin">
+</div>
+	</main>
+
+	<footer id="site-footer" class="section-inner thin animated fadeIn faster">
+		<p>&copy; 2022 <a href="https://wangtu2022.github.io/">煎鱼</a> &#183; <a href="http://www.beian.miit.gov.cn/">粤ICP备19076352号</a></p>
+		<p>
+			Made with <a href="https://gohugo.io/" target="_blank" rel="noopener">Hugo</a> &#183; Theme <a href="https://github.com/Track3/hermit" target="_blank" rel="noopener">Hermit</a> &#183; <a href="https://wangtu2022.github.io/posts/index.xml" target="_blank" title="rss"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-rss"><path d="M4 11a9 9 0 0 1 9 9"></path><path d="M4 4a16 16 0 0 1 16 16"></path><circle cx="5" cy="19" r="1"></circle></svg></a>
+		</p>
+	</footer>
+
+
+
+	<script src="https://wangtu2022.github.io/js/bundle.min.580988ed2982bcbb74a1773c7abea97b43e4c43b9324e10cda0813ec6ec4bb67.js" integrity="sha256-WAmI7SmCvLt0oXc8er6pe0PkxDuTJOEM2ggT7G7Eu2c=" crossorigin="anonymous"></script>
+	
+<script type="application/javascript">
+var doNotTrack = false;
+if (!doNotTrack) {
+	window.ga=window.ga||function(){(ga.q=ga.q||[]).push(arguments)};ga.l=+new Date;
+	ga('create', 'UA-166045776-1', 'auto');
+	
+	ga('send', 'pageview');
+}
+</script>
+<script async src='https://www.google-analytics.com/analytics.js'></script>
+
+
+</body>
+
+</html>

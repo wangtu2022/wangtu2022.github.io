@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="zh-hans">
+
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<meta http-equiv="X-UA-Compatible" content="ie=edge">
+	<meta name="theme-color" content="#494f5c">
+	<meta name="msapplication-TileColor" content="#494f5c">
+<meta itemprop="name" content="上帝视角看 “Go 项目标准布局” 之争">
+<meta itemprop="description" content="大家好，我是煎鱼。
+前段时间 Go 语言社区有一件事情引爆了热议，那就是 golang-standards/project-layout 项目的 “Go 项目的标准布局” 之争。
+没想到，五一假期，认真一看，这个 issues 已经提出将近一个月了，仍然在热议阶段，我想，咱们需要好好的聊聊这个话题。
+煎鱼带你了解下的前因后果，再分享我的看法和业务真实情况。
+背景 问题发生地 在 GitHub 上有一个项目 Spaghetti（github.com/adonovan/spaghetti），是 Go 软件包的一个依赖性分析工具。
+该项目的目录结构如下：
+看上去并不复杂，代码量不多，文件平铺也不超过一屏，就是一个布局比较简单的项目。
+有一位老哥提出了一个 PR，明确的期望该项目按照 golang-standards/project-layout 项目给出的 “标准” 布局来调整。：
+我猜测该项目可能是因为把 Go、HTML、JS、PNG 和 go."><meta itemprop="datePublished" content="2021-09-13T23:34:23+08:00" />
+<meta itemprop="dateModified" content="2021-09-13T23:34:23+08:00" />
+<meta itemprop="wordCount" content="252">
+<meta itemprop="keywords" content="go," /><meta property="og:title" content="上帝视角看 “Go 项目标准布局” 之争" />
+<meta property="og:description" content="大家好，我是煎鱼。
+前段时间 Go 语言社区有一件事情引爆了热议，那就是 golang-standards/project-layout 项目的 “Go 项目的标准布局” 之争。
+没想到，五一假期，认真一看，这个 issues 已经提出将近一个月了，仍然在热议阶段，我想，咱们需要好好的聊聊这个话题。
+煎鱼带你了解下的前因后果，再分享我的看法和业务真实情况。
+背景 问题发生地 在 GitHub 上有一个项目 Spaghetti（github.com/adonovan/spaghetti），是 Go 软件包的一个依赖性分析工具。
+该项目的目录结构如下：
+看上去并不复杂，代码量不多，文件平铺也不超过一屏，就是一个布局比较简单的项目。
+有一位老哥提出了一个 PR，明确的期望该项目按照 golang-standards/project-layout 项目给出的 “标准” 布局来调整。：
+我猜测该项目可能是因为把 Go、HTML、JS、PNG 和 go." />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://wangtu2022.github.io/posts/go/go-standards/" /><meta property="article:section" content="posts" />
+<meta property="article:published_time" content="2021-09-13T23:34:23+08:00" />
+<meta property="article:modified_time" content="2021-09-13T23:34:23+08:00" />
+
+<meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="上帝视角看 “Go 项目标准布局” 之争"/>
+<meta name="twitter:description" content="大家好，我是煎鱼。
+前段时间 Go 语言社区有一件事情引爆了热议，那就是 golang-standards/project-layout 项目的 “Go 项目的标准布局” 之争。
+没想到，五一假期，认真一看，这个 issues 已经提出将近一个月了，仍然在热议阶段，我想，咱们需要好好的聊聊这个话题。
+煎鱼带你了解下的前因后果，再分享我的看法和业务真实情况。
+背景 问题发生地 在 GitHub 上有一个项目 Spaghetti（github.com/adonovan/spaghetti），是 Go 软件包的一个依赖性分析工具。
+该项目的目录结构如下：
+看上去并不复杂，代码量不多，文件平铺也不超过一屏，就是一个布局比较简单的项目。
+有一位老哥提出了一个 PR，明确的期望该项目按照 golang-standards/project-layout 项目给出的 “标准” 布局来调整。：
+我猜测该项目可能是因为把 Go、HTML、JS、PNG 和 go."/>
+
+	<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+	<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+	<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+	<link rel="manifest" href="/site.webmanifest">
+	<link rel="mask-icon" href="/safari-pinned-tab.svg" color="">
+	<link rel="shortcut icon" href="/favicon.ico">
+
+	<title>上帝视角看 “Go 项目标准布局” 之争</title>
+	<link rel="stylesheet" href="https://wangtu2022.github.io/css/style.min.d3141168199607bf3a517216ce3c263814eecdbc8fca72a9a88700799a838219.css" integrity="sha256-0xQRaBmWB786UXIWzjwmOBTuzbyPynKpqIcAeZqDghk=" crossorigin="anonymous">
+	
+	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.1/css/all.min.css">
+	<link rel="stylesheet" href="https://wangtu2022.github.io/css/styles.css">
+</head>
+
+<body id="page">
+	
+	<header id="site-header" class="animated slideInUp">
+		<div class="hdr-wrapper section-inner">
+			<div class="hdr-left">
+				<div class="site-branding">
+					<a href="https://wangtu2022.github.io/">煎鱼</a>
+				</div>
+				<nav class="site-nav hide-in-mobile">
+					
+				<a href="https://wangtu2022.github.io/posts/">文章</a>
+				<a href="https://wangtu2022.github.io/tags/">标签</a>
+				<a href="https://wangtu2022.github.io/about/">关于</a>
+
+				</nav>
+			</div>
+			<div class="hdr-right hdr-icons">
+				<span class="hdr-social hide-in-mobile"><a href="https://github.com/eddycjy" target="_blank" rel="noopener me" title="Github"><svg xmlns="http://www.w3.org/2000/svg" class="feather" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"></path></svg></a></span><button id="menu-btn" class="hdr-btn" title="Menu"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-menu"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg></button>
+			</div>
+		</div>
+	</header>
+	<div id="mobile-menu" class="animated fast">
+		<ul>
+			<li><a href="https://wangtu2022.github.io/posts/">文章</a></li>
+			<li><a href="https://wangtu2022.github.io/tags/">标签</a></li>
+			<li><a href="https://wangtu2022.github.io/about/">关于</a></li>
+		</ul>
+	</div>
+
+
+	<main class="site-main section-inner animated fadeIn faster">
+		<article class="thin">
+			<header class="post-header">
+				<div class="post-meta"><span>Sep 13, 2021</span></div>
+				<h1>上帝视角看 “Go 项目标准布局” 之争</h1>
+			</header>
+			<div class="content">
+				<p>大家好，我是煎鱼。</p>
+<p>前段时间 Go 语言社区有一件事情引爆了热议，那就是 <code>golang-standards/project-layout</code> 项目的 “Go 项目的标准布局” 之争。</p>
+<p>没想到，五一假期，认真一看，这个 issues 已经提出将近一个月了，仍然在热议阶段，我想，咱们需要好好的聊聊这个话题。</p>
+<p>煎鱼带你了解下的前因后果，再分享我的看法和业务真实情况。</p>
+<h2 id="背景">背景<a href="#背景" class="anchor" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 7h3a5 5 0 0 1 5 5 5 5 0 0 1-5 5h-3m-6 0H6a5 5 0 0 1-5-5 5 5 0 0 1 5-5h3"></path><line x1="8" y1="12" x2="16" y2="12"></line></svg></a></h2>
+<h3 id="问题发生地">问题发生地<a href="#问题发生地" class="anchor" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 7h3a5 5 0 0 1 5 5 5 5 0 0 1-5 5h-3m-6 0H6a5 5 0 0 1-5-5 5 5 0 0 1 5-5h3"></path><line x1="8" y1="12" x2="16" y2="12"></line></svg></a></h3>
+<p>在 GitHub 上有一个项目 Spaghetti（github.com/adonovan/spaghetti），是 Go 软件包的一个依赖性分析工具。</p>
+<p>该项目的目录结构如下：</p>
+<p><img src="https://p3-juejin.byteimg.com/tos-cn-i-k3u1fbpfcp/11b7f74aa3944e509c89bcbfc51a2c99~tplv-k3u1fbpfcp-zoom-1.image" alt="图片"></p>
+<p>看上去并不复杂，代码量不多，文件平铺也不超过一屏，就是一个布局比较简单的项目。</p>
+<p>有一位老哥提出了一个 PR，明确的期望该项目按照 <code>golang-standards/project-layout</code> 项目给出的 “标准” 布局来调整。：</p>
+<p><img src="https://p3-juejin.byteimg.com/tos-cn-i-k3u1fbpfcp/e0da59130ce94ee190d51491396d6919~tplv-k3u1fbpfcp-zoom-1.image" alt="图片"></p>
+<p>我猜测该项目可能是因为把 Go、HTML、JS、PNG 和 go.mod 文件等摆在了一起，引起了该同学的一丝丝纠结，觉得比较乱？</p>
+<h3 id="标准布局-长什么样子">“标准布局“ 长什么样子<a href="#标准布局-长什么样子" class="anchor" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 7h3a5 5 0 0 1 5 5 5 5 0 0 1-5 5h-3m-6 0H6a5 5 0 0 1-5-5 5 5 0 0 1 5-5h3"></path><line x1="8" y1="12" x2="16" y2="12"></line></svg></a></h3>
+<p>在 <code>golang-standards/project-layout</code> 项目中，其自称：</p>
+<p><img src="https://p3-juejin.byteimg.com/tos-cn-i-k3u1fbpfcp/55511ceb43cb48c59d0ce302783eec59~tplv-k3u1fbpfcp-zoom-1.image" alt="图片"></p>
+<p>项目的组织名也是 &ldquo;golang-standards&rdquo;，其提供了一个基本的 Go 项目布局，精简展示如下：</p>
+<pre tabindex="0"><code>project-layout
+├── api
+├── cmd
+├── configs
+├── docs
+├── go.mod
+├── init
+├── internal
+├── pkg
+├── scripts
+├── vendor
+├── ...
+</code></pre><ul>
+<li>
+<p>/cmd：项目主要的应用程序。</p>
+</li>
+<li>
+<p>/internal：私有的应用程序代码库，这些是不希望被其他人导入的代码。</p>
+</li>
+<li>
+<p>应用程序实际的代码可以放在 /internal/app 目录（如：internal/app/myapp）。</p>
+</li>
+<li>
+<p>应用程序的共享代码放在 /internal/pkg 目录（如：internal/pkg/myprivlib）中。</p>
+</li>
+<li>
+<p>/pkg：外部应用程序可以使用的库代码（如：/pkg/mypubliclib）。其他项目将会导入这些库来保证项目可以正常运行。</p>
+</li>
+<li>
+<p>/vendor：应用程序的依赖关系，可通过执行 <code>go mod vendor</code> 执行得到。</p>
+</li>
+<li>
+<p>/configs：配置文件模板或默认配置。</p>
+</li>
+<li>
+<p>/init：系统初始化（systemd、upstart、sysv）和进程管理（runit、supervisord）配置。</p>
+</li>
+<li>
+<p>/scripts:：用于执行各种构建，安装，分析等操作的脚本。</p>
+</li>
+</ul>
+<p>更具体的布局介绍，大家可以参见 project-layout 项目的 README，其基本把方方面面的目录都考虑到了（人多力量大）。</p>
+<p>由于内容过于长，因此就不一一展示了。</p>
+<h3 id="russ-cox-现身原因">Russ Cox 现身原因<a href="#russ-cox-现身原因" class="anchor" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 7h3a5 5 0 0 1 5 5 5 5 0 0 1-5 5h-3m-6 0H6a5 5 0 0 1-5-5 5 5 0 0 1 5-5h3"></path><line x1="8" y1="12" x2="16" y2="12"></line></svg></a></h3>
+<p>不过很巧，该项目的作者是前 Google 员工，是 <code>gopl.io</code> 项目（5.1k stars）的作者。</p>
+<p>在仅仅过去 23 分钟后，作为 GoTeam Leader 的 Russ Cox（@rsc）就现身，并提出新的 issue 表达出了反对意见：</p>
+<p><img src="https://p3-juejin.byteimg.com/tos-cn-i-k3u1fbpfcp/f72fcd999116477193c22430eb33c22f~tplv-k3u1fbpfcp-zoom-1.image" alt="图片"></p>
+<p>在 <code>golang-standards/project-layout</code> 项目的 README 中有明确指出这不是官方的标准，有如下声称：</p>
+<blockquote>
+<blockquote>
+<p>it is a set of common historical and emerging project layout patterns in the Go ecosystem.</p>
+</blockquote>
+</blockquote>
+<p>Russ Cox 主要是对声称 &ldquo;这是一套 Go 生态系统中常见的历史和新兴的项目布局模式&rdquo; 这一说法表示了 “不准确” 的意见。</p>
+<p>例如：Go 生态系统中的绝大多数包都不会将可导入的包放在 pkg 子目录中。更广泛地说，这里描述的只是非常复杂的工程项目，而 Go 的仓库往往要简单得多。</p>
+<p>另外，不幸的是，这套项目布局在组织名字上被称作 &ldquo;golang-standards&rdquo;（Golang 标准） 提出来，实际上并非真的是官方标准，有误导的情况存在。</p>
+<h3 id="russ-cox-反对原因">Russ Cox 反对原因<a href="#russ-cox-反对原因" class="anchor" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 7h3a5 5 0 0 1 5 5 5 5 0 0 1-5 5h-3m-6 0H6a5 5 0 0 1-5-5 5 5 0 0 1 5-5h3"></path><line x1="8" y1="12" x2="16" y2="12"></line></svg></a></h3>
+<p>在了解 project-layout 项目所提供的 “标准“ 项目布局和 Russ Cox 提出 issues 的背景后。</p>
+<p>我们进一步了解 Russ Cox 认为<strong>这不对</strong>的根本考虑。project-layout 这个项目有两个问题：</p>
+<ul>
+<li>
+<p>它声称是 Go 标准（Go standards）的主办方，但实际上并非如此，因为这些标准绝非 Go 官方标准。</p>
+</li>
+<li>
+<p>它提出的项目布局标准过于复杂，不是一个合理的标准。</p>
+</li>
+</ul>
+<h2 id="go-项目布局的标准是什么">Go 项目布局的标准是什么<a href="#go-项目布局的标准是什么" class="anchor" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 7h3a5 5 0 0 1 5 5 5 5 0 0 1-5 5h-3m-6 0H6a5 5 0 0 1-5-5 5 5 0 0 1 5-5h3"></path><line x1="8" y1="12" x2="16" y2="12"></line></svg></a></h2>
+<p>提出这个 issues 后，出现了一大堆人追问 Russ Cox，到底何为 Go 项目的布局标准？</p>
+<p>Russ Cox 给出了正式回应，一个可导入的 Go repo 的最小标准布局是：</p>
+<ul>
+<li>
+<p>在你的根目录下放一个 LICENSE 文件。</p>
+</li>
+<li>
+<p>在你的根目录下放一个 go.mod 文件。</p>
+</li>
+<li>
+<p>将 Go 代码放在 repo 中，放在根目录中，或者按照你认为合适的方式组织成一个目录树。</p>
+</li>
+</ul>
+<p>就这样了，这就是 &ldquo;标准&rdquo;，没有那么复杂。不需要像 project-layout 项目一样的布局。像是 Go 官方的 <code>golang.org/x</code> 仓库打破了 project-layout 所说的这些 &ldquo;规则 &ldquo;中的每一条。</p>
+<h2 id="go-提案">Go 提案<a href="#go-提案" class="anchor" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 7h3a5 5 0 0 1 5 5 5 5 0 0 1-5 5h-3m-6 0H6a5 5 0 0 1-5-5 5 5 0 0 1 5-5h3"></path><line x1="8" y1="12" x2="16" y2="12"></line></svg></a></h2>
+<p>在经历了长时间的口水战后，已经有人在 Go 官方仓库提出希望释出相关的提案（proposal）：</p>
+<p><img src="https://p3-juejin.byteimg.com/tos-cn-i-k3u1fbpfcp/ada96a8647e04b38a340995ccf764156~tplv-k3u1fbpfcp-zoom-1.image" alt="图片"></p>
+<p>猜测可能会有如下几种可能：</p>
+<ul>
+<li>
+<p>GitHub 项目 golang-standards/project-layout 愿意更名，不再自称 ”golang-standards“，不过可能性比较低，因为已经已多人提出，但作者没什么表示。</p>
+</li>
+<li>
+<p>Go 官方正式提供 Go 标准项目布局的说明。</p>
+</li>
+<li>
+<p>Go 官方不做约束，仅做表态，可能输出文章。</p>
+</li>
+</ul>
+<p>后续大家继续关注该提案，就可以知道发展了，传送门：issues #45861。</p>
+<p>按照惯例，我猜测第三种可能性最大，因为很难有人可以提供所有开发者认可的标准，每个事业部、团队的喜好都可能有所不同。</p>
+<h2 id="总结">总结<a href="#总结" class="anchor" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 7h3a5 5 0 0 1 5 5 5 5 0 0 1-5 5h-3m-6 0H6a5 5 0 0 1-5-5 5 5 0 0 1 5-5h3"></path><line x1="8" y1="12" x2="16" y2="12"></line></svg></a></h2>
+<p>实际上，任何东西自称 “XX 标准”，在名气大后，都会带来一些问题。就像本文提到的 golang-standards/project-layout 项目一样。</p>
+<p>换位思考一下，若你是某个项目的 Leader，某一天你的同事，被人拿着 “标准” 来建议修改时，说这是这个项目的 “标准”，会不会很奇妙？</p>
+<p>无独有偶，我有一个朋友，他们公司早年只有一套 DDD 标准，本想统一。结果后面每一个介入 DDD 的业务同学，都认为前人不标准，每个人都自创了一套 DDD 标准。</p>
+<p>总是会有小伙伴<strong>想让定义绝对的 “标准”，又或是 “最佳实践”</strong>。其实是难以定义的，最好的就是能够一个团队内形成基本共识，这里面牵扯到的不单单只有技术&hellip;</p>
+<p>你对此有什么看法呢，<strong>欢迎在评论区留言和大家一起交流</strong>！</p>
+
+			</div>
+			<hr class="post-end">
+			<footer class="post-info">
+				<p>
+					<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-tag meta-icon"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"></path><line x1="7" y1="7" x2="7" y2="7"></line></svg><span class="tag"><a href="https://wangtu2022.github.io/tags/go">go</a></span>
+				</p>
+				<p><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-file-text"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>252 Words</p>
+				<p><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-calendar"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>2021-09-13 23:34 &#43;0800</p>
+			</footer>
+		</article>
+		<div class="post-nav thin">
+			<a class="next-post" href="https://wangtu2022.github.io/posts/go/go-array-slice/">
+				<span class="post-nav-label"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-arrow-left"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>&nbsp;Newer</span><br><span>Go 数组比切片好在哪？</span>
+			</a>
+			<a class="prev-post" href="https://wangtu2022.github.io/posts/go/go-map-access/">
+				<span class="post-nav-label">Older&nbsp;<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-arrow-right"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg></span><br><span>用 Go map 要注意这个细节，避免依赖他！</span>
+			</a>
+		</div>
+		<div id="comments" class="thin">
+</div>
+	</main>
+
+	<footer id="site-footer" class="section-inner thin animated fadeIn faster">
+		<p>&copy; 2022 <a href="https://wangtu2022.github.io/">煎鱼</a> &#183; <a href="http://www.beian.miit.gov.cn/">粤ICP备19076352号</a></p>
+		<p>
+			Made with <a href="https://gohugo.io/" target="_blank" rel="noopener">Hugo</a> &#183; Theme <a href="https://github.com/Track3/hermit" target="_blank" rel="noopener">Hermit</a> &#183; <a href="https://wangtu2022.github.io/posts/index.xml" target="_blank" title="rss"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-rss"><path d="M4 11a9 9 0 0 1 9 9"></path><path d="M4 4a16 16 0 0 1 16 16"></path><circle cx="5" cy="19" r="1"></circle></svg></a>
+		</p>
+	</footer>
+
+
+
+	<script src="https://wangtu2022.github.io/js/bundle.min.580988ed2982bcbb74a1773c7abea97b43e4c43b9324e10cda0813ec6ec4bb67.js" integrity="sha256-WAmI7SmCvLt0oXc8er6pe0PkxDuTJOEM2ggT7G7Eu2c=" crossorigin="anonymous"></script>
+	
+<script type="application/javascript">
+var doNotTrack = false;
+if (!doNotTrack) {
+	window.ga=window.ga||function(){(ga.q=ga.q||[]).push(arguments)};ga.l=+new Date;
+	ga('create', 'UA-166045776-1', 'auto');
+	
+	ga('send', 'pageview');
+}
+</script>
+<script async src='https://www.google-analytics.com/analytics.js'></script>
+
+
+</body>
+
+</html>

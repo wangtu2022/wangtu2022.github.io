@@ -1,0 +1,102 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>Tags on 煎鱼</title>
+    <link>https://wangtu2022.github.io/tags/</link>
+    <description>Recent content in Tags on 煎鱼</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>zh-hans</language>
+    <copyright>This work is licensed under a Creative Commons Attribution-NonCommercial 4.0 International License.</copyright>
+    <lastBuildDate>Sat, 05 Feb 2022 16:03:31 +0800</lastBuildDate><atom:link href="https://wangtu2022.github.io/tags/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>go</title>
+      <link>https://wangtu2022.github.io/tags/go/</link>
+      <pubDate>Sat, 05 Feb 2022 16:03:31 +0800</pubDate>
+      
+      <guid>https://wangtu2022.github.io/tags/go/</guid>
+      <description></description>
+    </item>
+    
+    <item>
+      <title>go1.18</title>
+      <link>https://wangtu2022.github.io/tags/go1.18/</link>
+      <pubDate>Sat, 05 Feb 2022 16:00:00 +0800</pubDate>
+      
+      <guid>https://wangtu2022.github.io/tags/go1.18/</guid>
+      <description></description>
+    </item>
+    
+    <item>
+      <title>为什么</title>
+      <link>https://wangtu2022.github.io/tags/%E4%B8%BA%E4%BB%80%E4%B9%88/</link>
+      <pubDate>Fri, 31 Dec 2021 12:55:16 +0800</pubDate>
+      
+      <guid>https://wangtu2022.github.io/tags/%E4%B8%BA%E4%BB%80%E4%B9%88/</guid>
+      <description></description>
+    </item>
+    
+    <item>
+      <title>面试题</title>
+      <link>https://wangtu2022.github.io/tags/%E9%9D%A2%E8%AF%95%E9%A2%98/</link>
+      <pubDate>Fri, 31 Dec 2021 12:55:08 +0800</pubDate>
+      
+      <guid>https://wangtu2022.github.io/tags/%E9%9D%A2%E8%AF%95%E9%A2%98/</guid>
+      <description></description>
+    </item>
+    
+    <item>
+      <title>giac</title>
+      <link>https://wangtu2022.github.io/tags/giac/</link>
+      <pubDate>Fri, 31 Dec 2021 12:54:57 +0800</pubDate>
+      
+      <guid>https://wangtu2022.github.io/tags/giac/</guid>
+      <description></description>
+    </item>
+    
+    <item>
+      <title>go1.17</title>
+      <link>https://wangtu2022.github.io/tags/go1.17/</link>
+      <pubDate>Fri, 31 Dec 2021 12:54:56 +0800</pubDate>
+      
+      <guid>https://wangtu2022.github.io/tags/go1.17/</guid>
+      <description></description>
+    </item>
+    
+    <item>
+      <title>职场成长</title>
+      <link>https://wangtu2022.github.io/tags/%E8%81%8C%E5%9C%BA%E6%88%90%E9%95%BF/</link>
+      <pubDate>Fri, 31 Dec 2021 12:54:56 +0800</pubDate>
+      
+      <guid>https://wangtu2022.github.io/tags/%E8%81%8C%E5%9C%BA%E6%88%90%E9%95%BF/</guid>
+      <description></description>
+    </item>
+    
+    <item>
+      <title>mq</title>
+      <link>https://wangtu2022.github.io/tags/mq/</link>
+      <pubDate>Fri, 31 Dec 2021 12:54:50 +0800</pubDate>
+      
+      <guid>https://wangtu2022.github.io/tags/mq/</guid>
+      <description></description>
+    </item>
+    
+    <item>
+      <title>泛型</title>
+      <link>https://wangtu2022.github.io/tags/%E6%B3%9B%E5%9E%8B/</link>
+      <pubDate>Wed, 13 Jan 2021 21:11:44 +0800</pubDate>
+      
+      <guid>https://wangtu2022.github.io/tags/%E6%B3%9B%E5%9E%8B/</guid>
+      <description></description>
+    </item>
+    
+    <item>
+      <title>ecug</title>
+      <link>https://wangtu2022.github.io/tags/ecug/</link>
+      <pubDate>Tue, 05 Jan 2021 21:26:50 +0800</pubDate>
+      
+      <guid>https://wangtu2022.github.io/tags/ecug/</guid>
+      <description></description>
+    </item>
+    
+  </channel>
+</rss>

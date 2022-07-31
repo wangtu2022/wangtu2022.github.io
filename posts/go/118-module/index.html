@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="zh-hans">
+
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<meta http-equiv="X-UA-Compatible" content="ie=edge">
+	<meta name="theme-color" content="#494f5c">
+	<meta name="msapplication-TileColor" content="#494f5c">
+<meta itemprop="name" content="Go1.18 新特性：多 Module 工作区模式">
+<meta itemprop="description" content="大家好，我是煎鱼。
+Go 的依赖管理，也就是 Go Module。从推出到现在，也已经有了一定的年头了，吐槽一直很多，官方也不断地在进行完善。
+Go1.18 将会推出一个新特性：Multi-Module Workspaces，用于支持 Module 多工作区，能解决以往的一系列问题。
+今天将由煎鱼带大家一起深入学习。
+背景 在日常使用 Go 工程时，总会遇到 2 个经典问题，特别的折腾人。
+如下：
+依赖本地 replace module。 依赖本地未发布的 module。 replace module 第一个场景：像是平时在 Go 工程中，我们为了解决一些本地依赖，或是定制化代码。会在 go.mod 文件中使用 replace 做替换。"><meta itemprop="datePublished" content="2022-02-05T16:00:00+08:00" />
+<meta itemprop="dateModified" content="2022-02-05T16:00:00+08:00" />
+<meta itemprop="wordCount" content="275">
+<meta itemprop="keywords" content="go,go1.18," /><meta property="og:title" content="Go1.18 新特性：多 Module 工作区模式" />
+<meta property="og:description" content="大家好，我是煎鱼。
+Go 的依赖管理，也就是 Go Module。从推出到现在，也已经有了一定的年头了，吐槽一直很多，官方也不断地在进行完善。
+Go1.18 将会推出一个新特性：Multi-Module Workspaces，用于支持 Module 多工作区，能解决以往的一系列问题。
+今天将由煎鱼带大家一起深入学习。
+背景 在日常使用 Go 工程时，总会遇到 2 个经典问题，特别的折腾人。
+如下：
+依赖本地 replace module。 依赖本地未发布的 module。 replace module 第一个场景：像是平时在 Go 工程中，我们为了解决一些本地依赖，或是定制化代码。会在 go.mod 文件中使用 replace 做替换。" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://wangtu2022.github.io/posts/go/118-module/" /><meta property="article:section" content="posts" />
+<meta property="article:published_time" content="2022-02-05T16:00:00+08:00" />
+<meta property="article:modified_time" content="2022-02-05T16:00:00+08:00" />
+
+<meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="Go1.18 新特性：多 Module 工作区模式"/>
+<meta name="twitter:description" content="大家好，我是煎鱼。
+Go 的依赖管理，也就是 Go Module。从推出到现在，也已经有了一定的年头了，吐槽一直很多，官方也不断地在进行完善。
+Go1.18 将会推出一个新特性：Multi-Module Workspaces，用于支持 Module 多工作区，能解决以往的一系列问题。
+今天将由煎鱼带大家一起深入学习。
+背景 在日常使用 Go 工程时，总会遇到 2 个经典问题，特别的折腾人。
+如下：
+依赖本地 replace module。 依赖本地未发布的 module。 replace module 第一个场景：像是平时在 Go 工程中，我们为了解决一些本地依赖，或是定制化代码。会在 go.mod 文件中使用 replace 做替换。"/>
+
+	<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+	<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+	<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+	<link rel="manifest" href="/site.webmanifest">
+	<link rel="mask-icon" href="/safari-pinned-tab.svg" color="">
+	<link rel="shortcut icon" href="/favicon.ico">
+
+	<title>Go1.18 新特性：多 Module 工作区模式</title>
+	<link rel="stylesheet" href="https://wangtu2022.github.io/css/style.min.d3141168199607bf3a517216ce3c263814eecdbc8fca72a9a88700799a838219.css" integrity="sha256-0xQRaBmWB786UXIWzjwmOBTuzbyPynKpqIcAeZqDghk=" crossorigin="anonymous">
+	
+	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.1/css/all.min.css">
+	<link rel="stylesheet" href="https://wangtu2022.github.io/css/styles.css">
+</head>
+
+<body id="page">
+	
+	<header id="site-header" class="animated slideInUp">
+		<div class="hdr-wrapper section-inner">
+			<div class="hdr-left">
+				<div class="site-branding">
+					<a href="https://wangtu2022.github.io/">煎鱼</a>
+				</div>
+				<nav class="site-nav hide-in-mobile">
+					
+				<a href="https://wangtu2022.github.io/posts/">文章</a>
+				<a href="https://wangtu2022.github.io/tags/">标签</a>
+				<a href="https://wangtu2022.github.io/about/">关于</a>
+
+				</nav>
+			</div>
+			<div class="hdr-right hdr-icons">
+				<button id="toc-btn" class="hdr-btn desktop-only-ib" title="Table of Contents"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-list"><line x1="8" y1="6" x2="21" y2="6"></line><line x1="8" y1="12" x2="21" y2="12"></line><line x1="8" y1="18" x2="21" y2="18"></line><line x1="3" y1="6" x2="3" y2="6"></line><line x1="3" y1="12" x2="3" y2="12"></line><line x1="3" y1="18" x2="3" y2="18"></line></svg></button><span class="hdr-social hide-in-mobile"><a href="https://github.com/eddycjy" target="_blank" rel="noopener me" title="Github"><svg xmlns="http://www.w3.org/2000/svg" class="feather" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"></path></svg></a></span><button id="menu-btn" class="hdr-btn" title="Menu"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-menu"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg></button>
+			</div>
+		</div>
+	</header>
+	<div id="mobile-menu" class="animated fast">
+		<ul>
+			<li><a href="https://wangtu2022.github.io/posts/">文章</a></li>
+			<li><a href="https://wangtu2022.github.io/tags/">标签</a></li>
+			<li><a href="https://wangtu2022.github.io/about/">关于</a></li>
+		</ul>
+	</div>
+
+
+	<main class="site-main section-inner animated fadeIn faster">
+		<article class="thin">
+			<header class="post-header">
+				<div class="post-meta"><span>Feb 5, 2022</span></div>
+				<h1>Go1.18 新特性：多 Module 工作区模式</h1>
+			</header>
+			<div class="content">
+				<p>大家好，我是煎鱼。</p>
+<p>Go 的依赖管理，也就是 Go Module。从推出到现在，也已经有了一定的年头了，吐槽一直很多，官方也不断地在进行完善。</p>
+<p>Go1.18 将会推出一个新特性：Multi-Module Workspaces，用于支持 Module 多工作区，能解决以往的一系列问题。</p>
+<p>今天将由煎鱼带大家一起深入学习。</p>
+<h2 id="背景">背景<a href="#背景" class="anchor" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 7h3a5 5 0 0 1 5 5 5 5 0 0 1-5 5h-3m-6 0H6a5 5 0 0 1-5-5 5 5 0 0 1 5-5h3"></path><line x1="8" y1="12" x2="16" y2="12"></line></svg></a></h2>
+<p>在日常使用 Go 工程时，总会遇到 2 个经典问题，特别的折腾人。</p>
+<p>如下：</p>
+<ol>
+<li>依赖本地 replace module。</li>
+<li>依赖本地未发布的 module。</li>
+</ol>
+<h3 id="replace-module">replace module<a href="#replace-module" class="anchor" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 7h3a5 5 0 0 1 5 5 5 5 0 0 1-5 5h-3m-6 0H6a5 5 0 0 1-5-5 5 5 0 0 1 5-5h3"></path><line x1="8" y1="12" x2="16" y2="12"></line></svg></a></h3>
+<p>第一个场景：像是平时在 Go 工程中，我们为了解决一些本地依赖，或是定制化代码。会在 go.mod 文件中使用 replace 做替换。</p>
+<p>如下代码：</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-go" data-lang="go"><span class="line"><span class="cl"><span class="nx">replace</span> <span class="nx">golang</span><span class="p">.</span><span class="nx">org</span><span class="o">/</span><span class="nx">x</span><span class="o">/</span><span class="nx">net</span> <span class="p">=&gt;</span> <span class="o">/</span><span class="nx">Users</span><span class="o">/</span><span class="nx">eddycjy</span><span class="o">/</span><span class="k">go</span><span class="o">/</span><span class="nx">awesomeProject</span>
+</span></span></code></pre></div><p>这样就可以实现本地开发联调时的准确性。</p>
+<p>问题就在这里：</p>
+<ul>
+<li>本地路径：所设定的 replace 本质上转换的是本地的路径，也就是每个人都不一样。</li>
+<li>仓库依赖：文件修改是会上传到 Git 仓库的，不小心传上去了，影响到其他开发同学，又或是每次上传都得重新改回去。</li>
+</ul>
+<p>用户体验非常差，很折腾人。</p>
+<h3 id="未发布的-module">未发布的 module<a href="#未发布的-module" class="anchor" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 7h3a5 5 0 0 1 5 5 5 5 0 0 1-5 5h-3m-6 0H6a5 5 0 0 1-5-5 5 5 0 0 1 5-5h3"></path><line x1="8" y1="12" x2="16" y2="12"></line></svg></a></h3>
+<p>第二个场景：在做本地的 Go 项目开发时，可能会在本地同时开发多个库（项目库、工具库、第三方库）等。</p>
+<p>如下代码：</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-go" data-lang="go"><span class="line"><span class="cl"><span class="kn">package</span> <span class="nx">main</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="kn">import</span> <span class="p">(</span>
+</span></span><span class="line"><span class="cl">    <span class="s">&#34;github.com/eddycjy/pkgutil&#34;</span>
+</span></span><span class="line"><span class="cl"><span class="p">)</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="kd">func</span> <span class="nf">main</span><span class="p">()</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="nx">pkgutil</span><span class="p">.</span><span class="nf">PrintFish</span><span class="p">()</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span></code></pre></div><p>如果这个时候运行 <code>go run</code> 或是 <code>go mod tidy</code>，都不行，会运行失败。</p>
+<p>报如下类似错误：</p>
+<pre tabindex="0"><code>fatal: repository &#39;https://github.com/eddycjy/pkgutil/&#39; not found
+</code></pre><p>这个问题报错是因为 <code>github.com/eddycjy/pkgutil</code> 这个库，在 GitHub 是没有的，自然也就拉取不到。</p>
+<p>解决方法：在 Go1.18 以前，我们会通过 replace（会遇到背景一的问题），又或是直接上传到 Github 上，自然也就能被 Go 工具链拉取到依赖了。</p>
+<p>许多同学会发出灵魂质疑：Go 的依赖都必须要上传到 GitHub 吗，强绑定？</p>
+<p>对新入门的同学非常不友好，很要命。</p>
+<h2 id="工作区模式">工作区模式<a href="#工作区模式" class="anchor" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 7h3a5 5 0 0 1 5 5 5 5 0 0 1-5 5h-3m-6 0H6a5 5 0 0 1-5-5 5 5 0 0 1 5-5h3"></path><line x1="8" y1="12" x2="16" y2="12"></line></svg></a></h2>
+<p>在社区的多轮反馈下，Michael Matloob 提出了提案《<a href="https://go.googlesource.com/proposal/+/master/design/45713-workspace.md" title="Proposal: Multi-Module Workspaces in cmd/go">Proposal: Multi-Module Workspaces in cmd/go</a>》进行了大量的讨论和实施，在 Go1.18 正式落地。</p>
+<p>新提案的一个核心概念，就是增加了 <code>go work</code> 工作区的概念，针对的是 Go Module 的依赖管理模式。</p>
+<p>其能够在本地项目的 go.work 文件中，通过设置一系列依赖的模块本地路径，再将<strong>路径下的模块组成一个当前的工作区</strong>，他的读取优先级是最高的。</p>
+<p>我们可以通过 <code>go help</code> 来查看，如下：</p>
+<pre tabindex="0"><code>$ go1.18beta1 help work
+Usage:
+
+	go work &lt;command&gt; [arguments]
+
+The commands are:
+
+	edit        edit go.work from tools or scripts
+	init        initialize workspace file
+	sync        sync workspace build list to modules
+	use         add modules to workspace file
+
+Use &#34;go help work &lt;command&gt;&#34; for more information about a command.
+</code></pre><p>只要执行 <code>go work init</code> 就可以初始化一个新的工作区，后面跟的参数就是要生成的具体子模块 mod。</p>
+<p>命令如下：</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-go" data-lang="go"><span class="line"><span class="cl"><span class="k">go</span> <span class="nx">work</span> <span class="nx">init</span> <span class="p">.</span><span class="o">/</span><span class="nx">mod</span> <span class="p">.</span><span class="o">/</span><span class="nx">tools</span>
+</span></span></code></pre></div><p>项目目录如下：</p>
+<pre tabindex="0"><code>awesomeProject
+├── mod
+│   ├── go.mod      // 子模块
+│   └── main.go
+├── go.work         // 工作区
+└── tools
+    ├── fish.go
+    └── go.mod      // 子模块
+</code></pre><p>生成的 go.work 文件内容：</p>
+<pre tabindex="0"><code>go 1.18
+
+use (
+    ./mod 
+    ./tools
+)
+</code></pre><p>新的 go.work 与 go.mod 语法一致，也可以使用 replace 语法：</p>
+<pre tabindex="0"><code>go 1.18
+
+use (...)
+
+replace golang.org/x/net =&gt; example.com/fork/net v1.4.5
+</code></pre><p>go.work 文件内共支持三个指令：</p>
+<ul>
+<li>go：声明 go 版本号，主要用于后续新语义的版本控制。</li>
+<li>use：声明应用所依赖模块的具体文件路径，路径可以是绝对路径或相对路径，可以在应用命目录外均可。</li>
+<li>replace：声明替换某个模块依赖的导入路径，优先级高级 go.mod 中的 replace 指令。</li>
+</ul>
+<p>若想要禁用工作区模式，可以通过 <code>-workfile=off</code> 指令来指定。</p>
+<p>也就是在运行时执行如下命令：</p>
+<pre tabindex="0"><code>go run -workfile=off main.go
+
+go build -workfile=off
+</code></pre><p>go.work 文件是不需要提交到 Git 仓库上的，否则就比较折腾了。</p>
+<p>只要你在 Go 项目中设置了 go.work 文件，那么在运行和编译时就会进入到工作区模式，会优先以工作区的配置为最高优先级，来适配本地开发的诉求。</p>
+<p>至此，工作区的核心知识就介绍完毕了。</p>
+<h2 id="总结">总结<a href="#总结" class="anchor" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 7h3a5 5 0 0 1 5 5 5 5 0 0 1-5 5h-3m-6 0H6a5 5 0 0 1-5-5 5 5 0 0 1 5-5h3"></path><line x1="8" y1="12" x2="16" y2="12"></line></svg></a></h2>
+<p>今天给大家介绍了 Go1.18 的新特性：多 Module 工作区模式。其本质上还是为了解决本地开发的诉求。</p>
+<p>由于 go.mod 文件是与项目强关联的，基本都会上传到 Git 仓库中，很难在这上面动刀子。直接就造了个 go.work 出来，纯本地使用，方便快捷。</p>
+<p>使用新的 go.work，就可以在完全是本地文件上各种捣鼓了，不会对其他成员开发有其他影响。</p>
+<p>你觉得怎么样呢？：）</p>
+
+			</div>
+			<hr class="post-end">
+			<footer class="post-info">
+				<p>
+					<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-tag meta-icon"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"></path><line x1="7" y1="7" x2="7" y2="7"></line></svg><span class="tag"><a href="https://wangtu2022.github.io/tags/go">go</a></span><span class="tag"><a href="https://wangtu2022.github.io/tags/go1.18">go1.18</a></span>
+				</p>
+				<p><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-file-text"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>275 Words</p>
+				<p><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-calendar"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>2022-02-05 16:00 &#43;0800</p>
+			</footer>
+		</article>
+		<aside id="toc">
+			<div class="toc-title">Table of Contents</div>
+			<nav id="TableOfContents">
+  <ul>
+    <li><a href="#背景">背景</a>
+      <ul>
+        <li><a href="#replace-module">replace module</a></li>
+        <li><a href="#未发布的-module">未发布的 module</a></li>
+      </ul>
+    </li>
+    <li><a href="#工作区模式">工作区模式</a></li>
+    <li><a href="#总结">总结</a></li>
+  </ul>
+</nav>
+		</aside>
+		<div class="post-nav thin">
+			<a class="next-post" href="https://wangtu2022.github.io/posts/go/118-build-info/">
+				<span class="post-nav-label"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-arrow-left"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>&nbsp;Newer</span><br><span>Go1.18 新特性：编译后的二进制文件，将包含更多信息</span>
+			</a>
+			<a class="prev-post" href="https://wangtu2022.github.io/posts/go/var/">
+				<span class="post-nav-label">Older&nbsp;<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-arrow-right"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg></span><br><span>为什么 Go 有两种声明变量的方式，有什么区别，哪种好？</span>
+			</a>
+		</div>
+		<div id="comments" class="thin">
+</div>
+	</main>
+
+	<footer id="site-footer" class="section-inner thin animated fadeIn faster">
+		<p>&copy; 2022 <a href="https://wangtu2022.github.io/">煎鱼</a> &#183; <a href="http://www.beian.miit.gov.cn/">粤ICP备19076352号</a></p>
+		<p>
+			Made with <a href="https://gohugo.io/" target="_blank" rel="noopener">Hugo</a> &#183; Theme <a href="https://github.com/Track3/hermit" target="_blank" rel="noopener">Hermit</a> &#183; <a href="https://wangtu2022.github.io/posts/index.xml" target="_blank" title="rss"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-rss"><path d="M4 11a9 9 0 0 1 9 9"></path><path d="M4 4a16 16 0 0 1 16 16"></path><circle cx="5" cy="19" r="1"></circle></svg></a>
+		</p>
+	</footer>
+
+
+
+	<script src="https://wangtu2022.github.io/js/bundle.min.580988ed2982bcbb74a1773c7abea97b43e4c43b9324e10cda0813ec6ec4bb67.js" integrity="sha256-WAmI7SmCvLt0oXc8er6pe0PkxDuTJOEM2ggT7G7Eu2c=" crossorigin="anonymous"></script>
+	
+<script type="application/javascript">
+var doNotTrack = false;
+if (!doNotTrack) {
+	window.ga=window.ga||function(){(ga.q=ga.q||[]).push(arguments)};ga.l=+new Date;
+	ga('create', 'UA-166045776-1', 'auto');
+	
+	ga('send', 'pageview');
+}
+</script>
+<script async src='https://www.google-analytics.com/analytics.js'></script>
+
+
+</body>
+
+</html>

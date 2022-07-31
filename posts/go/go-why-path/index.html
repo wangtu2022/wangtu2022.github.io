@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="zh-hans">
+
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<meta http-equiv="X-UA-Compatible" content="ie=edge">
+	<meta name="theme-color" content="#494f5c">
+	<meta name="msapplication-TileColor" content="#494f5c">
+<meta itemprop="name" content="意见征集：Go1 要不要移除 GOPATH？">
+<meta itemprop="description" content="大家好，我是在打自己脸的后方记者煎鱼。
+前几天我发表了文章《意见征集：Go1 要不要移除 GOPATH？》。 本次投票共有 592 人参与了投票。 结果如下：
+绝大部分人支持移除 GOPATH，但建议保留的人依然占相当一部分。
+最新进展 在近几天，在 go issues 上有人提出了新的提案：《proposal: cmd/go: maintain &lsquo;classic&rsquo; vendor behaviour》。
+该提案正式向 Go 官方提出了我们上一篇文章有提到的两点：
+Go 历史项目的维护问题。 Go1 兼容性保证的许诺。 摘选一部分核心观点给大家看看。
+新的提案 从 Go1."><meta itemprop="datePublished" content="2021-04-05T16:02:34+08:00" />
+<meta itemprop="dateModified" content="2021-04-05T16:02:34+08:00" />
+<meta itemprop="wordCount" content="165">
+<meta itemprop="keywords" content="go," /><meta property="og:title" content="意见征集：Go1 要不要移除 GOPATH？" />
+<meta property="og:description" content="大家好，我是在打自己脸的后方记者煎鱼。
+前几天我发表了文章《意见征集：Go1 要不要移除 GOPATH？》。 本次投票共有 592 人参与了投票。 结果如下：
+绝大部分人支持移除 GOPATH，但建议保留的人依然占相当一部分。
+最新进展 在近几天，在 go issues 上有人提出了新的提案：《proposal: cmd/go: maintain &lsquo;classic&rsquo; vendor behaviour》。
+该提案正式向 Go 官方提出了我们上一篇文章有提到的两点：
+Go 历史项目的维护问题。 Go1 兼容性保证的许诺。 摘选一部分核心观点给大家看看。
+新的提案 从 Go1." />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://wangtu2022.github.io/posts/go/go-why-path/" /><meta property="article:section" content="posts" />
+<meta property="article:published_time" content="2021-04-05T16:02:34+08:00" />
+<meta property="article:modified_time" content="2021-04-05T16:02:34+08:00" />
+
+<meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="意见征集：Go1 要不要移除 GOPATH？"/>
+<meta name="twitter:description" content="大家好，我是在打自己脸的后方记者煎鱼。
+前几天我发表了文章《意见征集：Go1 要不要移除 GOPATH？》。 本次投票共有 592 人参与了投票。 结果如下：
+绝大部分人支持移除 GOPATH，但建议保留的人依然占相当一部分。
+最新进展 在近几天，在 go issues 上有人提出了新的提案：《proposal: cmd/go: maintain &lsquo;classic&rsquo; vendor behaviour》。
+该提案正式向 Go 官方提出了我们上一篇文章有提到的两点：
+Go 历史项目的维护问题。 Go1 兼容性保证的许诺。 摘选一部分核心观点给大家看看。
+新的提案 从 Go1."/>
+
+	<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+	<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+	<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+	<link rel="manifest" href="/site.webmanifest">
+	<link rel="mask-icon" href="/safari-pinned-tab.svg" color="">
+	<link rel="shortcut icon" href="/favicon.ico">
+
+	<title>意见征集：Go1 要不要移除 GOPATH？</title>
+	<link rel="stylesheet" href="https://wangtu2022.github.io/css/style.min.d3141168199607bf3a517216ce3c263814eecdbc8fca72a9a88700799a838219.css" integrity="sha256-0xQRaBmWB786UXIWzjwmOBTuzbyPynKpqIcAeZqDghk=" crossorigin="anonymous">
+	
+	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.1/css/all.min.css">
+	<link rel="stylesheet" href="https://wangtu2022.github.io/css/styles.css">
+</head>
+
+<body id="page">
+	
+	<header id="site-header" class="animated slideInUp">
+		<div class="hdr-wrapper section-inner">
+			<div class="hdr-left">
+				<div class="site-branding">
+					<a href="https://wangtu2022.github.io/">煎鱼</a>
+				</div>
+				<nav class="site-nav hide-in-mobile">
+					
+				<a href="https://wangtu2022.github.io/posts/">文章</a>
+				<a href="https://wangtu2022.github.io/tags/">标签</a>
+				<a href="https://wangtu2022.github.io/about/">关于</a>
+
+				</nav>
+			</div>
+			<div class="hdr-right hdr-icons">
+				<span class="hdr-social hide-in-mobile"><a href="https://github.com/eddycjy" target="_blank" rel="noopener me" title="Github"><svg xmlns="http://www.w3.org/2000/svg" class="feather" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"></path></svg></a></span><button id="menu-btn" class="hdr-btn" title="Menu"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-menu"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg></button>
+			</div>
+		</div>
+	</header>
+	<div id="mobile-menu" class="animated fast">
+		<ul>
+			<li><a href="https://wangtu2022.github.io/posts/">文章</a></li>
+			<li><a href="https://wangtu2022.github.io/tags/">标签</a></li>
+			<li><a href="https://wangtu2022.github.io/about/">关于</a></li>
+		</ul>
+	</div>
+
+
+	<main class="site-main section-inner animated fadeIn faster">
+		<article class="thin">
+			<header class="post-header">
+				<div class="post-meta"><span>Apr 5, 2021</span></div>
+				<h1>意见征集：Go1 要不要移除 GOPATH？</h1>
+			</header>
+			<div class="content">
+				<p>大家好，我是在打自己脸的后方记者煎鱼。</p>
+<p>前几天我发表了文章《意见征集：Go1 要不要移除 GOPATH？》。
+本次投票共有 592 人参与了投票。
+结果如下：</p>
+<p><img src="https://static01.imgkr.com/temp/d10e1354bc9d43c68439fb71d8935270.png" alt=""></p>
+<p>绝大部分人支持移除 GOPATH，但建议保留的人依然占相当一部分。</p>
+<h2 id="最新进展">最新进展<a href="#最新进展" class="anchor" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 7h3a5 5 0 0 1 5 5 5 5 0 0 1-5 5h-3m-6 0H6a5 5 0 0 1-5-5 5 5 0 0 1 5-5h3"></path><line x1="8" y1="12" x2="16" y2="12"></line></svg></a></h2>
+<p>在近几天，在 go issues 上有人提出了新的提案：《proposal: cmd/go: maintain &lsquo;classic&rsquo; vendor behaviour》。</p>
+<p>该提案正式向 Go 官方提出了我们上一篇文章有提到的两点：</p>
+<ol>
+<li>Go 历史项目的维护问题。</li>
+<li>Go1 兼容性保证的许诺。</li>
+</ol>
+<p>摘选一部分核心观点给大家看看。</p>
+<h2 id="新的提案">新的提案<a href="#新的提案" class="anchor" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 7h3a5 5 0 0 1 5 5 5 5 0 0 1-5 5h-3m-6 0H6a5 5 0 0 1-5-5 5 5 0 0 1 5-5h3"></path><line x1="8" y1="12" x2="16" y2="12"></line></svg></a></h2>
+<p>从 Go1.17 开始，Go1.17 就将 GOPATH 从编译器工具链中移除 <code>GO111MODULE</code> 标识。</p>
+<p>其依据如下：</p>
+<p><img src="https://static01.imgkr.com/temp/bf314e0979b7481681c6293ee60715c3.png" alt=""></p>
+<p>重点在于执行 <code>-mod=vendor</code> 命令时，其会忽略主模块根目录以外位置的软件目录，<strong>这意味着在 go mod 之前设计和编写的应用程序不能再编译（指的历史项目问题）</strong>。</p>
+<p>提案本身并不是要求要保持 GOPATH 代码解析 1:1 的说法，而是希望能够允许项目代码通过其他的方式在移除 GOPATH 后也能正常运行，有其他方式能够导入（不需要转成 Go mod）。</p>
+<p>另外最后提到删除 GOPATH 这样的代码解析能力，<strong>与下面这段摘自 go1compat 文档的精神不一致</strong>：</p>
+<blockquote>
+<blockquote>
+<p>It is intended that programs written to the Go 1 specification will continue to compile and run correctly, unchanged, over the lifetime of that specification. At some indefinite point, a Go 2 specification may arise, but until that time, Go programs that work today should continue to work even as future &ldquo;point&rdquo; releases of Go 1 arise (Go 1.1, Go 1.2, etc.).</p>
+</blockquote>
+</blockquote>
+<p>指出直接移除 GOPATH 可能违反 Go1 兼容性保证的精神，带来历史项目的工作量。</p>
+<h2 id="相爱相杀">相爱相杀<a href="#相爱相杀" class="anchor" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 7h3a5 5 0 0 1 5 5 5 5 0 0 1-5 5h-3m-6 0H6a5 5 0 0 1-5-5 5 5 0 0 1 5-5h3"></path><line x1="8" y1="12" x2="16" y2="12"></line></svg></a></h2>
+<p>无独有偶，前几天我和欧神（@changkun）就讨论过 Go1 兼容性保证（go1compat）的问题，我也是认为违反了该精神保证，这次行为不是很合理。</p>
+<p>但&hellip;欧神重读 《Go 1 and the Future of Go Programs》后，也就是我们俗称的 Go1 兼容性保证。发现了以下亮点：</p>
+<p><img src="https://static01.imgkr.com/temp/aa47a80786814576b5a5b091d8244127.png" alt=""></p>
+<p>在工具链中提到，<strong>Go 语言的工具链（编译器、链接器、构建工具等）仍然正在积极开发中，可能会改变行为，也就是不在兼容性保护的范围内</strong>。</p>
+<p>我们回到主角身上，GOPATH 是什么：GOPATH 定义的是软件的构建形式而不是编译的条件，归属于工具链里。</p>
+<p>因此其实<strong>移除 GOPATH 并不违反 Go1 兼容性保证</strong>，因为他不在保障范围内。</p>
+<p>注：感谢欧神的探讨和释疑，在此推荐欧神的大作《<a href="https://golang.design/under-the-hood/" title="Go 语言原本">Go 语言原本</a>》。</p>
+<h2 id="总结">总结<a href="#总结" class="anchor" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 7h3a5 5 0 0 1 5 5 5 5 0 0 1-5 5h-3m-6 0H6a5 5 0 0 1-5-5 5 5 0 0 1 5-5h3"></path><line x1="8" y1="12" x2="16" y2="12"></line></svg></a></h2>
+<p>目前该<a href="https://github.com/golang/go/issues/44519" title="提案">提案</a>已经进入 proposal review meeting 日程了，很快就会有决策了，在这里我们就不进行过多的新方案探讨。</p>
+<p>现实场景中依赖 GOPATH 的历史项目确实存在，使用什么方法更低成本、合理的让既有项目能够正常运行将会是一个讨论重点。</p>
+<p>接下来煎鱼将会跟踪这个提案，新的消息会继续同步。毕竟我是利益相关者（有依赖 GOPATH 的项目)&hellip;</p>
+<p>欢迎大家一起来讨论各种可能性！</p>
+
+			</div>
+			<hr class="post-end">
+			<footer class="post-info">
+				<p>
+					<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-tag meta-icon"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"></path><line x1="7" y1="7" x2="7" y2="7"></line></svg><span class="tag"><a href="https://wangtu2022.github.io/tags/go">go</a></span>
+				</p>
+				<p><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-file-text"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>165 Words</p>
+				<p><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-calendar"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>2021-04-05 16:02 &#43;0800</p>
+			</footer>
+		</article>
+		<div class="post-nav thin">
+			<a class="next-post" href="https://wangtu2022.github.io/posts/go/go-typeparams-master/">
+				<span class="post-nav-label"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-arrow-left"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>&nbsp;Newer</span><br><span>令人激动！Go 泛型代码合入 master（附尝鲜方法）</span>
+			</a>
+			<a class="prev-post" href="https://wangtu2022.github.io/posts/go/go1.16-mod/">
+				<span class="post-nav-label">Older&nbsp;<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-arrow-right"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg></span><br><span>Go1.16 新特性：Go mod 的后悔药，仅需这一招</span>
+			</a>
+		</div>
+		<div id="comments" class="thin">
+</div>
+	</main>
+
+	<footer id="site-footer" class="section-inner thin animated fadeIn faster">
+		<p>&copy; 2022 <a href="https://wangtu2022.github.io/">煎鱼</a> &#183; <a href="http://www.beian.miit.gov.cn/">粤ICP备19076352号</a></p>
+		<p>
+			Made with <a href="https://gohugo.io/" target="_blank" rel="noopener">Hugo</a> &#183; Theme <a href="https://github.com/Track3/hermit" target="_blank" rel="noopener">Hermit</a> &#183; <a href="https://wangtu2022.github.io/posts/index.xml" target="_blank" title="rss"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-rss"><path d="M4 11a9 9 0 0 1 9 9"></path><path d="M4 4a16 16 0 0 1 16 16"></path><circle cx="5" cy="19" r="1"></circle></svg></a>
+		</p>
+	</footer>
+
+
+
+	<script src="https://wangtu2022.github.io/js/bundle.min.580988ed2982bcbb74a1773c7abea97b43e4c43b9324e10cda0813ec6ec4bb67.js" integrity="sha256-WAmI7SmCvLt0oXc8er6pe0PkxDuTJOEM2ggT7G7Eu2c=" crossorigin="anonymous"></script>
+	
+<script type="application/javascript">
+var doNotTrack = false;
+if (!doNotTrack) {
+	window.ga=window.ga||function(){(ga.q=ga.q||[]).push(arguments)};ga.l=+new Date;
+	ga('create', 'UA-166045776-1', 'auto');
+	
+	ga('send', 'pageview');
+}
+</script>
+<script async src='https://www.google-analytics.com/analytics.js'></script>
+
+
+</body>
+
+</html>

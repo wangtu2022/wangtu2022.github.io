@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="zh-hans">
+
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<meta http-equiv="X-UA-Compatible" content="ie=edge">
+	<meta name="theme-color" content="#494f5c">
+	<meta name="msapplication-TileColor" content="#494f5c">
+<meta itemprop="name" content="微服务的灾难：端到端测试的痛苦">
+<meta itemprop="description" content="大家好，我是煎鱼。
+小咸鱼经过前文所提到的折磨人的 “微服务拆分、微服务环境” 问题后，终于顺顺利利的上到了测试环境进行测试。
+这时候开发、测试同学又闹新的头疼了，测了一轮下来。发现好好的。结果发现一上生产就有一些地方有问题，发现没测到。
+这到底是为什么呢？
+背景 在以往，小咸鱼他们团队都是传统的大单体应用。也就是一体化应用，包含了前端、后端等模块，具备天然的协调性：
+测试同学能够很方便的就直接测到前后端接口。 测试能够直接对系统本身进行集成测试。 但现在，做了微服务化（雏形）后，小咸鱼他们就翻车了，为什么呢？
+因为考虑到微服务，微服务就是向往单拎一个服务出来，都可以独立修改，独立发布。于是小咸鱼提交了一个迭代的几个服务变更，想着实现一把 “敏捷” 发布。
+结果一上线就炸了，一大堆的 BUG，光荣加班到晚上 12 点。
+这实质上是缺乏端到端测试的一个问题，单服务，无法明确系统正在正常运行。
+端到端测试 在测试的质量保障上，我们要站在用户视角去验证这个系统，保障整体的系统可用性，而不是单纯的前端 BFF，又或是后端 Server 的某些接口能够正常运行。
+在定义上端到端测试（End-to-end Test）是一种用于测试整个应用程序的流程是否符合预期的测试技术。测试同学会模拟用户真实的使用场景，通过用户界面测试应用程序。
+如下图：
+与小咸鱼团队那种单纯只测接口的方式不同，端到端测试是面向业务的。
+其目的是验证应用程序系统整体上是否符合业务诉求，主要通过 GUI 测试，也会有人称其为集成测试、系统测试，黑盒测试。不少公司会将这几种混在一起。"><meta itemprop="datePublished" content="2020-09-10T19:54:59+08:00" />
+<meta itemprop="dateModified" content="2020-09-10T19:54:59+08:00" />
+<meta itemprop="wordCount" content="62">
+<meta itemprop="keywords" content="微服务," /><meta property="og:title" content="微服务的灾难：端到端测试的痛苦" />
+<meta property="og:description" content="大家好，我是煎鱼。
+小咸鱼经过前文所提到的折磨人的 “微服务拆分、微服务环境” 问题后，终于顺顺利利的上到了测试环境进行测试。
+这时候开发、测试同学又闹新的头疼了，测了一轮下来。发现好好的。结果发现一上生产就有一些地方有问题，发现没测到。
+这到底是为什么呢？
+背景 在以往，小咸鱼他们团队都是传统的大单体应用。也就是一体化应用，包含了前端、后端等模块，具备天然的协调性：
+测试同学能够很方便的就直接测到前后端接口。 测试能够直接对系统本身进行集成测试。 但现在，做了微服务化（雏形）后，小咸鱼他们就翻车了，为什么呢？
+因为考虑到微服务，微服务就是向往单拎一个服务出来，都可以独立修改，独立发布。于是小咸鱼提交了一个迭代的几个服务变更，想着实现一把 “敏捷” 发布。
+结果一上线就炸了，一大堆的 BUG，光荣加班到晚上 12 点。
+这实质上是缺乏端到端测试的一个问题，单服务，无法明确系统正在正常运行。
+端到端测试 在测试的质量保障上，我们要站在用户视角去验证这个系统，保障整体的系统可用性，而不是单纯的前端 BFF，又或是后端 Server 的某些接口能够正常运行。
+在定义上端到端测试（End-to-end Test）是一种用于测试整个应用程序的流程是否符合预期的测试技术。测试同学会模拟用户真实的使用场景，通过用户界面测试应用程序。
+如下图：
+与小咸鱼团队那种单纯只测接口的方式不同，端到端测试是面向业务的。
+其目的是验证应用程序系统整体上是否符合业务诉求，主要通过 GUI 测试，也会有人称其为集成测试、系统测试，黑盒测试。不少公司会将这几种混在一起。" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://wangtu2022.github.io/posts/microservice/tests/" /><meta property="article:section" content="posts" />
+<meta property="article:published_time" content="2020-09-10T19:54:59+08:00" />
+<meta property="article:modified_time" content="2020-09-10T19:54:59+08:00" />
+
+<meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="微服务的灾难：端到端测试的痛苦"/>
+<meta name="twitter:description" content="大家好，我是煎鱼。
+小咸鱼经过前文所提到的折磨人的 “微服务拆分、微服务环境” 问题后，终于顺顺利利的上到了测试环境进行测试。
+这时候开发、测试同学又闹新的头疼了，测了一轮下来。发现好好的。结果发现一上生产就有一些地方有问题，发现没测到。
+这到底是为什么呢？
+背景 在以往，小咸鱼他们团队都是传统的大单体应用。也就是一体化应用，包含了前端、后端等模块，具备天然的协调性：
+测试同学能够很方便的就直接测到前后端接口。 测试能够直接对系统本身进行集成测试。 但现在，做了微服务化（雏形）后，小咸鱼他们就翻车了，为什么呢？
+因为考虑到微服务，微服务就是向往单拎一个服务出来，都可以独立修改，独立发布。于是小咸鱼提交了一个迭代的几个服务变更，想着实现一把 “敏捷” 发布。
+结果一上线就炸了，一大堆的 BUG，光荣加班到晚上 12 点。
+这实质上是缺乏端到端测试的一个问题，单服务，无法明确系统正在正常运行。
+端到端测试 在测试的质量保障上，我们要站在用户视角去验证这个系统，保障整体的系统可用性，而不是单纯的前端 BFF，又或是后端 Server 的某些接口能够正常运行。
+在定义上端到端测试（End-to-end Test）是一种用于测试整个应用程序的流程是否符合预期的测试技术。测试同学会模拟用户真实的使用场景，通过用户界面测试应用程序。
+如下图：
+与小咸鱼团队那种单纯只测接口的方式不同，端到端测试是面向业务的。
+其目的是验证应用程序系统整体上是否符合业务诉求，主要通过 GUI 测试，也会有人称其为集成测试、系统测试，黑盒测试。不少公司会将这几种混在一起。"/>
+
+	<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+	<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+	<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+	<link rel="manifest" href="/site.webmanifest">
+	<link rel="mask-icon" href="/safari-pinned-tab.svg" color="">
+	<link rel="shortcut icon" href="/favicon.ico">
+
+	<title>微服务的灾难：端到端测试的痛苦</title>
+	<link rel="stylesheet" href="https://wangtu2022.github.io/css/style.min.d3141168199607bf3a517216ce3c263814eecdbc8fca72a9a88700799a838219.css" integrity="sha256-0xQRaBmWB786UXIWzjwmOBTuzbyPynKpqIcAeZqDghk=" crossorigin="anonymous">
+	
+	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.1/css/all.min.css">
+	<link rel="stylesheet" href="https://wangtu2022.github.io/css/styles.css">
+</head>
+
+<body id="page">
+	
+	<header id="site-header" class="animated slideInUp">
+		<div class="hdr-wrapper section-inner">
+			<div class="hdr-left">
+				<div class="site-branding">
+					<a href="https://wangtu2022.github.io/">煎鱼</a>
+				</div>
+				<nav class="site-nav hide-in-mobile">
+					
+				<a href="https://wangtu2022.github.io/posts/">文章</a>
+				<a href="https://wangtu2022.github.io/tags/">标签</a>
+				<a href="https://wangtu2022.github.io/about/">关于</a>
+
+				</nav>
+			</div>
+			<div class="hdr-right hdr-icons">
+				<button id="toc-btn" class="hdr-btn desktop-only-ib" title="Table of Contents"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-list"><line x1="8" y1="6" x2="21" y2="6"></line><line x1="8" y1="12" x2="21" y2="12"></line><line x1="8" y1="18" x2="21" y2="18"></line><line x1="3" y1="6" x2="3" y2="6"></line><line x1="3" y1="12" x2="3" y2="12"></line><line x1="3" y1="18" x2="3" y2="18"></line></svg></button><span class="hdr-social hide-in-mobile"><a href="https://github.com/eddycjy" target="_blank" rel="noopener me" title="Github"><svg xmlns="http://www.w3.org/2000/svg" class="feather" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"></path></svg></a></span><button id="menu-btn" class="hdr-btn" title="Menu"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-menu"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg></button>
+			</div>
+		</div>
+	</header>
+	<div id="mobile-menu" class="animated fast">
+		<ul>
+			<li><a href="https://wangtu2022.github.io/posts/">文章</a></li>
+			<li><a href="https://wangtu2022.github.io/tags/">标签</a></li>
+			<li><a href="https://wangtu2022.github.io/about/">关于</a></li>
+		</ul>
+	</div>
+
+
+	<main class="site-main section-inner animated fadeIn faster">
+		<article class="thin">
+			<header class="post-header">
+				<div class="post-meta"><span>Sep 10, 2020</span></div>
+				<h1>微服务的灾难：端到端测试的痛苦</h1>
+			</header>
+			<div class="content">
+				<p>大家好，我是煎鱼。</p>
+<p>小咸鱼经过前文所提到的折磨人的 “微服务拆分、微服务环境” 问题后，终于顺顺利利的上到了测试环境进行测试。</p>
+<p>这时候开发、测试同学又闹新的头疼了，测了一轮下来。发现好好的。结果发现一上生产就有一些地方有问题，发现没测到。</p>
+<p>这到底是为什么呢？</p>
+<h2 id="背景">背景<a href="#背景" class="anchor" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 7h3a5 5 0 0 1 5 5 5 5 0 0 1-5 5h-3m-6 0H6a5 5 0 0 1-5-5 5 5 0 0 1 5-5h3"></path><line x1="8" y1="12" x2="16" y2="12"></line></svg></a></h2>
+<p>在以往，小咸鱼他们团队都是传统的大单体应用。也就是一体化应用，包含了前端、后端等模块，具备天然的协调性：</p>
+<ul>
+<li>测试同学能够很方便的就直接测到前后端接口。</li>
+<li>测试能够直接对系统本身进行集成测试。</li>
+</ul>
+<p>但现在，做了微服务化（雏形）后，小咸鱼他们就翻车了，为什么呢？</p>
+<p>因为考虑到微服务，微服务就是向往单拎一个服务出来，都可以独立修改，独立发布。于是小咸鱼提交了一个迭代的几个服务变更，想着实现一把 “敏捷” 发布。</p>
+<p>结果一上线就炸了，一大堆的 BUG，光荣加班到晚上 12 点。</p>
+<p>这实质上是缺乏端到端测试的一个问题，单服务，无法明确系统正在正常运行。</p>
+<h2 id="端到端测试">端到端测试<a href="#端到端测试" class="anchor" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 7h3a5 5 0 0 1 5 5 5 5 0 0 1-5 5h-3m-6 0H6a5 5 0 0 1-5-5 5 5 0 0 1 5-5h3"></path><line x1="8" y1="12" x2="16" y2="12"></line></svg></a></h2>
+<p>在测试的质量保障上，我们要站在用户视角去验证这个系统，保障整体的系统可用性，而不是单纯的前端 BFF，又或是后端 Server 的某些接口能够正常运行。</p>
+<p>在定义上<strong>端到端测试（End-to-end Test）是一种用于测试整个应用程序的流程是否符合预期的测试技术</strong>。测试同学会模拟用户真实的使用场景，通过用户界面测试应用程序。</p>
+<p>如下图：</p>
+<p><img src="https://image.eddycjy.com/5ca5b971d8e25cf41c648401489d47b4.jpg" alt="端到端测试"></p>
+<p>与小咸鱼团队那种单纯只测接口的方式不同，端到端测试是面向业务的。</p>
+<p>其目的是<strong>验证应用程序系统整体上是否符合业务诉求</strong>，主要通过 GUI 测试，也会有人称其为集成测试、系统测试，黑盒测试。不少公司会将这几种混在一起。</p>
+<p>实则在细节定义上各有不同：</p>
+<p><img src="https://files.mdnice.com/user/3610/820d7fbb-e3aa-4e99-8898-d69fa242887b.png" alt="图来自网络"></p>
+<p>本文不是测试方向文章，因此不深究。</p>
+<h2 id="问题症结">问题症结<a href="#问题症结" class="anchor" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 7h3a5 5 0 0 1 5 5 5 5 0 0 1-5 5h-3m-6 0H6a5 5 0 0 1-5-5 5 5 0 0 1 5-5h3"></path><line x1="8" y1="12" x2="16" y2="12"></line></svg></a></h2>
+<p>那么小咸鱼他们团队主要是缺乏端到端的这类集成测试的校验。直接在迭代中，把几个微服务一改，接口跑几下，以为就是合理通过的了。</p>
+<p>真实情况：</p>
+<ul>
+<li>一上到生产，发现压根不是这么回事。因为多个变更结合在一起，很有可能会导致系统原有的行为发生改变。</li>
+<li>即使是你单个服务接口没违背，也不一定能保证其他在同个时段上的服务没问题。</li>
+<li>在业内执行情况来看，业务迭代的非常快，接口自动化大多比较缺乏。又或是以请外包人员的方式来做，大多是面向存量补接口。</li>
+</ul>
+<p>我们可以知道单纯验证接口，不走端到端类别的集成测试，是非常风骚的。设身处地的想想如下场景：</p>
+<p>有没有见过一些开发，他在本地测好接口后，一和前端集成上到测试环境。测试人员，一点一个报错，正向流程压根跑不通。测试同学苦不堪言，开发同学一下身背数十 BUG，齐齐加班。</p>
+<p>但开发同学大呼我在本地的接口测试的完全没问题。归根结底，小咸鱼团队的问题，还是因为缺乏端到端测试，缺乏齐全的接口自动化用例导致的。</p>
+<h2 id="解决思路">解决思路<a href="#解决思路" class="anchor" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 7h3a5 5 0 0 1 5 5 5 5 0 0 1-5 5h-3m-6 0H6a5 5 0 0 1-5-5 5 5 0 0 1 5-5h3"></path><line x1="8" y1="12" x2="16" y2="12"></line></svg></a></h2>
+<p>在每个迭代中，实际上每个团队都会专注于系统中所使用的所有服务中的某个服务。</p>
+<p>系统中存在的大量微服务和子系统的功能和较窄的测试空间，有可能会导致没有发现系统或服务中存在的隐患。</p>
+<p>这样测试，问题的出现，甚至是必然的。</p>
+<p>在解决思路上常见于：</p>
+<ol>
+<li>新增预发布环境，做类似端到端测试的集成测试，确保系统集成后会是可用的。</li>
+<li>尝试更高覆盖率的接口自动化测试，大多数公司会针对新的，做增量或存量的自动化测试用例的补全。</li>
+<li>借助线上、线下数据在 CI/CD 时进行自动化测试，实现更全面真实的测试用例。</li>
+</ol>
+<p>业内基本是数种思路齐头并进，最常见的是第一种方式。最有效，但开销也是最大的，并且会导致预发布环境的一定阻塞。</p>
+<p>随后第二第三种大多都会紧接着跟进，具体程度会根据公司的软硬实力（例如：行政手段、基础设施等）不同而做的深度不同。</p>
+<p>甚至前几天听小咸鱼说，面试时还听到不少公司延伸了外包岗位专门做一块的内容。</p>
+<h2 id="总结">总结<a href="#总结" class="anchor" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 7h3a5 5 0 0 1 5 5 5 5 0 0 1-5 5h-3m-6 0H6a5 5 0 0 1-5-5 5 5 0 0 1 5-5h3"></path><line x1="8" y1="12" x2="16" y2="12"></line></svg></a></h2>
+<p>虽说这个问题并不是 “微服务” 架构所独有的。但是显然微服务化后放大了测试的深坑问题。</p>
+<p>很多公司的流程和措施都是为了保障一些东西，像小咸鱼团队这样，被网上布道师例举的优点遮蔽了双眼，后面又被迫把端到端测试加回来的不在少数。</p>
+<p><strong>你们的团队又是如何高效解决这个问题的呢，欢迎在评论区留言和交流</strong>！</p>
+
+			</div>
+			<hr class="post-end">
+			<footer class="post-info">
+				<p>
+					<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-tag meta-icon"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"></path><line x1="7" y1="7" x2="7" y2="7"></line></svg><span class="tag"><a href="https://wangtu2022.github.io/tags/%E5%BE%AE%E6%9C%8D%E5%8A%A1">微服务</a></span>
+				</p>
+				<p><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-file-text"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>62 Words</p>
+				<p><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-calendar"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>2020-09-10 19:54 &#43;0800</p>
+			</footer>
+		</article>
+		<aside id="toc">
+			<div class="toc-title">Table of Contents</div>
+			<nav id="TableOfContents">
+  <ul>
+    <li><a href="#背景">背景</a></li>
+    <li><a href="#端到端测试">端到端测试</a></li>
+    <li><a href="#问题症结">问题症结</a></li>
+    <li><a href="#解决思路">解决思路</a></li>
+    <li><a href="#总结">总结</a></li>
+  </ul>
+</nav>
+		</aside>
+		<div class="post-nav thin">
+			<a class="next-post" href="https://wangtu2022.github.io/posts/reading/documentary-of-go/">
+				<span class="post-nav-label"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-arrow-left"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>&nbsp;Newer</span><br><span>Go: A Documentary 发布！</span>
+			</a>
+			<a class="prev-post" href="https://wangtu2022.github.io/posts/microservice/tracing/">
+				<span class="post-nav-label">Older&nbsp;<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-arrow-right"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg></span><br><span>微服务的战争：选型？分布式链路追踪</span>
+			</a>
+		</div>
+		<div id="comments" class="thin">
+</div>
+	</main>
+
+	<footer id="site-footer" class="section-inner thin animated fadeIn faster">
+		<p>&copy; 2022 <a href="https://wangtu2022.github.io/">煎鱼</a> &#183; <a href="http://www.beian.miit.gov.cn/">粤ICP备19076352号</a></p>
+		<p>
+			Made with <a href="https://gohugo.io/" target="_blank" rel="noopener">Hugo</a> &#183; Theme <a href="https://github.com/Track3/hermit" target="_blank" rel="noopener">Hermit</a> &#183; <a href="https://wangtu2022.github.io/posts/index.xml" target="_blank" title="rss"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-rss"><path d="M4 11a9 9 0 0 1 9 9"></path><path d="M4 4a16 16 0 0 1 16 16"></path><circle cx="5" cy="19" r="1"></circle></svg></a>
+		</p>
+	</footer>
+
+
+
+	<script src="https://wangtu2022.github.io/js/bundle.min.580988ed2982bcbb74a1773c7abea97b43e4c43b9324e10cda0813ec6ec4bb67.js" integrity="sha256-WAmI7SmCvLt0oXc8er6pe0PkxDuTJOEM2ggT7G7Eu2c=" crossorigin="anonymous"></script>
+	
+<script type="application/javascript">
+var doNotTrack = false;
+if (!doNotTrack) {
+	window.ga=window.ga||function(){(ga.q=ga.q||[]).push(arguments)};ga.l=+new Date;
+	ga('create', 'UA-166045776-1', 'auto');
+	
+	ga('send', 'pageview');
+}
+</script>
+<script async src='https://www.google-analytics.com/analytics.js'></script>
+
+
+</body>
+
+</html>

@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="zh-hans">
+
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<meta http-equiv="X-UA-Compatible" content="ie=edge">
+	<meta name="theme-color" content="#494f5c">
+	<meta name="msapplication-TileColor" content="#494f5c">
+<meta itemprop="name" content="学会使用 GDB 调试 Go 代码">
+<meta itemprop="description" content="大家好，我是煎鱼。
+上一篇文章《一个 Demo 学会使用 Go Delve 调试》我们详细介绍了 Go 语言如何使用 Delve 进行排查和调试，对于问题的解决非常的有帮助。
+但调试工具肯定不止只有 Delve，今天我们来介绍第二个神器，那就是：GDB。
+GDB 是什么 GDB 是一个类 UNIX 系统下的程序调试工具，允许你看到另一个程序在执行时 &ldquo;内部 &ldquo;发生了什么，或者程序在崩溃时正在做什么。
+主要可以做四类事情：
+启动你的程序，指定任何可能影响其行为的东西。 使你的程序在指定的条件下停止。 检查当你的程序停止时发生了什么。 改变你程序中的东西，这样你就可以试验纠正一个错误的影响，并继续了解另一个错误。 安装 如果是在 MacOS 上的话，可以直接使用 brew 安装："><meta itemprop="datePublished" content="2021-12-31T12:54:57+08:00" />
+<meta itemprop="dateModified" content="2021-12-31T12:54:57+08:00" />
+<meta itemprop="wordCount" content="443">
+<meta itemprop="keywords" content="go," /><meta property="og:title" content="学会使用 GDB 调试 Go 代码" />
+<meta property="og:description" content="大家好，我是煎鱼。
+上一篇文章《一个 Demo 学会使用 Go Delve 调试》我们详细介绍了 Go 语言如何使用 Delve 进行排查和调试，对于问题的解决非常的有帮助。
+但调试工具肯定不止只有 Delve，今天我们来介绍第二个神器，那就是：GDB。
+GDB 是什么 GDB 是一个类 UNIX 系统下的程序调试工具，允许你看到另一个程序在执行时 &ldquo;内部 &ldquo;发生了什么，或者程序在崩溃时正在做什么。
+主要可以做四类事情：
+启动你的程序，指定任何可能影响其行为的东西。 使你的程序在指定的条件下停止。 检查当你的程序停止时发生了什么。 改变你程序中的东西，这样你就可以试验纠正一个错误的影响，并继续了解另一个错误。 安装 如果是在 MacOS 上的话，可以直接使用 brew 安装：" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://wangtu2022.github.io/posts/go/gdb/" /><meta property="article:section" content="posts" />
+<meta property="article:published_time" content="2021-12-31T12:54:57+08:00" />
+<meta property="article:modified_time" content="2021-12-31T12:54:57+08:00" />
+
+<meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="学会使用 GDB 调试 Go 代码"/>
+<meta name="twitter:description" content="大家好，我是煎鱼。
+上一篇文章《一个 Demo 学会使用 Go Delve 调试》我们详细介绍了 Go 语言如何使用 Delve 进行排查和调试，对于问题的解决非常的有帮助。
+但调试工具肯定不止只有 Delve，今天我们来介绍第二个神器，那就是：GDB。
+GDB 是什么 GDB 是一个类 UNIX 系统下的程序调试工具，允许你看到另一个程序在执行时 &ldquo;内部 &ldquo;发生了什么，或者程序在崩溃时正在做什么。
+主要可以做四类事情：
+启动你的程序，指定任何可能影响其行为的东西。 使你的程序在指定的条件下停止。 检查当你的程序停止时发生了什么。 改变你程序中的东西，这样你就可以试验纠正一个错误的影响，并继续了解另一个错误。 安装 如果是在 MacOS 上的话，可以直接使用 brew 安装："/>
+
+	<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+	<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+	<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+	<link rel="manifest" href="/site.webmanifest">
+	<link rel="mask-icon" href="/safari-pinned-tab.svg" color="">
+	<link rel="shortcut icon" href="/favicon.ico">
+
+	<title>学会使用 GDB 调试 Go 代码</title>
+	<link rel="stylesheet" href="https://wangtu2022.github.io/css/style.min.d3141168199607bf3a517216ce3c263814eecdbc8fca72a9a88700799a838219.css" integrity="sha256-0xQRaBmWB786UXIWzjwmOBTuzbyPynKpqIcAeZqDghk=" crossorigin="anonymous">
+	
+	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.1/css/all.min.css">
+	<link rel="stylesheet" href="https://wangtu2022.github.io/css/styles.css">
+</head>
+
+<body id="page">
+	
+	<header id="site-header" class="animated slideInUp">
+		<div class="hdr-wrapper section-inner">
+			<div class="hdr-left">
+				<div class="site-branding">
+					<a href="https://wangtu2022.github.io/">煎鱼</a>
+				</div>
+				<nav class="site-nav hide-in-mobile">
+					
+				<a href="https://wangtu2022.github.io/posts/">文章</a>
+				<a href="https://wangtu2022.github.io/tags/">标签</a>
+				<a href="https://wangtu2022.github.io/about/">关于</a>
+
+				</nav>
+			</div>
+			<div class="hdr-right hdr-icons">
+				<button id="toc-btn" class="hdr-btn desktop-only-ib" title="Table of Contents"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-list"><line x1="8" y1="6" x2="21" y2="6"></line><line x1="8" y1="12" x2="21" y2="12"></line><line x1="8" y1="18" x2="21" y2="18"></line><line x1="3" y1="6" x2="3" y2="6"></line><line x1="3" y1="12" x2="3" y2="12"></line><line x1="3" y1="18" x2="3" y2="18"></line></svg></button><span class="hdr-social hide-in-mobile"><a href="https://github.com/eddycjy" target="_blank" rel="noopener me" title="Github"><svg xmlns="http://www.w3.org/2000/svg" class="feather" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"></path></svg></a></span><button id="menu-btn" class="hdr-btn" title="Menu"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-menu"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg></button>
+			</div>
+		</div>
+	</header>
+	<div id="mobile-menu" class="animated fast">
+		<ul>
+			<li><a href="https://wangtu2022.github.io/posts/">文章</a></li>
+			<li><a href="https://wangtu2022.github.io/tags/">标签</a></li>
+			<li><a href="https://wangtu2022.github.io/about/">关于</a></li>
+		</ul>
+	</div>
+
+
+	<main class="site-main section-inner animated fadeIn faster">
+		<article class="thin">
+			<header class="post-header">
+				<div class="post-meta"><span>Dec 31, 2021</span></div>
+				<h1>学会使用 GDB 调试 Go 代码</h1>
+			</header>
+			<div class="content">
+				<p>大家好，我是煎鱼。</p>
+<p>上一篇文章《一个 Demo 学会使用 Go Delve 调试》我们详细介绍了 Go 语言如何使用 Delve 进行排查和调试，对于问题的解决非常的有帮助。</p>
+<p>但调试工具肯定不止只有 Delve，今天我们来介绍第二个神器，那就是：GDB。</p>
+<h2 id="gdb-是什么">GDB 是什么<a href="#gdb-是什么" class="anchor" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 7h3a5 5 0 0 1 5 5 5 5 0 0 1-5 5h-3m-6 0H6a5 5 0 0 1-5-5 5 5 0 0 1 5-5h3"></path><line x1="8" y1="12" x2="16" y2="12"></line></svg></a></h2>
+<p>GDB 是一个类 UNIX 系统下的程序调试工具，允许你看到另一个程序在执行时 &ldquo;内部 &ldquo;发生了什么，或者程序在崩溃时正在做什么。</p>
+<p><img src="https://files.mdnice.com/user/3610/35fc6475-ec0d-44a0-ae8c-920121130edb.png" alt="GDB Logo"></p>
+<p>主要可以做四类事情：</p>
+<ol>
+<li>启动你的程序，指定任何可能影响其行为的东西。</li>
+<li>使你的程序在指定的条件下停止。</li>
+<li>检查当你的程序停止时发生了什么。</li>
+<li>改变你程序中的东西，这样你就可以试验纠正一个错误的影响，并继续了解另一个错误。</li>
+</ol>
+<h2 id="安装">安装<a href="#安装" class="anchor" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 7h3a5 5 0 0 1 5 5 5 5 0 0 1-5 5h-3m-6 0H6a5 5 0 0 1-5-5 5 5 0 0 1 5-5h3"></path><line x1="8" y1="12" x2="16" y2="12"></line></svg></a></h2>
+<p>如果是在 MacOS 上的话，可以直接使用 brew 安装：</p>
+<pre tabindex="0"><code>brew install gdb
+</code></pre><p>如果是在 Linux ，则使用自带的包管理工具进行安装即可，但需要注意安装完毕后需要在 HOME 目录进行相关配置。</p>
+<p>安装完毕后，执行 <code>gdb</code> 就可以看到：</p>
+<pre tabindex="0"><code>$ gdb
+GNU gdb (GDB) 10.2
+...
+(gdb) 
+</code></pre><p>写此文时最新的 gdb 版本已经是 10.2 了，我也升级了上去。问题不大，还多了不少功能。</p>
+<h2 id="编译">编译<a href="#编译" class="anchor" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 7h3a5 5 0 0 1 5 5 5 5 0 0 1-5 5h-3m-6 0H6a5 5 0 0 1-5-5 5 5 0 0 1 5-5h3"></path><line x1="8" y1="12" x2="16" y2="12"></line></svg></a></h2>
+<p>我们还是使用先前的演示程序来进行调试。但由于 Go 语言的不少编译优化，因此在编译运行程序时，有以下几点需要注意：</p>
+<ul>
+<li>
+<p>go build 编译时需要增加 <code>-gcflags=all=&quot;-N -l&quot;</code> 指令来关闭内联优化，方便接下来的调试。</p>
+</li>
+<li>
+<p>若是 MacOS，在 go build 编译时需要增加 <code>-ldflags='-compressdwarf=false'</code> 指令。</p>
+<ul>
+<li>若不禁止，则会出现 <code>No symbol table is loaded. Use the &quot;file&quot; command.</code> 的错误。</li>
+<li>Go 编译默认为了减少二进制大小会默认压缩 DWARF 调试信息，但这会影响 gdb 的调试，因此需要将其关闭。</li>
+</ul>
+</li>
+</ul>
+<p>编译的命令是：</p>
+<pre tabindex="0"><code>$ go build -gcflags=all=&#34;-N -l&#34; -ldflags=&#39;-compressdwarf=false&#39; .
+</code></pre><p>输出结果：</p>
+<pre tabindex="0"><code>！了鱼煎进子脑
+</code></pre><h2 id="尝试-gdb">尝试 gdb<a href="#尝试-gdb" class="anchor" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 7h3a5 5 0 0 1 5 5 5 5 0 0 1-5 5h-3m-6 0H6a5 5 0 0 1-5-5 5 5 0 0 1 5-5h3"></path><line x1="8" y1="12" x2="16" y2="12"></line></svg></a></h2>
+<p>GDB 有两种调试模式，分别是文本用户界面（Text User Interface，简称 tui）和默认的命令行模式：</p>
+<pre tabindex="0"><code>// 调试界面
+$ gdb -tui ./awesome-project
+
+// 命令行模式
+$ gdb ./awesome-project
+</code></pre><p>接下来我们使用 gdb tui 的调试模式来给大家演示功能。</p>
+<p>我们在执行命令 <code>gdb -tui ./awesome-project</code> 后，窗口会切换为如下：</p>
+<p><img src="https://files.mdnice.com/user/3610/2a7096f4-addd-404f-9a47-4a97cbe9d595.png" alt="gdb tui 初始样子"></p>
+<p>你会发现中间提示 “No Source Available”，此时你需要继续回车两次，他就会自动加载插件支持，提示：“Loading Go Runtime support.”。</p>
+<p>我们就可以看到具体的代码块内容，如下：</p>
+<p><img src="https://files.mdnice.com/user/3610/351571a3-b89e-42f2-941e-24e734bfae26.png" alt=""></p>
+<p>用 MacOS 的同学需要注意，如果你在断点时发现发现了如下错误：</p>
+<pre tabindex="0"><code>(gdb) b main.main
+Breakpoint 1 at 0x10a2ea0: file /Users/eddycjy/go-application/awesomeProject/main.go, line 15.
+(gdb) r
+Starting program: /Users/eddycjy/go-application/awesomeProject/hello
+Unable to find Mach task port for process-id 64212: (os/kern) failure (0x5).
+ (please check gdb is codesigned - see taskgated(8))
+</code></pre><p>也就是 “please check gdb is codesigned - see taskgated(8)”，则需要重新处理证书认证和授权，是 MacOS 使用上的一个问题，具体可参考：《<a href="https://gist.github.com/hlissner/898b7dfc0a3b63824a70e15cd0180154">Codesign gdb on OSX</a>》。</p>
+<p>解决后，咱们的 gdb 就算是能够正确的运行起来了！</p>
+<h2 id="常用-gdb-命令">常用 gdb 命令<a href="#常用-gdb-命令" class="anchor" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 7h3a5 5 0 0 1 5 5 5 5 0 0 1-5 5h-3m-6 0H6a5 5 0 0 1-5-5 5 5 0 0 1 5-5h3"></path><line x1="8" y1="12" x2="16" y2="12"></line></svg></a></h2>
+<p>在 gdb 中，和 dlv 一样有常用的关键字命令。当然了，gdb 的 help all 输出非常多：</p>
+<pre tabindex="0"><code>(gdb) help all
+
+Command class: aliases
+Command class: breakpoints
+
+awatch -- Set a watchpoint for an expression.
+break, brea, bre, br, b -- Set breakpoint at specified location.
+break-range -- Set a breakpoint for an address range.
+catch -- Set catchpoints to catch events.
+...
+</code></pre><p>常用的关键字如下：</p>
+<ul>
+<li>b：break 的缩写，作用是打断点，例如：main.main，可带代码行数。</li>
+<li>r：run 的缩写，作用是运行程序到下一个断点处。</li>
+<li>c：continue 的缩写，作用是继续执行到下一个断点。</li>
+<li>s：step 的缩写，作用是单步执行，如果有所调用的方法，将会进入该方法。</li>
+<li>l：list 的缩写，作用是查看对应的源码。</li>
+<li>n：next 的缩写，作用是单步执行，不会进入所调用的方法，。</li>
+<li>q：quit 的缩写，作用是退出。</li>
+<li>info breakpoints：作用是查看所有设置的断点信息。</li>
+<li>info locals：作用是查看变量信息。</li>
+<li>info args：作用是查看函数的入参和出参的具体值。</li>
+<li>info goroutines：作用是查看 goroutines 的信息。</li>
+<li>goroutine 1 bt：作用是查看指定序号的 goroutine 调用堆栈。</li>
+</ul>
+<h2 id="进行调试">进行调试<a href="#进行调试" class="anchor" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 7h3a5 5 0 0 1 5 5 5 5 0 0 1-5 5h-3m-6 0H6a5 5 0 0 1-5-5 5 5 0 0 1 5-5h3"></path><line x1="8" y1="12" x2="16" y2="12"></line></svg></a></h2>
+<p>在调试上与 dlv 差不多，也是先执行关键字 <code>b</code> 打断点：</p>
+<pre tabindex="0"><code>(gdb) b main.main
+Breakpoint 1 at 0x10cbaa0: file /Users/eddycjy/go-application/awesomeProject/main.go, line 9.
+</code></pre><p>也可以先执行关键字 <code>l</code> 查看对应的代码情况再进行做决定：</p>
+<pre tabindex="0"><code>(gdb) l main.main
+4		&#34;fmt&#34;
+5	
+6		&#34;github.com/eddycjy/awesome-project/stringer&#34;
+7	)
+8	
+9	func main() {
+10		fmt.Println(stringer.Reverse(&#34;脑子进煎鱼了！&#34;))
+11	}
+</code></pre><p>查看对应 goroutines 正在运行的函数情况：</p>
+<pre tabindex="0"><code>(gdb) info goroutines
+  1  waiting runtime.gosched
+* 13  running runtime.goexit
+</code></pre><p>根据 pprof 等所得到的 goroutine 序号进行进一步的分析：</p>
+<pre tabindex="0"><code>(gdb) goroutine 1 bt
+#0  0x000000000040facb in runtime.gosched () at /home/user/go/src/runtime/proc.c:873
+#1  0x00000000004031c9 in runtime.chanrecv (c=void, ep=void, selected=void, received=void)
+ at  /home/user/go/src/runtime/chan.c:342
+#2  0x0000000000403299 in runtime.chanrecv1 (t=void, c=void) at/home/user/go/src/runtime/chan.c:423
+#3  0x000000000043075b in testing.RunTests (matchString...
+</code></pre><p>注意一个细节，gdb 调试是可以看到并对 runtime 包内容的代码进行断点和分析的。</p>
+<p>也可以和 dlv 一样执行 p 关键字输出相应的值的类型、值内容：</p>
+<pre tabindex="0"><code>(gdb) p re
+(gdb) p t
+$1 = (struct testing.T *) 0xf840688b60
+(gdb) p t
+$1 = (struct testing.T *) 0xf840688b60
+(gdb) p *t
+$2 = {errors = &#34;&#34;, failed = false, ch = 0xf8406f5690}
+(gdb) p *t-&gt;ch
+$3 = struct hchan&lt;*testing.T&gt;
+</code></pre><p>与 dlv 大同小异。</p>
+<h2 id="总结">总结<a href="#总结" class="anchor" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 7h3a5 5 0 0 1 5 5 5 5 0 0 1-5 5h-3m-6 0H6a5 5 0 0 1-5-5 5 5 0 0 1 5-5h3"></path><line x1="8" y1="12" x2="16" y2="12"></line></svg></a></h2>
+<p>总体上来讲，MacOS 上使用 gdb 还是挺麻烦的，在 Linux 环境下使用 gdb 还是更方便些。</p>
+<p>由于 <strong>dlv 和 gdb 在大致的调试上不会差距的太远</strong>，因此本文就没有过于展开。</p>
+<p>若是对业务代码进行分析，更建议使用 dlv，也就是我们上一篇文章所讲的内容。<strong>若有 runtime 库的调试需求的话，推荐使用 gdb 来作为首要调试工具</strong>，若无这方面诉求，建议使用 dlv。</p>
+
+			</div>
+			<hr class="post-end">
+			<footer class="post-info">
+				<p>
+					<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-tag meta-icon"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"></path><line x1="7" y1="7" x2="7" y2="7"></line></svg><span class="tag"><a href="https://wangtu2022.github.io/tags/go">go</a></span>
+				</p>
+				<p><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-file-text"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>443 Words</p>
+				<p><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-calendar"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>2021-12-31 12:54 &#43;0800</p>
+			</footer>
+		</article>
+		<aside id="toc">
+			<div class="toc-title">Table of Contents</div>
+			<nav id="TableOfContents">
+  <ul>
+    <li><a href="#gdb-是什么">GDB 是什么</a></li>
+    <li><a href="#安装">安装</a></li>
+    <li><a href="#编译">编译</a></li>
+    <li><a href="#尝试-gdb">尝试 gdb</a></li>
+    <li><a href="#常用-gdb-命令">常用 gdb 命令</a></li>
+    <li><a href="#进行调试">进行调试</a></li>
+    <li><a href="#总结">总结</a></li>
+  </ul>
+</nav>
+		</aside>
+		<div class="post-nav thin">
+			<a class="next-post" href="https://wangtu2022.github.io/posts/go/delve/">
+				<span class="post-nav-label"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-arrow-left"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>&nbsp;Newer</span><br><span>一个 Demo 学会使用 Go Delve 调试</span>
+			</a>
+			<a class="prev-post" href="https://wangtu2022.github.io/posts/2021giac/">
+				<span class="post-nav-label">Older&nbsp;<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-arrow-right"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg></span><br><span>我周末参加了个架构师大会！</span>
+			</a>
+		</div>
+		<div id="comments" class="thin">
+</div>
+	</main>
+
+	<footer id="site-footer" class="section-inner thin animated fadeIn faster">
+		<p>&copy; 2022 <a href="https://wangtu2022.github.io/">煎鱼</a> &#183; <a href="http://www.beian.miit.gov.cn/">粤ICP备19076352号</a></p>
+		<p>
+			Made with <a href="https://gohugo.io/" target="_blank" rel="noopener">Hugo</a> &#183; Theme <a href="https://github.com/Track3/hermit" target="_blank" rel="noopener">Hermit</a> &#183; <a href="https://wangtu2022.github.io/posts/index.xml" target="_blank" title="rss"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-rss"><path d="M4 11a9 9 0 0 1 9 9"></path><path d="M4 4a16 16 0 0 1 16 16"></path><circle cx="5" cy="19" r="1"></circle></svg></a>
+		</p>
+	</footer>
+
+
+
+	<script src="https://wangtu2022.github.io/js/bundle.min.580988ed2982bcbb74a1773c7abea97b43e4c43b9324e10cda0813ec6ec4bb67.js" integrity="sha256-WAmI7SmCvLt0oXc8er6pe0PkxDuTJOEM2ggT7G7Eu2c=" crossorigin="anonymous"></script>
+	
+<script type="application/javascript">
+var doNotTrack = false;
+if (!doNotTrack) {
+	window.ga=window.ga||function(){(ga.q=ga.q||[]).push(arguments)};ga.l=+new Date;
+	ga('create', 'UA-166045776-1', 'auto');
+	
+	ga('send', 'pageview');
+}
+</script>
+<script async src='https://www.google-analytics.com/analytics.js'></script>
+
+
+</body>
+
+</html>

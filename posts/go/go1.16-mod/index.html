@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="zh-hans">
+
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<meta http-equiv="X-UA-Compatible" content="ie=edge">
+	<meta name="theme-color" content="#494f5c">
+	<meta name="msapplication-TileColor" content="#494f5c">
+<meta itemprop="name" content="Go1.16 新特性：Go mod 的后悔药，仅需这一招">
+<meta itemprop="description" content="大家好，我是煎鱼。
+前几天 Go 官方正式发布了 1.16 版本。从这个版本起，环境变量 GO111MODULE 的默认值正式修改为 on。
+这也意味着 Go modules 将更进一步推进其业务覆盖面，有新老项目共存的小伙伴建议手动将 GO111MODULE 调整为 auto。
+Go1.16 针对 Go modules 放出了一个新特性，能够让维护 Go mod 库的开发者拥有反复吃 “后悔药” 的权力，提醒开发者已发布的 “脏” 版本存在问题。
+这个新特性，对于许多维护和使用公共库（开源、企业等）的小伙伴简直是一个小福音，建议大家都应该要了解这个知识点。
+在接下来文章中将进行详细说明和介绍。"><meta itemprop="datePublished" content="2021-04-05T16:00:13+08:00" />
+<meta itemprop="dateModified" content="2021-04-05T16:00:13+08:00" />
+<meta itemprop="wordCount" content="210">
+<meta itemprop="keywords" content="go," /><meta property="og:title" content="Go1.16 新特性：Go mod 的后悔药，仅需这一招" />
+<meta property="og:description" content="大家好，我是煎鱼。
+前几天 Go 官方正式发布了 1.16 版本。从这个版本起，环境变量 GO111MODULE 的默认值正式修改为 on。
+这也意味着 Go modules 将更进一步推进其业务覆盖面，有新老项目共存的小伙伴建议手动将 GO111MODULE 调整为 auto。
+Go1.16 针对 Go modules 放出了一个新特性，能够让维护 Go mod 库的开发者拥有反复吃 “后悔药” 的权力，提醒开发者已发布的 “脏” 版本存在问题。
+这个新特性，对于许多维护和使用公共库（开源、企业等）的小伙伴简直是一个小福音，建议大家都应该要了解这个知识点。
+在接下来文章中将进行详细说明和介绍。" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://wangtu2022.github.io/posts/go/go1.16-mod/" /><meta property="article:section" content="posts" />
+<meta property="article:published_time" content="2021-04-05T16:00:13+08:00" />
+<meta property="article:modified_time" content="2021-04-05T16:00:13+08:00" />
+
+<meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="Go1.16 新特性：Go mod 的后悔药，仅需这一招"/>
+<meta name="twitter:description" content="大家好，我是煎鱼。
+前几天 Go 官方正式发布了 1.16 版本。从这个版本起，环境变量 GO111MODULE 的默认值正式修改为 on。
+这也意味着 Go modules 将更进一步推进其业务覆盖面，有新老项目共存的小伙伴建议手动将 GO111MODULE 调整为 auto。
+Go1.16 针对 Go modules 放出了一个新特性，能够让维护 Go mod 库的开发者拥有反复吃 “后悔药” 的权力，提醒开发者已发布的 “脏” 版本存在问题。
+这个新特性，对于许多维护和使用公共库（开源、企业等）的小伙伴简直是一个小福音，建议大家都应该要了解这个知识点。
+在接下来文章中将进行详细说明和介绍。"/>
+
+	<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+	<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+	<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+	<link rel="manifest" href="/site.webmanifest">
+	<link rel="mask-icon" href="/safari-pinned-tab.svg" color="">
+	<link rel="shortcut icon" href="/favicon.ico">
+
+	<title>Go1.16 新特性：Go mod 的后悔药，仅需这一招</title>
+	<link rel="stylesheet" href="https://wangtu2022.github.io/css/style.min.d3141168199607bf3a517216ce3c263814eecdbc8fca72a9a88700799a838219.css" integrity="sha256-0xQRaBmWB786UXIWzjwmOBTuzbyPynKpqIcAeZqDghk=" crossorigin="anonymous">
+	
+	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.1/css/all.min.css">
+	<link rel="stylesheet" href="https://wangtu2022.github.io/css/styles.css">
+</head>
+
+<body id="page">
+	
+	<header id="site-header" class="animated slideInUp">
+		<div class="hdr-wrapper section-inner">
+			<div class="hdr-left">
+				<div class="site-branding">
+					<a href="https://wangtu2022.github.io/">煎鱼</a>
+				</div>
+				<nav class="site-nav hide-in-mobile">
+					
+				<a href="https://wangtu2022.github.io/posts/">文章</a>
+				<a href="https://wangtu2022.github.io/tags/">标签</a>
+				<a href="https://wangtu2022.github.io/about/">关于</a>
+
+				</nav>
+			</div>
+			<div class="hdr-right hdr-icons">
+				<span class="hdr-social hide-in-mobile"><a href="https://github.com/eddycjy" target="_blank" rel="noopener me" title="Github"><svg xmlns="http://www.w3.org/2000/svg" class="feather" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"></path></svg></a></span><button id="menu-btn" class="hdr-btn" title="Menu"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-menu"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg></button>
+			</div>
+		</div>
+	</header>
+	<div id="mobile-menu" class="animated fast">
+		<ul>
+			<li><a href="https://wangtu2022.github.io/posts/">文章</a></li>
+			<li><a href="https://wangtu2022.github.io/tags/">标签</a></li>
+			<li><a href="https://wangtu2022.github.io/about/">关于</a></li>
+		</ul>
+	</div>
+
+
+	<main class="site-main section-inner animated fadeIn faster">
+		<article class="thin">
+			<header class="post-header">
+				<div class="post-meta"><span>Apr 5, 2021</span></div>
+				<h1>Go1.16 新特性：Go mod 的后悔药，仅需这一招</h1>
+			</header>
+			<div class="content">
+				<p>大家好，我是煎鱼。</p>
+<p>前几天 Go 官方正式发布了 1.16 版本。<strong>从这个版本起，环境变量 GO111MODULE 的默认值正式修改为 on</strong>。</p>
+<p><img src="https://imgkr2.cn-bj.ufileos.com/64ac411e-6361-4b23-b437-78123e16ae5a.png?UCloudPublicKey=TOKEN_8d8b72be-579a-4e83-bfd0-5f6ce1546f13&amp;Signature=NWVlX2CGAsMjMs%252BJH54ZKW1s1fM%253D&amp;Expires=1613623986" alt=""></p>
+<p>这也意味着 Go modules 将更进一步推进其业务覆盖面，有新老项目共存的小伙伴建议手动将 GO111MODULE 调整为 auto。</p>
+<p><strong>Go1.16 针对 Go modules 放出了一个新特性，能够让维护 Go mod 库的开发者拥有反复吃 “后悔药” 的权力，提醒开发者已发布的 “脏” 版本存在问题</strong>。</p>
+<p>这个新特性，对于许多维护和使用公共库（开源、企业等）的小伙伴简直是一个小福音，建议大家都应该要了解这个知识点。</p>
+<p>在接下来文章中将进行详细说明和介绍。</p>
+<h2 id="后悔药go-mod-retract">后悔药：Go mod retract<a href="#后悔药go-mod-retract" class="anchor" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 7h3a5 5 0 0 1 5 5 5 5 0 0 1-5 5h-3m-6 0H6a5 5 0 0 1-5-5 5 5 0 0 1 5-5h3"></path><line x1="8" y1="12" x2="16" y2="12"></line></svg></a></h2>
+<p>Go1.16 起可以在 go.mod 文件中使用 <code>retract</code> 指令来声明该第三方模块的某些发行版本不能被其他模块使用。</p>
+<p>在使用场景上：在发现严重问题或无意发布某些版本后，模块的维护作者可以撤回该版本，支持撤回单个或多个版本。</p>
+<p>以前没有办法解决，因此一旦出现就非常麻烦。对应两者的操作如下：</p>
+<ul>
+<li>维护者：
+<ul>
+<li>删除有问题版本的 tag。</li>
+<li>重新打一个新版本的 tag。</li>
+</ul>
+</li>
+<li>使用者：
+<ul>
+<li>发现有问题的版本 tag 丢失，需手动介入。</li>
+<li>不知道有问题，由于其他库依赖，因此被动升级而踩坑。</li>
+</ul>
+</li>
+</ul>
+<p>因此在本次 Go1.16 发布后，就拥有了一个<strong>半止损</strong>的新手段了，也可以作为 Go mod 自动更新的大坑的补全办法之一。</p>
+<h2 id="实战演练">实战演练<a href="#实战演练" class="anchor" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 7h3a5 5 0 0 1 5 5 5 5 0 0 1-5 5h-3m-6 0H6a5 5 0 0 1-5-5 5 5 0 0 1 5-5h3"></path><line x1="8" y1="12" x2="16" y2="12"></line></svg></a></h2>
+<p>为了方便演示，首先创建一个 Demo 项目（github.com/eddycjy/go-retract-demo），其含有一个基础方法：</p>
+<pre tabindex="0"><code>package go_retract_demo
+
+func HelloWorld() string {
+	return &#34;001：脑子进煎鱼了！&#34;
+}
+</code></pre><p>另外有一个应用工程依赖了该第三方库，代码如下：</p>
+<pre tabindex="0"><code>func main() {
+  // import demo &#34;github.com/eddycjy/go-retract-demo&#34;
+	s := demo.HelloWorld()
+	fmt.Println(s)
+}
+</code></pre><p>对应的 go.mod 文件如下：</p>
+<pre tabindex="0"><code>module github.com/eddycjy/awesomeProject
+
+go 1.16
+
+require github.com/eddycjy/go-retract-demo v0.0.1
+</code></pre><h3 id="retract-特性演示">retract 特性演示<a href="#retract-特性演示" class="anchor" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 7h3a5 5 0 0 1 5 5 5 5 0 0 1-5 5h-3m-6 0H6a5 5 0 0 1-5-5 5 5 0 0 1 5-5h3"></path><line x1="8" y1="12" x2="16" y2="12"></line></svg></a></h3>
+<p>但随着时间不断推移，第三方开源库 <code>eddycjy/go-retract-demo</code> 即将迭代到 <code>v0.3.0</code> 时，发现以往的 <code>v0.2.0</code> 是有 BUG 的。</p>
+<p>需要紧急的在<code>v0.3.0</code> 版本把这个 BUG 修复并提醒出去。此时可以在 <code>go.mod</code> 文件中写入 <code>retract</code> 指令：</p>
+<pre tabindex="0"><code>module github.com/eddycjy/go-retract-demo
+
+go 1.16
+
+// 因为煎鱼不小心敲错了...
+retract v0.2.0
+</code></pre><p>指令上面为撤回的原因，后面是具体的版本。如果涉及多版本，可以如下编写：</p>
+<pre tabindex="0"><code>retract (
+  v0.1.0
+  v0.2.0
+)
+</code></pre><h3 id="retract-特性效果">retract 特性效果<a href="#retract-特性效果" class="anchor" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 7h3a5 5 0 0 1 5 5 5 5 0 0 1-5 5h-3m-6 0H6a5 5 0 0 1-5-5 5 5 0 0 1 5-5h3"></path><line x1="8" y1="12" x2="16" y2="12"></line></svg></a></h3>
+<p>成功发布最新版本 <code>v0.3.0</code> 版本并指定 <code>retract</code> 后。
+所有引用了该库的工程应用，执行 <code>go list</code> 就可以看到如下提醒：</p>
+<pre tabindex="0"><code>$ go1.16 list -m -u all
+github.com/eddycjy/awesomeProject
+github.com/eddycjy/go-retract-demo v0.2.0 (retracted) [v0.3.0]
+</code></pre><p>结合该命令，我们日常使用的 IDE（例如：GoLand），其在保存时是会默认执行 <code>go list</code> 命令的。<strong>在后续 IDE 支持后，就可以在编码时就快速发现有问题的版本和提示</strong>。</p>
+<p>在手动执行 <code>go get</code> 时也会出现 <code>warning</code> 提示，会把 go.mod 文件上的原因注释显示出来：</p>
+<pre tabindex="0"><code>$ go1.16 get github.com/eddycjy/go-retract-demo@v0.2.0
+go: warning: github.com/eddycjy/go-retract-demo@v0.2.0: retracted by module author: 因为煎鱼不小心敲错了...
+go: to switch to the latest unretracted version, run:
+	go get github.com/eddycjy/go-retract-demo@latest
+</code></pre><p>这样就能看到是哪个模块依赖，因为什么原因要求撤回了，非常直观。</p>
+<h2 id="总结">总结<a href="#总结" class="anchor" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 7h3a5 5 0 0 1 5 5 5 5 0 0 1-5 5h-3m-6 0H6a5 5 0 0 1-5-5 5 5 0 0 1 5-5h3"></path><line x1="8" y1="12" x2="16" y2="12"></line></svg></a></h2>
+<p>以往在出问题后每个个体需要跑去问维护者或者看 GitHub Commits，那样总归非常麻烦，很可能一来一回半个钟就没了。</p>
+<p>新特性给予了 Go modules 软撤回版本的一个方法，能够把问题更直观的反馈到开发者的手中，再结合日常开发工具的话更是美哉。</p>
+<p>但这个特性的完全应用目前也是有一定的阻碍的：</p>
+<ul>
+<li><del>国内模块代理：需要国内的模块代理也支持 retract ，否则即使你更新了版本也没有提示处理</del>。</li>
+<li>IDE：IDE 针对 retract 做一些支持，例如：文字颜色标红、黄等，能够便于开发者更好的识别。</li>
+</ul>
+<p>你对 Go modules 的 retract 特性怎么看，欢迎一起留言讨论！</p>
+
+			</div>
+			<hr class="post-end">
+			<footer class="post-info">
+				<p>
+					<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-tag meta-icon"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"></path><line x1="7" y1="7" x2="7" y2="7"></line></svg><span class="tag"><a href="https://wangtu2022.github.io/tags/go">go</a></span>
+				</p>
+				<p><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-file-text"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>210 Words</p>
+				<p><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-calendar"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>2021-04-05 16:00 &#43;0800</p>
+			</footer>
+		</article>
+		<div class="post-nav thin">
+			<a class="next-post" href="https://wangtu2022.github.io/posts/go/go-why-path/">
+				<span class="post-nav-label"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-arrow-left"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>&nbsp;Newer</span><br><span>意见征集：Go1 要不要移除 GOPATH？</span>
+			</a>
+			<a class="prev-post" href="https://wangtu2022.github.io/posts/go/go1.16-3/">
+				<span class="post-nav-label">Older&nbsp;<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-arrow-right"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg></span><br><span>Go1.16 新特性：详解内存管理机制的变更，你需要了解</span>
+			</a>
+		</div>
+		<div id="comments" class="thin">
+</div>
+	</main>
+
+	<footer id="site-footer" class="section-inner thin animated fadeIn faster">
+		<p>&copy; 2022 <a href="https://wangtu2022.github.io/">煎鱼</a> &#183; <a href="http://www.beian.miit.gov.cn/">粤ICP备19076352号</a></p>
+		<p>
+			Made with <a href="https://gohugo.io/" target="_blank" rel="noopener">Hugo</a> &#183; Theme <a href="https://github.com/Track3/hermit" target="_blank" rel="noopener">Hermit</a> &#183; <a href="https://wangtu2022.github.io/posts/index.xml" target="_blank" title="rss"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-rss"><path d="M4 11a9 9 0 0 1 9 9"></path><path d="M4 4a16 16 0 0 1 16 16"></path><circle cx="5" cy="19" r="1"></circle></svg></a>
+		</p>
+	</footer>
+
+
+
+	<script src="https://wangtu2022.github.io/js/bundle.min.580988ed2982bcbb74a1773c7abea97b43e4c43b9324e10cda0813ec6ec4bb67.js" integrity="sha256-WAmI7SmCvLt0oXc8er6pe0PkxDuTJOEM2ggT7G7Eu2c=" crossorigin="anonymous"></script>
+	
+<script type="application/javascript">
+var doNotTrack = false;
+if (!doNotTrack) {
+	window.ga=window.ga||function(){(ga.q=ga.q||[]).push(arguments)};ga.l=+new Date;
+	ga('create', 'UA-166045776-1', 'auto');
+	
+	ga('send', 'pageview');
+}
+</script>
+<script async src='https://www.google-analytics.com/analytics.js'></script>
+
+
+</body>
+
+</html>
